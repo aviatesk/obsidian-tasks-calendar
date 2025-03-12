@@ -19,6 +19,8 @@
   "devDependencies": {
     "@types/luxon": "^3.4.2",
     "@types/node": "^22.13.10",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "@typescript-eslint/eslint-plugin": "^5.2.0",
     "@typescript-eslint/parser": "^5.2.0",
     "builtin-modules": "^3.2.0",
@@ -37,6 +39,7 @@
     "@fullcalendar/timegrid": "^6.1.15",
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",
+    "lucide-react": "^0.479.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   }

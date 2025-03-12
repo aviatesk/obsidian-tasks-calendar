@@ -19,14 +19,36 @@
     font-size: 1em;
 }
 
-.tasks-calendar-container .fc-button {
-    background-color: var(--interactive-accent);
-    border-color: var(--interactive-accent);
-    color: var(--text-on-accent);
+.tasks-calendar-container .fc-button,
+.tasks-calendar-container .calendar-add-button,
+.tasks-calendar-container .calendar-settings-button,
+.tasks-calendar-container .calendar-delete-button,
+.tasks-calendar-container .calendar-action-button,
+.status-add-button,
+.status-reset-button {
+    background-color: var(--background-secondary);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+.tasks-calendar-container .calendar-delete-button {
+    background-color: #e57373;
 }
 
-.tasks-calendar-container .fc-button:hover {
-    background-color: var(--interactive-accent-hover);
+.tasks-calendar-container .fc-button:hover,
+.tasks-calendar-container .calendar-add-button:hover,
+.tasks-calendar-container .calendar-settings-button:hover,
+.tasks-calendar-container .calendar-delete-button:hover,
+.tasks-calendar-container .calendar-action-button:hover,
+.status-add-button:hover,
+.status-reset-button:hover {
+    background-color: var(--background-modifier-hover);
+}
+.tasks-calendar-container .calendar-delete-button:hover {
+    background-color: #ef5350;
 }
 
 .tasks-calendar-container .fc-button-active {
@@ -45,8 +67,13 @@
 
 .tasks-calendar-container .fc-daygrid-event {
     background-color: var(--interactive-accent);
-    border-color: var(--interactive-accent);
+    border-color: var (--interactive-accent);
     color: var(--text-on-accent);
+}
+
+/* Remove blue border from all-day events */
+.tasks-calendar-container .fc-daygrid-event.fc-event {
+    border: none;
 }
 
 .tasks-calendar-container .fc-day-today {
@@ -106,32 +133,6 @@
     position: relative;
 }
 
-/* Make the all-day row larger */
-.tasks-calendar-container .fc-timegrid-allday-lane {
-    min-height: 100px !important;
-    max-height: 150px !important;
-}
-
-.tasks-calendar-container .fc-timegrid-allday-cushion {
-    min-height: 100px !important;
-}
-
-/* Also increase height in month view */
-.tasks-calendar-container .fc-daygrid-day-events {
-    min-height: 60px;
-}
-
-/* Allow scrolling when there are many all-day events */
-.tasks-calendar-container .fc-timegrid-allday-events {
-    overflow-y: auto;
-    max-height: 130px;
-}
-
-/* Fix cell heights when there are many events */
-.tasks-calendar-container .fc-daygrid-day {
-    min-height: 120px;
-}
-
 /* Style for the view dropdown menu */
 .view-dropdown {
     display: none;
@@ -173,7 +174,6 @@
 }
 
 .tasks-calendar-container .fc-viewMenu-button {
-    background-color: var(--interactive-accent);
     padding-right: 25px !important;
     position: relative;
 }
@@ -295,40 +295,35 @@
     padding: 4px 8px;
     margin-left: 8px;
     font-size: 0.9em;
+    height: auto;
     width: auto;
-    min-width: 140px;
-}
-
-.tasks-calendar-container .calendar-add-button,
-.tasks-calendar-container .calendar-settings-button {
-    background-color: var(--background-secondary);
-    color: var(--text-normal);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
-    padding: 4px 8px;
-    cursor: pointer;
-    margin-left: 5px;
-    font-size: 1em;
-}
-
-.tasks-calendar-container .calendar-add-button:hover,
-.tasks-calendar-container .calendar-settings-button:hover {
-    background-color: var(--background-modifier-hover);
+    min-width: 50px;
+    text-align: center;
 }
 
 /* 設定パネルのスタイル */
 .tasks-calendar-container .calendar-settings-panel {
     position: absolute;
     bottom: 100%;
-    right: 0;
     background-color: var(--background-primary);
     border: 1px solid var(--background-modifier-border);
     border-radius: 6px;
     padding: 12px;
     min-width: 280px;
+    max-height: 70vh; /* Add maximum height for scrollability */
+    overflow-y: auto; /* Enable vertical scrolling when needed */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     z-index: 1000;
     margin-bottom: 8px;
+}
+
+/* Mobile-specific adjustments */
+@media screen and (max-width: 768px) {
+    .tasks-calendar-container .calendar-settings-panel {
+        max-height: 60vh; /* Smaller max height on mobile */
+        width: calc(100vw - 40px); /* Take most of the screen width but leave margins */
+        min-width: unset; /* Override min-width for small screens */
+    }
 }
 
 .tasks-calendar-container .tasks-calendar-settings-form .setting-item {
@@ -357,21 +352,6 @@
     align-self: flex-start;
 }
 
-.tasks-calendar-container .calendar-delete-button {
-    background-color: #e57373;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 6px 10px;
-    margin-top: 10px;
-    cursor: pointer;
-    font-size: 0.9em;
-}
-
-.tasks-calendar-container .calendar-delete-button:hover {
-    background-color: #ef5350;
-}
-
 /* 設定パネルのヘルプテキスト */
 .tasks-calendar-container .setting-item-description {
     font-size: 0.8em;
@@ -395,4 +375,188 @@ option[value="default"] {
 .tasks-calendar-container .fc .fc-timegrid-now-indicator-arrow {
     border-color: var(--text-accent);
     border-width: 5px;
+}
+
+/* ステータスチップのスタイリング */
+.status-list-container {
+  margin-bottom: 20px;
+}
+
+.status-input-container {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.status-input {
+  flex-grow: 1;
+  margin-right: 8px;
+}
+
+.status-add-button {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.status-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  min-height: 30px;
+  padding: 5px;
+  border-radius: 4px;
+  background-color: var(--background-secondary);
+}
+
+.status-chip {
+  display: flex;
+  align-items: center;
+  background-color: var(--interactive-accent-hover);
+  color: var(--text-normal);
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+}
+
+.status-text {
+  margin-right: 6px;
+}
+
+.status-remove-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-normal);
+  padding: 0;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.status-remove-button:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.status-reset-button {
+  background-color: var(--background-modifier-border);
+  color: var(--text-normal);
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.empty-status-message {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* 設定パネルのヘッダー */
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding-bottom: 8px;
+}
+
+.settings-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.settings-close-button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.settings-close-button:hover {
+  color: var(--text-normal);
+}
+
+/* 設定項目のヘッダー（ラベルとリセットボタン） */
+.setting-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.setting-item-input {
+  display: flex;
+  align-items: center;
+}
+
+.setting-reset-button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px;
+  margin-left: 8px;
+  visibility: hidden;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.setting-item:hover .setting-reset-button {
+  visibility: visible;
+}
+
+.setting-reset-button:hover {
+  color: var(--text-normal);
+  background-color: var(--background-modifier-hover);
+}
+
+/* フッターのアクション部分 */
+.calendar-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.calendar-action-button {
+  background-color: var(--background-secondary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+}
+
+.calendar-action-button:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.fc-list-day-side-text {
+  float: right;
+  padding-right: 60px;
 }
