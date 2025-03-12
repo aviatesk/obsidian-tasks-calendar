@@ -1,0 +1,398 @@
+.tasks-calendar-container {
+    padding: 0 20px;
+    height: 100%;
+    overflow-y: auto;
+    min-height: 300px; /* Ensure minimum height */
+    display: flex;
+    flex-direction: column;
+}
+
+.tasks-calendar-container .fc {
+    height: 100% !important;
+    min-height: 300px; /* Ensure minimum height */
+    width: 100% !important;
+    background-color: var(--background-primary);
+}
+
+.tasks-calendar-container .fc-toolbar-title {
+    color: var(--text-accent);
+    font-size: 1em;
+}
+
+.tasks-calendar-container .fc-button {
+    background-color: var(--interactive-accent);
+    border-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.tasks-calendar-container .fc-button:hover {
+    background-color: var(--interactive-accent-hover);
+}
+
+.tasks-calendar-container .fc-button-active {
+    background-color: var(--interactive-accent-hover);
+}
+
+.tasks-calendar-container .fc-daygrid-day {
+    background-color: var(--background-primary);
+    min-height: 120px;
+}
+
+.tasks-calendar-container .fc-daygrid-day-number {
+    color: var(--text-normal);
+    cursor: pointer;
+}
+
+.tasks-calendar-container .fc-daygrid-event {
+    background-color: var(--interactive-accent);
+    border-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.tasks-calendar-container .fc-day-today {
+    background-color: var(--background-modifier-hover);
+}
+
+.tasks-calendar-container .fc-day-today .fc-daygrid-day-number {
+    background-color: var(--text-accent);
+    color: var(--text-on-accent);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 2px;
+    cursor: pointer;
+}
+
+.tasks-calendar-container .fc-col-header-cell {
+    background-color: var(--background-secondary);
+    color: var (--text-normal);
+}
+
+.tasks-calendar-container .fc-daygrid-day-frame {
+    border-color: var(--background-modifier-border);
+}
+
+.tasks-calendar-container .fc-more-popover {
+    display: ruby;
+    background: var(--background-modifier-hover);
+}
+
+/* Style for the refresh button */
+.refresh-button-container {
+    display: none;
+}
+
+.refresh-button-container button {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+}
+
+.refresh-button-container button:hover {
+    background-color: var(--interactive-accent-hover);
+}
+
+.calendar-container {
+    flex-grow: 1;
+    height: calc(100% - 40px); /* フッター分の高さを引く */
+    min-height: 300px; /* Ensure minimum height */
+    width: 100%;
+    position: relative;
+}
+
+/* Make the all-day row larger */
+.tasks-calendar-container .fc-timegrid-allday-lane {
+    min-height: 100px !important;
+    max-height: 150px !important;
+}
+
+.tasks-calendar-container .fc-timegrid-allday-cushion {
+    min-height: 100px !important;
+}
+
+/* Also increase height in month view */
+.tasks-calendar-container .fc-daygrid-day-events {
+    min-height: 60px;
+}
+
+/* Allow scrolling when there are many all-day events */
+.tasks-calendar-container .fc-timegrid-allday-events {
+    overflow-y: auto;
+    max-height: 130px;
+}
+
+/* Fix cell heights when there are many events */
+.tasks-calendar-container .fc-daygrid-day {
+    min-height: 120px;
+}
+
+/* Style for the view dropdown menu */
+.view-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 1000;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    min-width: 120px;
+    overflow: hidden;
+}
+
+.view-dropdown.show {
+    display: block;
+}
+
+.view-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--text-normal);
+    transition: background-color 0.15s ease;
+}
+
+.view-option:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+/* Style the header buttons */
+.tasks-calendar-container .fc-toolbar-chunk {
+    position: relative;
+}
+
+.tasks-calendar-container .fc-toolbar-chunk .fc-button {
+    font-size: 0.9em;
+    padding: 0.3em 0.6em;
+}
+
+.tasks-calendar-container .fc-viewMenu-button {
+    background-color: var(--interactive-accent);
+    padding-right: 25px !important;
+    position: relative;
+}
+
+.tasks-calendar-container .fc-viewMenu-button::after {
+    content: "▼";
+    font-size: 0.7em;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.tasks-calendar-container .fc-refresh-button {
+    font-size: 1.2em;
+    padding: 0 0.6em !important;
+}
+
+/* Today button styling */
+.tasks-calendar-container .fc-todayButton-button {
+    font-size: 1em;
+    padding: 0.3em 0.6em !important;
+}
+
+/* Make calendar events clickable with a pointer cursor */
+.tasks-calendar-container .fc-event {
+    cursor: pointer;
+}
+
+.tasks-calendar-container .fc-event:hover {
+    filter: brightness(1.1);
+    transition: filter 0.2s ease;
+}
+
+/* Task preview popup styles */
+.task-preview-popup {
+    position: absolute;
+    z-index: 1100;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    padding: 12px;
+    max-width: 400px;
+    max-height: 300px;
+    overflow-y: auto;
+    color: var(--text-normal);
+    font-size: 0.9em;
+    pointer-events: none; /* Allow mouse to pass through so it doesn't block other elements */
+    animation: fadeIn 0.15s ease-in;
+    word-break: break-word;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.task-preview-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.task-preview-file-info {
+    font-size: 0.85em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--background-modifier-border);
+    padding-bottom: 6px;
+    margin-bottom: 6px;
+}
+
+.task-preview-task-text {
+    font-family: var(--font-monospace);
+    white-space: pre-wrap;
+    font-size: 0.9em;
+    line-height: 1.5;
+}
+
+.task-highlight {
+    background-color: var(--background-modifier-hover);
+    font-weight: bold;
+    border-radius: 4px;
+    padding: 2px 4px;
+}
+
+/* タブアイコンのスタイル調整 */
+.workspace-tab-header[data-type="tasks-calendar-view"] .workspace-tab-header-inner-icon {
+    opacity: 0.9;
+}
+
+.workspace-tab-header[data-type="tasks-calendar-view"].is-active .workspace-tab-header-inner-icon {
+    opacity: 1;
+}
+
+/* カレンダーフッターのスタイル */
+.tasks-calendar-container .calendar-footer {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-top: 1px solid var(--background-modifier-border);
+    margin-top: 10px;
+    font-size: 0.85em;
+    position: relative;
+}
+
+.tasks-calendar-container .calendar-selector-container {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+.tasks-calendar-container .calendar-selector {
+    background-color: var(--background-secondary);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin-left: 8px;
+    font-size: 0.9em;
+    width: auto;
+    min-width: 140px;
+}
+
+.tasks-calendar-container .calendar-add-button,
+.tasks-calendar-container .calendar-settings-button {
+    background-color: var(--background-secondary);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    margin-left: 5px;
+    font-size: 1em;
+}
+
+.tasks-calendar-container .calendar-add-button:hover,
+.tasks-calendar-container .calendar-settings-button:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+/* 設定パネルのスタイル */
+.tasks-calendar-container .calendar-settings-panel {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    padding: 12px;
+    min-width: 280px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    margin-bottom: 8px;
+}
+
+.tasks-calendar-container .tasks-calendar-settings-form .setting-item {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+}
+
+.tasks-calendar-container .tasks-calendar-settings-form .setting-item label {
+    margin-bottom: 4px;
+    color: var(--text-muted);
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.tasks-calendar-container .tasks-calendar-settings-form .setting-item input[type="text"] {
+    background-color: var(--background-secondary);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 0.9em;
+}
+
+.tasks-calendar-container .tasks-calendar-checkbox {
+    align-self: flex-start;
+}
+
+.tasks-calendar-container .calendar-delete-button {
+    background-color: #e57373;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 10px;
+    margin-top: 10px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.tasks-calendar-container .calendar-delete-button:hover {
+    background-color: #ef5350;
+}
+
+/* 設定パネルのヘルプテキスト */
+.tasks-calendar-container .setting-item-description {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    font-style: italic;
+}
+
+/* デフォルトカレンダーのセレクション表示強調 */
+option[value="default"] {
+    font-weight: bold;
+}
+
+/* Now indicator styling */
+.tasks-calendar-container .fc .fc-timegrid-now-indicator-line {
+    border-color: var(--text-accent);
+    border-width: 2px;
+    z-index: 4;
+}
+
+.tasks-calendar-container .fc .fc-timegrid-now-indicator-arrow {
+    border-color: var(--text-accent);
+    border-width: 5px;
+}

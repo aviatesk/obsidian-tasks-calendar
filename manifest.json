@@ -1,0 +1,10 @@
+{
+	"id": "tasks-calendar",
+	"name": "Tasks Calendar",
+	"version": "0.0.0",
+	"minAppVersion": "1.8.0",
+	"description": "Display tasks with date using FullCalendar",
+	"author": "",
+	"authorUrl": "",
+	"isDesktopOnly": false
+}
