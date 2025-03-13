@@ -91,9 +91,11 @@ export class TasksCalendarItemView extends ItemView {
       events: (fetchInfo, successCallback, failureCallback) => {
         this.fetchCalendarEvents(fetchInfo, successCallback, failureCallback);
       },
+      firstDay: 1,
       eventTimeFormat: {
-        hour: 'numeric',
-        minute: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
       },
       // Add event drag and drop handlers
       eventDrop: (info) => {
@@ -137,8 +139,8 @@ export class TasksCalendarItemView extends ItemView {
               const views = [
                 { name: 'Month', value: 'dayGridMonth' },
                 { name: 'Week', value: 'timeGridWeek' },
-                { name: 'Day', value: 'timeGridDay' },
                 { name: '3 Days', value: 'timeGridThreeDay' },
+                { name: 'Day', value: 'timeGridDay' },
                 { name: 'List', value: 'listWeek' }
               ];
 
