@@ -1,4 +1,4 @@
-import { ItemView, Notice, WorkspaceLeaf, debounce, TFile } from 'obsidian';
+import { ItemView, Notice, WorkspaceLeaf, debounce, TFile, Platform } from 'obsidian';
 import { Calendar, EventApi } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -21,6 +21,7 @@ export class TasksCalendarItemView extends ItemView {
   private currentSettings: CalendarSettings;
   private plugin: TasksCalendarPlugin;
   private footerEl: HTMLElement | null = null;
+  private closeDropdown: (event: MouseEvent) => void;
 
   constructor(leaf: WorkspaceLeaf, plugin: TasksCalendarPlugin) {
     super(leaf);
@@ -164,11 +165,12 @@ export class TasksCalendarItemView extends ItemView {
               dropdown.classList.add('show');
 
               // Close dropdown when clicking outside
-              document.addEventListener('click', (event) => {
+              this.closeDropdown = (event: MouseEvent) => {
                 if (!button.contains(event.target as Node)) {
                   dropdown.classList.remove('show');
                 }
-              });
+              }
+              document.addEventListener('click', this.closeDropdown);
             }
           }
         }
@@ -177,6 +179,8 @@ export class TasksCalendarItemView extends ItemView {
       eventMouseEnter: (info) => {
         const filePath = info.event.extendedProps?.filePath;
         const line = info.event.extendedProps?.line;
+        const taskText = info.event.extendedProps?.taskText;
+
         if (filePath && line) {
           this.app.workspace.trigger('hover-link', {
             event: info.jsEvent,
@@ -190,10 +194,23 @@ export class TasksCalendarItemView extends ItemView {
             state: {
               scroll: line
             }
-          })
+          });
+        }
+
+        // Show tooltip with task text if meta key is not pressed
+        if (taskText && !info.jsEvent.metaKey) {
+          this.showTooltip(info.el, taskText, info.jsEvent);
         }
       },
+      eventMouseLeave: (info) => {
+        // Hide tooltip when mouse leaves the event
+        this.hideTooltip();
+      },
     });
+
+    // Add global keydown listener to hide tooltip when Cmd key is pressed
+    document.addEventListener('keydown', this.onKeydown);
+
     this.calendar = calendar;
 
     this.plugin._onChangeCallback = debounce(() =>{
@@ -222,6 +239,61 @@ export class TasksCalendarItemView extends ItemView {
         }, 100);
       })
     );
+  }
+
+  // Show tooltip at the appropriate position
+  private showTooltip(eventEl: HTMLElement, text: string, event: MouseEvent) {
+    if (Platform.isMobile) return // disable tooltip on mobile
+
+    // Remove any existing tooltip
+    this.hideTooltip();
+
+    // Create tooltip element
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tasks-calendar-tooltip';
+    tooltip.textContent = text;
+    tooltip.id = 'tasks-calendar-active-tooltip';
+    this.app.workspace.containerEl.appendChild(tooltip);
+
+    // Position the tooltip
+    const eventRect = eventEl.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+
+    // Calculate initial position (centered below the event)
+    let left = eventRect.left + (eventRect.width / 2) - (tooltipRect.width / 2);
+    let top = event.clientY + 20; // Position below the cursor
+
+    // Adjust if tooltip would go off-screen
+    const rightEdge = left + tooltipRect.width;
+    const bottomEdge = top + tooltipRect.height;
+
+    // Check right edge
+    if (rightEdge > window.innerWidth) {
+      left = window.innerWidth - tooltipRect.width - 10;
+    }
+
+    // Check left edge
+    if (left < 10) {
+      left = 10;
+    }
+
+    // Check bottom edge
+    if (bottomEdge > window.innerHeight) {
+      top = event.clientY - tooltipRect.height - 10; // Position above cursor instead
+    }
+
+    // Apply position
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+  }
+
+  // Hide tooltip
+  private hideTooltip() {
+    if (Platform.isMobile) return // disable tooltip on mobile
+    const tooltip = document.getElementById('tasks-calendar-active-tooltip');
+    if (tooltip) {
+      tooltip.remove();
+    }
   }
 
   // カレンダーイベントをフェッチするカスタム関数
@@ -258,7 +330,16 @@ export class TasksCalendarItemView extends ItemView {
     this.resizeObserver.observe(this.containerEl);
   }
 
+  private onKeydown = (event: KeyboardEvent) => {
+    if (event.metaKey) {
+      this.hideTooltip();
+    }
+  }
+
   async onClose() {
+    // Clean up tooltip if it exists
+    this.hideTooltip();
+
     // Clean up React renderers
     if (this.taskPreviewRenderer) {
       this.taskPreviewRenderer.unmount();
@@ -275,6 +356,11 @@ export class TasksCalendarItemView extends ItemView {
       this.calendar.destroy();
       this.calendar = null;
     }
+
+    if (this.closeDropdown) {
+      document.removeEventListener('click', this.closeDropdown);
+    }
+    document.removeEventListener('keydown', this.onKeydown);
 
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();

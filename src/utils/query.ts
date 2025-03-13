@@ -64,8 +64,9 @@ export default function getTasksAsEvents(
               allDay,
               extendedProps: {
                 filePath: page.file.path,
-                line: task.line
-              }
+                line: task.line,
+                taskText: task.text  // Add the original task text
+              },
             });
           });
       }

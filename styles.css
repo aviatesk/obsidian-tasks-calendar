@@ -584,3 +584,21 @@ option[value="default"] {
     display: flex;
   }
 }
+
+.tasks-calendar-tooltip {
+  font-family: monospace;
+  font-size: 0.8em;
+  position: absolute;
+  background-color: var(--background-modifier-hover);
+  border: 1px solid var(--background-modifier-border-hover);
+  color: var(--text-normal);
+  padding: 8px 12px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  max-width: 300px;
+  word-wrap: break-word;
+  z-index: 10000;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+  animation: fadeIn 0.25s ease-in fadeOut 0.25s ease-out;
+}
