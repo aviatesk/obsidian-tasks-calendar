@@ -1,5 +1,5 @@
-import { ItemView, MarkdownView, Notice, WorkspaceLeaf, debounce } from 'obsidian';
-import { Calendar } from '@fullcalendar/core';
+import { ItemView, MarkdownView, Notice, WorkspaceLeaf, debounce, TFile } from 'obsidian';
+import { Calendar, EventApi } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
@@ -10,6 +10,7 @@ import { ReactRenderer } from './components/ReactRoot';
 import React from 'react';
 import { CalendarFooter } from './components/CalendarFooter';
 import getTasksAsEvents from './query';
+import updateTaskDates from './update';
 
 export class TasksCalendarItemView extends ItemView {
   calendar: Calendar | null = null;
@@ -83,7 +84,7 @@ export class TasksCalendarItemView extends ItemView {
           this.calendar.changeView('timeGridDay', date);
         }
       },
-      editable: false,
+      editable: true, // Enable dragging and resizing
       dayMaxEvents: true,
       // カスタムイベントフェッチ関数を使用
       events: (fetchInfo, successCallback, failureCallback) => {
@@ -92,6 +93,16 @@ export class TasksCalendarItemView extends ItemView {
       eventTimeFormat: {
         hour: 'numeric',
         minute: 'numeric',
+      },
+      // Add event drag and drop handlers
+      eventDrop: (info) => {
+        if (info.event && info.oldEvent)
+          this.handleTaskDateChange(info.event, info.oldEvent);
+      },
+      // Add event resize handler
+      eventResize: (info) => {
+        if (info.event && info.oldEvent)
+          this.handleTaskDateChange(info.event, info.oldEvent);
       },
       // Add event click handler to navigate to tasks
       eventClick: (info) => {
@@ -371,5 +382,52 @@ export class TasksCalendarItemView extends ItemView {
         }
       })
     );
+  }
+
+  // Helper method to update task date in the original file
+  private async handleTaskDateChange(newEvent: EventApi, oldEvent: EventApi) {
+    // Get file information from event properties
+    const filePath = newEvent.extendedProps.filePath;
+    const line = newEvent.extendedProps.line;
+
+    if (!(filePath && line)) {
+      new Notice("Unable to update task: missing file information");
+      return;
+    }
+
+    // Get the file from the vault
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!file || !(file instanceof TFile)) {
+      new Notice(`File not found: ${filePath}`);
+      return;
+    }
+
+    // Get date property names from current settings
+    const dateProperty = this.currentSettings.dateProperty || DEFAULT_CALENDAR_SETTINGS.dateProperty;
+    const startDateProperty = this.currentSettings.startDateProperty || DEFAULT_CALENDAR_SETTINGS.startDateProperty;
+
+    // Get the new start and end dates from the event
+    const newStart = newEvent.start;
+    const newEnd = newEvent.end;
+    const isAllDay = newEvent.allDay;
+    const wasAllDay = oldEvent.allDay;
+
+    if (!newStart)
+      return new Notice("Event without start date cannot be updated");
+
+    // Update task dates using the helper function
+    await updateTaskDates(
+      this.app.vault,
+      file,
+      line,
+      newStart,
+      newEnd,
+      isAllDay,
+      startDateProperty,
+      dateProperty,
+      wasAllDay
+    );
+
+    return new Notice("Task date updated successfully");
   }
 }
