@@ -1,4 +1,4 @@
-import { ItemView, MarkdownView, Notice, WorkspaceLeaf, debounce, TFile } from 'obsidian';
+import { ItemView, Notice, WorkspaceLeaf, debounce, TFile } from 'obsidian';
 import { Calendar, EventApi } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -9,8 +9,9 @@ import TasksCalendarPlugin from './main';
 import { ReactRenderer } from './components/ReactRoot';
 import React from 'react';
 import { CalendarFooter } from './components/CalendarFooter';
-import getTasksAsEvents from './query';
-import updateTaskDates from './update';
+import getTasksAsEvents from './utils/query';
+import updateTaskDates from './utils/update';
+import openTask from './utils/open';
 
 export class TasksCalendarItemView extends ItemView {
   calendar: Calendar | null = null;
@@ -108,28 +109,8 @@ export class TasksCalendarItemView extends ItemView {
       eventClick: (info) => {
         const filePath = info.event.extendedProps?.filePath;
         const line = info.event.extendedProps?.line;
-
-        if (filePath) {
-          // Open the file in a new tab by setting the third parameter to true
-          this.app.workspace.openLinkText(filePath, '', true).then(async () => {
-            // If we have the line number, navigate directly to it
-            if (line !== undefined) {
-              const activeLeaf = this.app.workspace.getActiveViewOfType(MarkdownView);
-              if (activeLeaf && activeLeaf.editor) {
-                const editor = activeLeaf.editor;
-
-                // Set cursor to the task position
-                editor.setCursor({ line: line, ch: 0 });
-
-                // Scroll to the cursor position with some context
-                editor.scrollIntoView({
-                  from: { line: Math.max(0, line - 2), ch: 0 },
-                  to: { line: line + 2, ch: 0 }
-                }, true);
-              }
-            }
-          });
-        }
+        if (filePath)
+          openTask(this.app, filePath, line);
       },
       customButtons: {
         todayButton: {

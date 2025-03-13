@@ -1,7 +1,7 @@
 import { DataviewApi, SMarkdownPage } from "obsidian-dataview";
 import { EventInput } from "@fullcalendar/core";
-import { CalendarSettings } from "./TasksCalendarSettings";
-import { DEFAULT_CALENDAR_SETTINGS } from "./TasksCalendarSettings";
+import { CalendarSettings } from "../TasksCalendarSettings";
+import { DEFAULT_CALENDAR_SETTINGS } from "../TasksCalendarSettings";
 
 export default function getTasksAsEvents(
   dataviewApi: DataviewApi, settings: CalendarSettings): EventInput[] {
