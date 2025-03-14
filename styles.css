@@ -712,6 +712,9 @@ option[value="default"] {
 
 .task-click-tooltip-info-text {
   line-height: 1.5;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .task-click-tooltip-file-link {
@@ -770,8 +773,7 @@ option[value="default"] {
   gap: 6px;
 }
 
-.date-time-picker-close-button,
-.date-time-picker-save-button {
+.date-time-picker-close-button {
   background: none;
   border: none;
   cursor: pointer;
@@ -784,37 +786,50 @@ option[value="default"] {
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.date-time-picker-save-button {
-  color: var(--text-accent);
-}
-
 .date-time-picker-close-button:hover {
-  color: var(--text-accent-hover);
-  background-color: var(--background-modifier-hover);
-}
-
-.date-time-picker-save-button:hover {
   color: var(--text-accent-hover);
   background-color: var(--background-modifier-hover);
 }
 
 .date-time-picker-calendar-container {
   padding: 8px;
-  height: 260px;
+  height: auto;
   overflow-y: auto;
 }
 
 .date-time-picker-calendar {
-  height: 100%;
+  height: auto;
 }
 
 .date-time-picker-calendar .fc {
   background-color: var(--background-primary);
   font-size: 0.85em;
+  height: auto;
+}
+
+/* Make sure all dates are visible */
+.date-time-picker-calendar .fc-view {
+  overflow: visible;
+}
+
+/* Make the calendar more compact */
+.date-time-picker-calendar .fc-daygrid-day {
+  min-height: auto;
+  height: 32px;
+  cursor: pointer;
+}
+
+.date-time-picker-calendar .fc-daygrid-day-frame {
+  min-height: auto;
   height: 100%;
 }
 
-/* カレンダーの日付セルをクリック可能にする */
+/* Fix white space issue */
+.date-time-picker-calendar .fc-header-toolbar {
+  margin-bottom: 0.5em !important;
+  padding: 0 !important;
+}
+
 .date-time-picker-calendar .fc-daygrid-day {
   cursor: pointer;
 }
@@ -935,7 +950,7 @@ option[value="default"] {
 }
 
 .time-control-button:hover {
-  color: var(--text-accent);
+  color: var (--text-accent);
 }
 
 .date-time-picker-time-input {

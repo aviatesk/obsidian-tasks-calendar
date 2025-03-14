@@ -30,18 +30,30 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   position,
   onClose,
   onOpenFile,
-  startDate,
-  endDate,
+  startDate: initialStartDate,
+  endDate: initialEndDate,
   tags,
   status = ' ',
   line,
-  isAllDay,
+  isAllDay: initialIsAllDay = false,
   onUpdateDates,
   onUpdateStatus
 }) => {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const fileName = filePath.split('/').pop() || filePath;
   const isMobile = Platform.isMobile;
+
+  // State for dynamic updates of dates
+  const [startDate, setStartDate] = useState<string | undefined>(initialStartDate);
+  const [endDate, setEndDate] = useState<string | undefined>(initialEndDate);
+  const [isAllDay, setIsAllDay] = useState<boolean>(!!initialIsAllDay);
+
+  // Date picker state
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [showStatusPicker, setShowStatusPicker] = useState(false);
+  const [datePickerPosition, setDatePickerPosition] = useState({ top: 0, left: 0 });
+  const [statusPickerPosition, setStatusPickerPosition] = useState({ top: 0, left: 0 });
 
   // Handle clicks outside the tooltip
   useEffect(() => {
@@ -56,13 +68,6 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [onClose]);
-
-  // Date picker state
-  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
-  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
-  const [showStatusPicker, setShowStatusPicker] = useState(false);
-  const [datePickerPosition, setDatePickerPosition] = useState({ top: 0, left: 0 });
-  const [statusPickerPosition, setStatusPickerPosition] = useState({ top: 0, left: 0 });
 
   // Helper to format date strings
   const formatDateString = (dateStr: string, isAllDayFormat = false) => {
@@ -99,12 +104,12 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
       // For mobile, we don't need specific positioning as it will be centered
       setDatePickerPosition({ top: 0, left: 0 });
     } else {
-    // Get clicked element position for the date picker
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    // Simple positioning - will be refined by calculateOptimalPosition in DateTimePickerModal
-    const top = rect.bottom + 5;
-    const left = rect.left;
-    setDatePickerPosition({ top, left });
+      // Get clicked element position for the date picker
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      // Simple positioning - will be refined by calculateOptimalPosition in DateTimePickerModal
+      const top = rect.bottom + 5;
+      const left = rect.left;
+      setDatePickerPosition({ top, left });
     }
 
     if (isStart) {
@@ -127,12 +132,12 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
       // For mobile, we don't need specific positioning as it will be centered
       setStatusPickerPosition({ top: 0, left: 0 });
     } else {
-    // Get clicked element position for the status picker
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    // Simple positioning - will be refined by calculateOptimalPosition in StatusPickerModal
-    const top = rect.bottom + 5;
-    const left = rect.left;
-    setStatusPickerPosition({ top, left });
+      // Get clicked element position for the status picker
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      // Simple positioning - will be refined by calculateOptimalPosition in StatusPickerModal
+      const top = rect.bottom + 5;
+      const left = rect.left;
+      setStatusPickerPosition({ top, left });
     }
 
     setShowStatusPicker(true);
@@ -141,24 +146,29 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     e.stopPropagation();
   };
 
-  // Date save handler
-  const handleDateSave = (date: Date, isAllDay: boolean, isStart: boolean) => {
+  // Date save handler - now automatically updates UI
+  const handleDateSave = (date: Date, allDay: boolean, isStart: boolean) => {
     if (!onUpdateDates) return;
 
+    // Update local state to reflect changes immediately
+    const isoDate = date.toISOString();
+
     if (isStart) {
-      let endDateObj = null;
-      if (endDate) {
-        endDateObj = new Date(endDate);
-      }
-      onUpdateDates(date, endDateObj, isAllDay);
+      setStartDate(isoDate);
+      const endDateObj = endDate ? new Date(endDate) : null;
+      onUpdateDates(date, endDateObj, allDay);
     } else {
-      let startDateObj = null;
-      if (startDate) {
-        startDateObj = new Date(startDate);
-      }
-      onUpdateDates(startDateObj, date, isAllDay);
+      setEndDate(isoDate);
+      const startDateObj = startDate ? new Date(startDate) : null;
+      onUpdateDates(startDateObj, date, allDay);
     }
 
+    // Update all-day state
+    setIsAllDay(allDay);
+  };
+
+  // Handle picker close
+  const handleDatePickerClose = () => {
     setShowStartDatePicker(false);
     setShowEndDatePicker(false);
   };
@@ -283,9 +293,9 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
         {showStartDatePicker && startDate && (
           <DateTimePickerModal
             initialDate={new Date(startDate)}
-            isAllDay={!!isAllDay}
-            onClose={() => setShowStartDatePicker(false)}
-            onSave={(date, isAllDay) => handleDateSave(date, isAllDay, true)}
+            isAllDay={isAllDay}
+            onClose={handleDatePickerClose}
+            onSave={(date, allDay) => handleDateSave(date, allDay, true)}
             position={datePickerPosition}
             isStartDate={true}
           />
@@ -294,9 +304,9 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
         {showEndDatePicker && endDate && (
           <DateTimePickerModal
             initialDate={new Date(endDate)}
-            isAllDay={!!isAllDay}
-            onClose={() => setShowEndDatePicker(false)}
-            onSave={(date, isAllDay) => handleDateSave(date, isAllDay, false)}
+            isAllDay={isAllDay}
+            onClose={handleDatePickerClose}
+            onSave={(date, allDay) => handleDateSave(date, allDay, false)}
             position={datePickerPosition}
             isStartDate={false}
           />
@@ -387,9 +397,9 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
       {showStartDatePicker && startDate && (
         <DateTimePickerModal
           initialDate={new Date(startDate)}
-          isAllDay={!!isAllDay}
-          onClose={() => setShowStartDatePicker(false)}
-          onSave={(date, isAllDay) => handleDateSave(date, isAllDay, true)}
+          isAllDay={isAllDay}
+          onClose={handleDatePickerClose}
+          onSave={(date, allDay) => handleDateSave(date, allDay, true)}
           position={datePickerPosition}
           isStartDate={true}
         />
@@ -398,9 +408,9 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
       {showEndDatePicker && endDate && (
         <DateTimePickerModal
           initialDate={new Date(endDate)}
-          isAllDay={!!isAllDay}
-          onClose={() => setShowEndDatePicker(false)}
-          onSave={(date, isAllDay) => handleDateSave(date, isAllDay, false)}
+          isAllDay={isAllDay}
+          onClose={handleDatePickerClose}
+          onSave={(date, allDay) => handleDateSave(date, allDay, false)}
           position={datePickerPosition}
           isStartDate={false}
         />

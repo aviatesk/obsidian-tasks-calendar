@@ -1,8 +1,8 @@
 import { Platform } from 'obsidian';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import { X, Check, Clock } from 'lucide-react';
+import { X, Clock } from 'lucide-react';
 import { FIRST_DAY } from 'src/TasksCalendarSettings';
 import { calculateOptimalPosition } from '../utils/position';
 
@@ -12,7 +12,7 @@ interface DateTimePickerModalProps {
   onClose: () => void;
   onSave: (date: Date, isAllDay: boolean) => void;
   position: { top: number; left: number };
-  isStartDate?: boolean; // 開始日か終了日か
+  isStartDate?: boolean; // Whether this is start date or end date
 }
 
 export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
@@ -23,13 +23,9 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   position,
   isStartDate = true
 }) => {
-  const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
+  // State for current values
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date(initialDate));
   const [isAllDay, setIsAllDay] = useState<boolean>(initialIsAllDay);
-  const calendarRef = useRef<HTMLDivElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const calendarInstance = useRef<Calendar | null>(null);
-  const [finalPosition, setFinalPosition] = useState(position);
-
   const [hours, setHours] = useState<string>(
     initialDate.getHours().toString().padStart(2, '0')
   );
@@ -37,41 +33,146 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     initialDate.getMinutes().toString().padStart(2, '0')
   );
 
-  // 入力フォーカス状態を追加
+  // Refs
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const calendarInstance = useRef<Calendar | null>(null);
+
+  // For time input changes - using a shorter debounce
+  const timeInputDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Input focus states
   const [hoursInputFocused, setHoursInputFocused] = useState(false);
   const [minutesInputFocused, setMinutesInputFocused] = useState(false);
+
+  // Position state
+  const [finalPosition, setFinalPosition] = useState(position);
 
   // Determine if on mobile or desktop
   const isMobile = Platform.isMobile;
 
+  // Create a result date from current state
+  const createResultDate = useCallback(() => {
+    const resultDate = new Date(selectedDate);
+
+    if (!isAllDay) {
+      const parsedHours = parseInt(hours, 10);
+      const parsedMinutes = parseInt(minutes, 10);
+
+      resultDate.setHours(isNaN(parsedHours) ? 0 : parsedHours);
+      resultDate.setMinutes(isNaN(parsedMinutes) ? 0 : parsedMinutes);
+    } else {
+      resultDate.setHours(0);
+      resultDate.setMinutes(0);
+      resultDate.setSeconds(0);
+      resultDate.setMilliseconds(0);
+    }
+
+    return resultDate;
+  }, [selectedDate, isAllDay, hours, minutes]);
+
+  // Handle date changes - update immediately
+  const handleDateChange = useCallback((newDate: Date) => {
+    setSelectedDate(newDate);
+
+    // Cancel any pending time input debounce
+    if (timeInputDebounceTimerRef.current) {
+      clearTimeout(timeInputDebounceTimerRef.current);
+      timeInputDebounceTimerRef.current = null;
+    }
+
+    // Save immediately
+    const resultDate = new Date(newDate);
+
+    if (!isAllDay) {
+      const parsedHours = parseInt(hours, 10);
+      const parsedMinutes = parseInt(minutes, 10);
+
+      resultDate.setHours(isNaN(parsedHours) ? 0 : parsedHours);
+      resultDate.setMinutes(isNaN(parsedMinutes) ? 0 : parsedMinutes);
+    } else {
+      resultDate.setHours(0);
+      resultDate.setMinutes(0);
+      resultDate.setSeconds(0);
+      resultDate.setMilliseconds(0);
+    }
+
+    onSave(resultDate, isAllDay);
+  }, [isAllDay, hours, minutes, onSave]);
+
+  // Handle all-day toggle - update immediately
+  const handleAllDayChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newIsAllDay = e.target.checked;
+    setIsAllDay(newIsAllDay);
+
+    // Cancel any pending time input debounce
+    if (timeInputDebounceTimerRef.current) {
+      clearTimeout(timeInputDebounceTimerRef.current);
+      timeInputDebounceTimerRef.current = null;
+    }
+
+    // Save immediately
+    const resultDate = createResultDate();
+
+    if (newIsAllDay) {
+      resultDate.setHours(0);
+      resultDate.setMinutes(0);
+      resultDate.setSeconds(0);
+      resultDate.setMilliseconds(0);
+    }
+
+    onSave(resultDate, newIsAllDay);
+  }, [createResultDate, onSave]);
+
+  // Handle time input changes with a short debounce
+  const handleTimeInputChange = useCallback((newValue: string, setter: React.Dispatch<React.SetStateAction<string>>, isHoursSetter: boolean) => {
+    setter(newValue);
+
+    // Use a short debounce for time inputs to avoid excessive updates while typing
+    if (timeInputDebounceTimerRef.current) {
+      clearTimeout(timeInputDebounceTimerRef.current);
+    }
+
+    timeInputDebounceTimerRef.current = setTimeout(() => {
+      const resultDate = createResultDate();
+      onSave(resultDate, isAllDay);
+      timeInputDebounceTimerRef.current = null;
+    }, 300); // Much shorter debounce time
+  }, [createResultDate, isAllDay, onSave]);
+
+  // Position calculation
   useEffect(() => {
-    // Calculate optimal position after the component mounts
     if (modalRef.current && !isMobile) {
-      // Create a temporary element to represent the source of the click
       const sourceEl = document.createElement('div');
       sourceEl.style.position = 'absolute';
       sourceEl.style.left = `${position.left}px`;
-      sourceEl.style.top = `${position.top - 5}px`;  // 5px offset to represent the original element
-      sourceEl.style.width = '100px';  // Approximate width
-      sourceEl.style.height = '20px';  // Approximate height
+      sourceEl.style.top = `${position.top - 5}px`;
+      sourceEl.style.width = '100px';
+      sourceEl.style.height = '20px';
       document.body.appendChild(sourceEl);
 
-      // Calculate optimal position
       const optimalPosition = calculateOptimalPosition(sourceEl, modalRef.current, 10);
       setFinalPosition(optimalPosition);
 
-      // Clean up temporary element
       document.body.removeChild(sourceEl);
     } else if (isMobile) {
-      // On mobile, position doesn't matter as it will be centered by CSS
       setFinalPosition({ top: 0, left: 0 });
     }
   }, [position, isMobile]);
 
+  // Close modal when clicking outside
   useEffect(() => {
-    // モーダルの外側をクリックした時に閉じる処理
     const handleClickOutside = (event: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        // If there's a pending time input save, execute it now
+        if (timeInputDebounceTimerRef.current) {
+          clearTimeout(timeInputDebounceTimerRef.current);
+          timeInputDebounceTimerRef.current = null;
+
+          const resultDate = createResultDate();
+          onSave(resultDate, isAllDay);
+        }
+
         onClose();
       }
     };
@@ -79,12 +180,17 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [onClose]);
 
+      // Clean up any pending timeout when component unmounts
+      if (timeInputDebounceTimerRef.current) {
+        clearTimeout(timeInputDebounceTimerRef.current);
+      }
+    };
+  }, [onClose, createResultDate, isAllDay, onSave]);
+
+  // Initialize calendar
   useEffect(() => {
     if (calendarRef.current) {
-      // FullCalendarのインスタンスを作成
       const calendar = new Calendar(calendarRef.current, {
         plugins: [dayGridPlugin],
         initialView: 'dayGridMonth',
@@ -94,14 +200,12 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
           center: 'title',
           right: 'next'
         },
-        height: 'auto',
-        selectable: false,  // 選択機能を無効化
-        events: [],         // イベントを空に
-        navLinks: false,    // ナビゲーションリンクを無効化
+        aspectRatio: 0.75,
+        selectable: false,
+        events: [],
+        navLinks: false,
         firstDay: FIRST_DAY,
-        // 今日の日付のハイライトを無効化
         dayCellDidMount: (info) => {
-          // 選択中の日付とマッチするならハイライト
           const cellDate = info.date;
           const isSelected =
             cellDate.getFullYear() === selectedDate.getFullYear() &&
@@ -111,41 +215,25 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
           if (isSelected) {
             info.el.classList.add('fc-day-selected');
           }
-        }
+        },
+        dayHeaderFormat: { weekday: 'narrow' },
+        fixedWeekCount: false
       });
 
       calendar.render();
       calendarInstance.current = calendar;
 
-      // 手動でクリックイベントリスナーを追加
       setTimeout(() => {
         if (calendarRef.current) {
-          // 既存の選択ハイライトを適用
           updateSelectedDateHighlight(selectedDate);
 
           const days = calendarRef.current.querySelectorAll('.fc-daygrid-day');
           days.forEach(day => {
             day.addEventListener('click', (e) => {
-              // イベント伝播を停止してmodalが閉じるのを防ぐ
               e.stopPropagation();
-
               const dateStr = day.getAttribute('data-date');
               if (dateStr) {
-                const clickedDate = new Date(dateStr);
-                const newDate = new Date(selectedDate);
-                newDate.setFullYear(clickedDate.getFullYear());
-                newDate.setMonth(clickedDate.getMonth());
-                newDate.setDate(clickedDate.getDate());
-
-                // 既存の時間を保持
-                const currentHours = parseInt(hours, 10) || 0;
-                const currentMinutes = parseInt(minutes, 10) || 0;
-                newDate.setHours(currentHours);
-                newDate.setMinutes(currentMinutes);
-
-                // 選択された日付を更新してハイライト
-                setSelectedDate(newDate);
-                updateSelectedDateHighlight(newDate);
+                handleDateClick(dateStr);
               }
             });
           });
@@ -156,94 +244,107 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
         calendar.destroy();
       };
     }
-  }, [selectedDate, hours, minutes]);
+  }, []); // Only run once on mount
 
-  // 選択中の日付をハイライトする関数
+  // Update calendar when selected date changes
+  useEffect(() => {
+    if (calendarInstance.current) {
+      updateSelectedDateHighlight(selectedDate);
+      calendarInstance.current.gotoDate(selectedDate);
+    }
+  }, [selectedDate]);
+
+  // Function to highlight the selected date
   const updateSelectedDateHighlight = (date: Date) => {
     if (!calendarRef.current) return;
 
-    // 既存の選択を削除
+    // Remove existing selections
     const selectedCells = calendarRef.current.querySelectorAll('.fc-day-selected');
     selectedCells.forEach(el => el.classList.remove('fc-day-selected'));
 
-    // 今日のハイライトも削除
+    // Remove today highlights
     const todayCells = calendarRef.current.querySelectorAll('.fc-day-today');
     todayCells.forEach(el => el.classList.remove('fc-day-today'));
 
-    // 新しい選択を追加
-    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD形式
+    // Add new selection
+    const dateStr = date.toISOString().split('T')[0];
     const newSelectedCell = calendarRef.current.querySelector(`[data-date="${dateStr}"]`);
     if (newSelectedCell) {
       newSelectedCell.classList.add('fc-day-selected');
     }
   };
 
+  // Handle date click (immediate update)
+  const handleDateClick = (dateStr: string) => {
+    const clickedDate = new Date(dateStr);
+    const newDate = new Date(selectedDate);
+    newDate.setFullYear(clickedDate.getFullYear());
+    newDate.setMonth(clickedDate.getMonth());
+    newDate.setDate(clickedDate.getDate());
+
+    // Preserve existing time
+    const currentHours = parseInt(hours, 10) || 0;
+    const currentMinutes = parseInt(minutes, 10) || 0;
+    newDate.setHours(currentHours);
+    newDate.setMinutes(currentMinutes);
+
+    // Update UI and save immediately
+    handleDateChange(newDate);
+  };
+
+  // Hours input change handler with validation
   const handleHoursChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
 
-    // 空入力を許可
     if (value === '') {
-      setHours('');
+      handleTimeInputChange('', setHours, true);
       return;
     }
 
-    // 数値のみを抽出
     const numericValue = value.replace(/[^0-9]/g, '');
     const numValue = parseInt(numericValue, 10);
 
-    if (isNaN(numValue)) {
-      return;
-    }
+    if (isNaN(numValue)) return;
 
-    // フォーカス状態ならパディングなしで値を設定
     if (hoursInputFocused) {
-      // 0-23の範囲で制限
       if (numValue <= 23) {
-        setHours(numericValue);
+        handleTimeInputChange(numericValue, setHours, true);
       }
     } else {
-      // フォーカス外れた時は0埋め
       if (numValue >= 0 && numValue <= 23) {
-        setHours(numValue.toString().padStart(2, '0'));
+        handleTimeInputChange(numValue.toString().padStart(2, '0'), setHours, true);
       }
     }
   };
 
+  // Minutes input change handler with validation
   const handleMinutesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
 
-    // 空入力を許可
     if (value === '') {
-      setMinutes('');
+      handleTimeInputChange('', setMinutes, false);
       return;
     }
 
-    // 数値のみを抽出
     const numericValue = value.replace(/[^0-9]/g, '');
     const numValue = parseInt(numericValue, 10);
 
-    if (isNaN(numValue)) {
-      return;
-    }
+    if (isNaN(numValue)) return;
 
-    // フォーカス状態ならパディングなしで値を設定
     if (minutesInputFocused) {
-      // 0-59の範囲で制限
       if (numValue <= 59) {
-        setMinutes(numericValue);
+        handleTimeInputChange(numericValue, setMinutes, false);
       }
     } else {
-      // フォーカス外れた時は0埋め
       if (numValue >= 0 && numValue <= 59) {
-        setMinutes(numValue.toString().padStart(2, '0'));
+        handleTimeInputChange(numValue.toString().padStart(2, '0'), setMinutes, false);
       }
     }
   };
 
-  // フォーカス状態の変更ハンドラ
+  // Focus handlers
   const handleHoursFocus = () => {
     setHoursInputFocused(true);
-    // 先頭が0の場合は削除して表示
     if (hours.startsWith('0') && hours !== '0') {
       setHours(hours.replace(/^0+/, ''));
     }
@@ -251,18 +352,21 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
   const handleHoursBlur = () => {
     setHoursInputFocused(false);
-    // 入力値を0埋めで整形
     if (hours !== '') {
       const numValue = parseInt(hours, 10);
       if (!isNaN(numValue) && numValue >= 0 && numValue <= 23) {
-        setHours(numValue.toString().padStart(2, '0'));
+        const paddedValue = numValue.toString().padStart(2, '0');
+        setHours(paddedValue);
+
+        // Ensure the change is saved
+        const resultDate = createResultDate();
+        onSave(resultDate, isAllDay);
       }
     }
   };
 
   const handleMinutesFocus = () => {
     setMinutesInputFocused(true);
-    // 先頭が0の場合は削除して表示
     if (minutes.startsWith('0') && minutes !== '0') {
       setMinutes(minutes.replace(/^0+/, ''));
     }
@@ -270,33 +374,28 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
   const handleMinutesBlur = () => {
     setMinutesInputFocused(false);
-    // 入力値を0埋めで整形
     if (minutes !== '') {
       const numValue = parseInt(minutes, 10);
       if (!isNaN(numValue) && numValue >= 0 && numValue <= 59) {
-        setMinutes(numValue.toString().padStart(2, '0'));
+        const paddedValue = numValue.toString().padStart(2, '0');
+        setMinutes(paddedValue);
+
+        // Ensure the change is saved
+        const resultDate = createResultDate();
+        onSave(resultDate, isAllDay);
       }
     }
   };
 
-  const handleSave = () => {
-    const resultDate = new Date(selectedDate);
-    if (!isAllDay) {
-      // デフォルト値を設定
-      const parsedHours = parseInt(hours, 10);
-      const parsedMinutes = parseInt(minutes, 10);
+  // Handle select changes for mobile (immediate update)
+  const handleSelectChange = (value: string, setter: React.Dispatch<React.SetStateAction<string>>, isHours: boolean) => {
+    setter(value);
 
-      resultDate.setHours(isNaN(parsedHours) ? 0 : parsedHours);
-      resultDate.setMinutes(isNaN(parsedMinutes) ? 0 : parsedMinutes);
-    } else {
-      // 終日イベントの場合、時間を0:00に設定
-      resultDate.setHours(0);
-      resultDate.setMinutes(0);
-      resultDate.setSeconds(0);
-      resultDate.setMilliseconds(0);
-    }
-
-    onSave(resultDate, isAllDay);
+    // Save immediately
+    setTimeout(() => {
+      const resultDate = createResultDate();
+      onSave(resultDate, isAllDay);
+    }, 0);
   };
 
   // Render different container based on mobile or desktop
@@ -308,13 +407,6 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
             {isStartDate ? 'Start' : 'End'} Date
           </div>
           <div className="date-time-picker-header-buttons">
-            <button
-              className="date-time-picker-save-button"
-              onClick={handleSave}
-              title="Save changes"
-            >
-              <Check size={18} />
-            </button>
             <button
               className="date-time-picker-close-button"
               onClick={onClose}
@@ -335,7 +427,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
               <input
                 type="checkbox"
                 checked={isAllDay}
-                onChange={(e) => setIsAllDay(e.target.checked)}
+                onChange={handleAllDayChange}
               />
               All day
             </label>
@@ -347,7 +439,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
               <div className="time-input-with-controls">
                 <select
                   value={hours}
-                  onChange={(e) => setHours(e.target.value)}
+                  onChange={(e) => handleSelectChange(e.target.value, setHours, true)}
                 >
                   {Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0')).map((val) => (
                     <option key={val} value={val}>{val}</option>
@@ -358,7 +450,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
               <div className="time-input-with-controls">
                 <select
                   value={minutes}
-                  onChange={(e) => setMinutes(e.target.value)}
+                  onChange={(e) => handleSelectChange(e.target.value, setMinutes, false)}
                 >
                   {Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0')).map((val) => (
                     <option key={val} value={val}>{val}</option>
@@ -385,13 +477,6 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
         </div>
         <div className="date-time-picker-header-buttons">
           <button
-            className="date-time-picker-save-button"
-            onClick={handleSave}
-            title="Save changes"
-          >
-            <Check size={16} />
-          </button>
-          <button
             className="date-time-picker-close-button"
             onClick={onClose}
             title="Close"
@@ -411,13 +496,13 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
             <input
               type="checkbox"
               checked={isAllDay}
-              onChange={(e) => setIsAllDay(e.target.checked)}
+              onChange={handleAllDayChange}
             />
             All day
           </label>
         </div>
 
-        {!isAllDay && !isMobile && (
+        {!isAllDay && (
           <div className="date-time-picker-time">
             <Clock size={16} className="date-time-picker-time-icon" />
             <div className="time-input-with-controls">
@@ -446,33 +531,6 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
                 maxLength={2}
                 placeholder="00"
               />
-            </div>
-          </div>
-        )}
-
-        {!isAllDay && isMobile && (
-          <div className="date-time-picker-time">
-            <Clock size={16} className="date-time-picker-time-icon" />
-            <div className="time-input-with-controls">
-              <select
-                value={hours}
-                onChange={(e) => setHours(e.target.value)}
-              >
-                {Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0')).map((val) => (
-                  <option key={val} value={val}>{val}</option>
-                ))}
-              </select>
-            </div>
-            <span className="date-time-picker-time-separator">:</span>
-            <div className="time-input-with-controls">
-              <select
-                value={minutes}
-                onChange={(e) => setMinutes(e.target.value)}
-              >
-                {Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0')).map((val) => (
-                  <option key={val} value={val}>{val}</option>
-                ))}
-              </select>
             </div>
           </div>
         )}

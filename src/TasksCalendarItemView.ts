@@ -151,8 +151,6 @@ export class TasksCalendarItemView extends ItemView {
           // Create tooltip renderer
           this.tooltipRenderer = new ReactRenderer(tooltipEl);
 
-          console.log(`rendering tooltip`)
-
           // Render tooltip component
           this.tooltipRenderer.render(
             React.createElement(TaskClickTooltip, {
