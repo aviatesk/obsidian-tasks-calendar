@@ -4,6 +4,7 @@ import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import { X, Check, Clock } from 'lucide-react';
 import { FIRST_DAY } from 'src/TasksCalendarSettings';
+import { calculateOptimalPosition } from '../utils/position';
 
 interface DateTimePickerModalProps {
   initialDate: Date;
@@ -27,6 +28,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   const calendarRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const calendarInstance = useRef<Calendar | null>(null);
+  const [finalPosition, setFinalPosition] = useState(position);
 
   const [hours, setHours] = useState<string>(
     initialDate.getHours().toString().padStart(2, '0')
@@ -41,6 +43,27 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
   // Determine if on mobile or desktop
   const isMobile = Platform.isMobile;
+
+  useEffect(() => {
+    // Calculate optimal position after the component mounts
+    if (modalRef.current) {
+      // Create a temporary element to represent the source of the click
+      const sourceEl = document.createElement('div');
+      sourceEl.style.position = 'absolute';
+      sourceEl.style.left = `${position.left}px`;
+      sourceEl.style.top = `${position.top - 5}px`;  // 5px offset to represent the original element
+      sourceEl.style.width = '100px';  // Approximate width
+      sourceEl.style.height = '20px';  // Approximate height
+      document.body.appendChild(sourceEl);
+
+      // Calculate optimal position
+      const optimalPosition = calculateOptimalPosition(sourceEl, modalRef.current, 10);
+      setFinalPosition(optimalPosition);
+
+      // Clean up temporary element
+      document.body.removeChild(sourceEl);
+    }
+  }, [position]);
 
   useEffect(() => {
     // モーダルの外側をクリックした時に閉じる処理
@@ -277,8 +300,8 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     <div
       className="date-time-picker-modal"
       style={{
-        top: `${position.top}px`,
-        left: `${position.left}px`,
+        top: `${finalPosition.top}px`,
+        left: `${finalPosition.left}px`,
       }}
       ref={modalRef}
     >

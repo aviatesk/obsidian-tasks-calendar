@@ -13,6 +13,8 @@ import { TaskClickTooltip } from './components/TaskClickTooltip';
 import getTasksAsEvents from './utils/query';
 import updateTaskDates from './utils/update';
 import openTask from './utils/open';
+import updateTaskStatus from './utils/status';
+import { calculateOptimalPosition } from './utils/position';
 
 export class TasksCalendarItemView extends ItemView {
   calendar: Calendar | null = null;
@@ -173,6 +175,15 @@ export class TasksCalendarItemView extends ItemView {
                   filePath,
                   line
                 );
+              },
+              // Status update handler
+              onUpdateStatus: (newStatus) => {
+                this.handleTaskStatusUpdate(
+                  info.event,
+                  newStatus,
+                  filePath,
+                  line
+                );
               }
             })
           );
@@ -295,57 +306,7 @@ export class TasksCalendarItemView extends ItemView {
 
   // Calculate the best position for the tooltip
   private calculateTooltipPosition(eventEl: HTMLElement, tooltipEl: HTMLElement) {
-    const eventRect = eventEl.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    // Calculate container boundaries
-    const containerRect = this.containerEl.children[1].getBoundingClientRect();
-
-    // Default position - try to center below the event
-    let left = eventRect.left + (eventRect.width / 2);
-    let top = eventRect.bottom + 10;
-
-    // Measure tooltip size after adding to DOM but before making visible
-    tooltipEl.style.visibility = 'hidden';
-    tooltipEl.style.display = 'block';
-
-    setTimeout(() => {
-      const tooltipRect = tooltipEl.getBoundingClientRect();
-
-      // Center the tooltip horizontally below the event
-      left = eventRect.left + (eventRect.width / 2) - (tooltipRect.width / 2);
-
-      // Make sure the tooltip stays within the container horizontally
-      if (left < containerRect.left + 10) {
-        left = containerRect.left + 10;
-      } else if (left + tooltipRect.width > containerRect.right - 10) {
-        left = containerRect.right - tooltipRect.width - 10;
-      }
-
-      // If tooltip would go off bottom of container, position it above the event
-      if (top + tooltipRect.height > containerRect.bottom - 10) {
-        // Check if there's enough space above the event
-        if (eventRect.top - tooltipRect.height - 10 >= containerRect.top) {
-          top = eventRect.top - tooltipRect.height - 10;
-        } else {
-          // Not enough space above or below, position at optimal location within container
-          top = Math.max(containerRect.top + 10,
-                Math.min(containerRect.bottom - tooltipRect.height - 10, top));
-        }
-      }
-
-      // Ensure we're not going outside the viewport in any case
-      left = Math.max(10, Math.min(viewportWidth - tooltipRect.width - 10, left));
-      top = Math.max(10, Math.min(viewportHeight - tooltipRect.height - 10, top));
-
-      // Apply final position
-      tooltipEl.style.left = `${left}px`;
-      tooltipEl.style.top = `${top}px`;
-      tooltipEl.style.visibility = 'visible';
-    }, 0);
-
-    return { left, top };
+    return calculateOptimalPosition(eventEl, tooltipEl, 10);
   }
 
   // Close current active tooltip if exists
@@ -633,6 +594,14 @@ export class TasksCalendarItemView extends ItemView {
                 filePath,
                 line
               );
+            },
+            onUpdateStatus: (updatedStatus) => {
+              this.handleTaskStatusUpdate(
+                event,
+                updatedStatus,
+                filePath,
+                line
+              );
             }
           })
         );
@@ -643,6 +612,87 @@ export class TasksCalendarItemView extends ItemView {
     } catch (error) {
       console.error("Failed to update task date:", error);
       new Notice("Failed to update task date");
+    }
+  }
+
+  // Add new method for updating task status from tooltip
+  private async handleTaskStatusUpdate(
+    event: EventApi,
+    newStatus: string,
+    filePath: string,
+    line: number
+  ) {
+    if (!filePath || line === undefined) {
+      new Notice("Unable to update task: missing file information");
+      return;
+    }
+
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!file || !(file instanceof TFile)) {
+      new Notice(`File not found: ${filePath}`);
+      return;
+    }
+
+    try {
+      // Update task status using the utility function
+      await updateTaskStatus(
+        this.app.vault,
+        file,
+        line,
+        newStatus
+      );
+
+      new Notice("Task status updated successfully");
+
+      if (this.tooltipRenderer && this.activeTooltipEl) {
+        // Re-render the tooltip with updated status
+        this.tooltipRenderer.render(
+          React.createElement(TaskClickTooltip, {
+            taskText: event.extendedProps.taskText || 'Task details not available',
+            cleanText: event.extendedProps.cleanText || event.title,
+            filePath: filePath,
+            position: {
+              left: parseInt(this.activeTooltipEl.style.left),
+              top: parseInt(this.activeTooltipEl.style.top)
+            },
+            onClose: () => this.closeActiveTooltip(),
+            onOpenFile: () => {
+              openTask(this.app, filePath, line);
+              this.closeActiveTooltip();
+            },
+            startDate: event.startStr,
+            endDate: event.endStr,
+            tags: event.extendedProps.tags,
+            status: newStatus, // Use new status
+            line: line,
+            isAllDay: event.allDay,
+            onUpdateDates: (updatedStart, updatedEnd, updatedAllDay) => {
+              this.handleTaskDateUpdate(
+                event,
+                updatedStart,
+                updatedEnd,
+                updatedAllDay,
+                filePath,
+                line
+              );
+            },
+            onUpdateStatus: (updatedStatus) => {
+              this.handleTaskStatusUpdate(
+                event,
+                updatedStatus,
+                filePath,
+                line
+              );
+            }
+          })
+        );
+      }
+
+      // Refresh calendar events to reflect the status change
+      this.calendar?.refetchEvents();
+    } catch (error) {
+      console.error("Failed to update task status:", error);
+      new Notice("Failed to update task status");
     }
   }
 }

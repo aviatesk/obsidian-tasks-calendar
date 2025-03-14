@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FileText, Pencil, X, Calendar, Tag, Info, CheckCircle } from 'lucide-react';
 import { DateTimePickerModal } from './DateTimePickerModal';
+import { StatusPickerModal } from './StatusPickerModal';
+import { formatStatus } from '../utils/status';
 
 interface TaskClickTooltipProps {
   taskText: string;
@@ -15,8 +17,9 @@ interface TaskClickTooltipProps {
   status?: string;
   line?: number;
   isAllDay?: boolean;
-  // 追加：日付更新ハンドラー
+  // Add handlers for updates
   onUpdateDates?: (startDate: Date | null, endDate: Date | null, isAllDay: boolean) => void;
+  onUpdateStatus?: (newStatus: string) => void;
 }
 
 export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
@@ -29,10 +32,11 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   startDate,
   endDate,
   tags,
-  status,
+  status = ' ',
   line,
   isAllDay,
-  onUpdateDates
+  onUpdateDates,
+  onUpdateStatus
 }) => {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const fileName = filePath.split('/').pop() || filePath;
@@ -51,27 +55,18 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     };
   }, [onClose]);
 
-  // Format status display
-  const formatStatus = (status?: string) => {
-    if (!status) return 'Unknown';
-
-    switch(status.trim()) {
-      case '': return 'Incomplete';
-      case ' ': return 'Incomplete';
-      case 'x': return 'Complete';
-      case 'X': return 'Complete';
-      case '-': return 'Cancelled';
-      case '/': return 'In Progress';
-      default: return status;
-    }
-  };
+  // Date picker state
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [showStatusPicker, setShowStatusPicker] = useState(false);
+  const [datePickerPosition, setDatePickerPosition] = useState({ top: 0, left: 0 });
+  const [statusPickerPosition, setStatusPickerPosition] = useState({ top: 0, left: 0 });
 
   // Helper to format date strings
   const formatDateString = (dateStr: string, isAllDayFormat = false) => {
     try {
       const date = new Date(dateStr);
 
-      // 終日イベントの場合は時間を表示しない
       if (isAllDayFormat) {
         return date.toLocaleDateString(undefined, {
           weekday: 'short',
@@ -94,10 +89,78 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     }
   };
 
-  // 日付選択モーダル表示用のステート
-  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
-  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
-  const [datePickerPosition, setDatePickerPosition] = useState({ top: 0, left: 0 });
+  // Date click handler
+  const handleDateClick = (e: React.MouseEvent, isStart: boolean) => {
+    if (!onUpdateDates) return;
+
+    // Get clicked element position for the date picker
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+
+    // Simple positioning - will be refined by calculateOptimalPosition in DateTimePickerModal
+    const top = rect.bottom + 5;
+    const left = rect.left;
+
+    setDatePickerPosition({ top, left });
+
+    if (isStart) {
+      setShowStartDatePicker(true);
+      setShowEndDatePicker(false);
+    } else {
+      setShowStartDatePicker(false);
+      setShowEndDatePicker(true);
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  // Status click handler
+  const handleStatusClick = (e: React.MouseEvent) => {
+    if (!onUpdateStatus) return;
+
+    // Get clicked element position for the status picker
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+
+    // Simple positioning - will be refined by calculateOptimalPosition in StatusPickerModal
+    const top = rect.bottom + 5;
+    const left = rect.left;
+
+    setStatusPickerPosition({ top, left });
+    setShowStatusPicker(true);
+
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  // Date save handler
+  const handleDateSave = (date: Date, isAllDay: boolean, isStart: boolean) => {
+    if (!onUpdateDates) return;
+
+    if (isStart) {
+      let endDateObj = null;
+      if (endDate) {
+        endDateObj = new Date(endDate);
+      }
+      onUpdateDates(date, endDateObj, isAllDay);
+    } else {
+      let startDateObj = null;
+      if (startDate) {
+        startDateObj = new Date(startDate);
+      }
+      onUpdateDates(startDateObj, date, isAllDay);
+    }
+
+    setShowStartDatePicker(false);
+    setShowEndDatePicker(false);
+  };
+
+  // Status save handler
+  const handleStatusSave = (newStatus: string) => {
+    if (onUpdateStatus) {
+      onUpdateStatus(newStatus);
+    }
+    setShowStatusPicker(false);
+  };
 
   // Format date display
   const formatDateDisplay = () => {
@@ -142,80 +205,6 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     );
   };
 
-  // 日付クリックイベントハンドラ
-  const handleDateClick = (e: React.MouseEvent, isStart: boolean) => {
-    if (!onUpdateDates) return;
-
-    // クリックした要素の位置を取得
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const viewportWidth = window.innerWidth;
-
-    // カレンダーの推定サイズ（高さ約420px、幅280px）
-    const calendarHeight = 420;
-    const calendarWidth = 280;
-
-    // 位置を計算
-    let top = rect.bottom + 5;
-    let left = rect.left;
-
-    // 下部に表示すると画面からはみ出す場合は上部に表示
-    if (top + calendarHeight > viewportHeight - 20) {
-      top = rect.top - calendarHeight - 5;
-    }
-
-    // 左端が画面からはみ出す場合は調整
-    if (left < 10) {
-      left = 10;
-    }
-
-    // 右端が画面からはみ出す場合は調整
-    if (left + calendarWidth > viewportWidth - 10) {
-      left = viewportWidth - calendarWidth - 10;
-    }
-
-    const position = { top, left };
-    setDatePickerPosition(position);
-
-    // モーダル表示フラグを設定
-    if (isStart) {
-      setShowStartDatePicker(true);
-      setShowEndDatePicker(false);
-    } else {
-      setShowStartDatePicker(false);
-      setShowEndDatePicker(true);
-    }
-
-    // イベントの伝播を停止
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  // 日付更新ハンドラ
-  const handleDateSave = (date: Date, isAllDay: boolean, isStart: boolean) => {
-    if (!onUpdateDates) return;
-
-    if (isStart) {
-      // 開始日の更新
-      let endDateObj = null;
-      if (endDate) {
-        endDateObj = new Date(endDate);
-      }
-      onUpdateDates(date, endDateObj, isAllDay);
-    } else {
-      // 終了日の更新
-      let startDateObj = null;
-      if (startDate) {
-        startDateObj = new Date(startDate);
-      }
-      onUpdateDates(startDateObj, date, isAllDay);
-    }
-
-    // モーダルを閉じる
-    setShowStartDatePicker(false);
-    setShowEndDatePicker(false);
-  };
-
   return (
     <div
       className="task-click-tooltip"
@@ -256,7 +245,13 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           {status && (
             <div className="task-click-tooltip-info-item">
               <CheckCircle size={16} className="task-click-tooltip-icon-small" />
-              <span className="task-click-tooltip-info-text">Status: {formatStatus(status)}</span>
+              <span
+                className="task-click-tooltip-info-text task-click-tooltip-status-text"
+                onClick={(e) => onUpdateStatus && handleStatusClick(e)}
+                title="Click to change status"
+              >
+                <span className="task-click-tooltip-status-value">{formatStatus(status)}</span>
+              </span>
             </div>
           )}
 
@@ -280,7 +275,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
         </div>
       </div>
 
-      {/* DatePicker モーダル */}
+      {/* DatePicker modals */}
       {showStartDatePicker && startDate && (
         <DateTimePickerModal
           initialDate={new Date(startDate)}
@@ -300,6 +295,16 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           onSave={(date, isAllDay) => handleDateSave(date, isAllDay, false)}
           position={datePickerPosition}
           isStartDate={false}
+        />
+      )}
+
+      {/* StatusPicker modal */}
+      {showStatusPicker && (
+        <StatusPickerModal
+          currentStatus={status}
+          onClose={() => setShowStatusPicker(false)}
+          onSave={handleStatusSave}
+          position={statusPickerPosition}
         />
       )}
     </div>

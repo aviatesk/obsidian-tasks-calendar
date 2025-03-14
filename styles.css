@@ -46,9 +46,11 @@
 .status-add-button:hover,
 .status-reset-button:hover {
   background-color: var(--background-modifier-hover);
+  color: var(--text-accent);
 }
 .tasks-calendar-container .calendar-delete-button:hover {
   background-color: #ef5350;
+  color: white;
 }
 
 .tasks-calendar-container .fc-button-active {
@@ -145,6 +147,7 @@
 
 .view-option:hover {
   background-color: var(--background-modifier-hover);
+  color: var(--text-accent);
 }
 
 /* Style the header buttons */
@@ -429,6 +432,7 @@ option[value="default"] {
 
 .status-remove-button:hover {
   background-color: rgba(0, 0, 0, 0.2);
+  color: var(--text-accent);
 }
 
 .status-reset-button {
@@ -439,6 +443,11 @@ option[value="default"] {
   padding: 4px 8px;
   cursor: pointer;
   font-size: 12px;
+}
+
+.status-reset-button:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-accent);
 }
 
 .empty-status-message {
@@ -472,7 +481,8 @@ option[value="default"] {
 }
 
 .settings-close-button:hover {
-  color: var(--text-normal);
+  color: var(--text-accent);
+  background-color: var(--background-modifier-hover);
 }
 
 /* 設定項目のヘッダー（ラベルとリセットボタン） */
@@ -510,7 +520,7 @@ option[value="default"] {
 }
 
 .setting-reset-button:hover {
-  color: var(--text-normal);
+  color: var(--text-accent);
   background-color: var(--background-modifier-hover);
 }
 
@@ -537,6 +547,7 @@ option[value="default"] {
 
 .calendar-action-button:hover {
   background-color: var(--background-modifier-hover);
+  color: var(--text-accent);
 }
 
 .fc-list-day-side-text {
@@ -713,18 +724,6 @@ option[value="default"] {
   text-decoration: underline;
 }
 
-/* Date editable styling */
-.task-click-tooltip-date-text {
-  cursor: pointer;
-  transition: color 0.15s ease, background-color 0.15s ease;
-  border-radius: 4px;
-}
-
-.task-click-tooltip-date-text:hover {
-  color: var(--text-accent);
-  background-color: var(--background-modifier-hover);
-}
-
 .task-click-tooltip-date-container {
   display: flex;
   flex-wrap: wrap;
@@ -841,6 +840,7 @@ option[value="default"] {
 
 .date-time-picker-calendar .fc-button:hover {
   background-color: var(--background-modifier-hover);
+  color: var(--text-accent);
 }
 
 .date-time-picker-calendar .fc-daygrid-day.fc-day-today {
@@ -935,7 +935,7 @@ option[value="default"] {
 }
 
 .time-control-button:hover {
-  color: var(--text-accent-hover);
+  color: var(--text-accent);
 }
 
 .date-time-picker-time-input {
@@ -964,4 +964,141 @@ option[value="default"] {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Status picker styling */
+.status-picker-modal {
+  position: fixed;
+  z-index: 10000;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  width: 220px;
+  animation: fadeIn 0.2s ease;
+  overflow: hidden;
+}
+
+.status-picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background-color: var(--background-secondary);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.status-picker-title {
+  font-weight: 600;
+  font-size: 0.95em;
+  color: var(--text-accent);
+}
+
+.status-picker-header-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.status-picker-close-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.status-picker-close-button:hover {
+  color: var(--text-accent);
+  background-color: var(--background-modifier-hover);
+}
+
+.status-picker-content {
+  padding: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.status-picker-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.status-picker-option {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.status-picker-option:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.status-picker-option.selected {
+  background-color: var(--background-secondary-alt);
+}
+
+.status-picker-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  color: var(--text-accent);
+}
+
+.status-picker-option-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-markdown-preview {
+  font-family: var(--font-monospace);
+  font-size: 0.9em;
+  padding: 0 4px;
+  background-color: var(--background-secondary);
+  border-radius: 4px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.status-label {
+  font-size: 0.95em;
+}
+
+.task-click-tooltip-status-value {
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+/* Consistent styling for interactive elements (both date and status) */
+.task-click-tooltip-date-text,
+.task-click-tooltip-status-text {
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  display: inline-block;
+}
+
+.task-click-tooltip-date-text:hover,
+.task-click-tooltip-status-text:hover {
+  color: var(--text-accent);
+  background-color: var(--background-modifier-hover);
+}
+
+.task-click-tooltip-status-value {
+  font-weight: 500;
+  color: var(--text-normal);
 }
