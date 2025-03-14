@@ -1,14 +1,15 @@
-import { ItemView, Notice, WorkspaceLeaf, debounce, TFile, Platform } from 'obsidian';
+import { ItemView, Notice, WorkspaceLeaf, debounce, TFile } from 'obsidian';
 import { Calendar, EventApi } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import interactionPlugin from '@fullcalendar/interaction';
-import { CalendarSettings, VIEW_TYPE, DEFAULT_CALENDAR_SETTINGS, HOVER_LINK_SOURCE, DEFAULT_PLUGIN_SETTINGS } from './TasksCalendarSettings';
+import { CalendarSettings, VIEW_TYPE, DEFAULT_CALENDAR_SETTINGS, HOVER_LINK_SOURCE } from './TasksCalendarSettings';
 import TasksCalendarPlugin from './main';
 import { ReactRenderer } from './components/ReactRoot';
 import React from 'react';
 import { CalendarFooter } from './components/CalendarFooter';
+import { TaskClickTooltip } from './components/TaskClickTooltip';
 import getTasksAsEvents from './utils/query';
 import updateTaskDates from './utils/update';
 import openTask from './utils/open';
@@ -17,11 +18,13 @@ export class TasksCalendarItemView extends ItemView {
   calendar: Calendar | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private taskPreviewRenderer: ReactRenderer | null = null;
+  private tooltipRenderer: ReactRenderer | null = null;
   private footerRenderer: ReactRenderer | null = null;
   private settings: CalendarSettings = DEFAULT_CALENDAR_SETTINGS;
   private plugin: TasksCalendarPlugin;
   private footerEl: HTMLElement | null = null;
   private closeDropdown: (event: MouseEvent) => void;
+  private activeTooltipEl: HTMLElement | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: TasksCalendarPlugin) {
     super(leaf);
@@ -56,6 +59,13 @@ export class TasksCalendarItemView extends ItemView {
       this.settings = await this.plugin.getCalendarSettings()
       this.initializeCalendar(calendarEl);
     }, 100);
+  }
+
+  private onKeydown = (event: KeyboardEvent) => {
+    // キーダウンイベントハンドラを復元
+    if (event.metaKey) {
+      // メタキーが押されたとき、何か特別な処理があればここに追加
+    }
   }
 
   private initializeCalendar(calendarEl: HTMLElement) {
@@ -107,16 +117,59 @@ export class TasksCalendarItemView extends ItemView {
         if (info.event && info.oldEvent)
           this.handleTaskDateChange(info.event, info.oldEvent);
       },
-      // Add event click handler to navigate to tasks
+      // Modified event click handler to show tooltip instead of opening file directly
       eventClick: (info) => {
+        // Close any existing tooltip first
+        this.closeActiveTooltip();
+
         const filePath = info.event.extendedProps.filePath;
         const line = info.event.extendedProps.line;
-        if (filePath)
-          openTask(this.app, filePath, line);
+        const taskText = info.event.extendedProps.taskText;
+        const cleanText = info.event.extendedProps.cleanText || info.event.title;
+        const startDate = info.event.startStr;
+        const endDate = info.event.endStr;
+        const tags = info.event.extendedProps.tags;
+        const status = info.event.extendedProps.status;
+        const isAllDay = info.event.allDay;
+
+        if (filePath) {
+          // Create tooltip container element
+          const tooltipEl = document.createElement('div');
+          tooltipEl.className = 'task-click-tooltip-container';
+          document.body.appendChild(tooltipEl);
+          this.activeTooltipEl = tooltipEl;
+
+          // Calculate tooltip position
+          const position = this.calculateTooltipPosition(info.el, tooltipEl);
+
+          // Create tooltip renderer
+          this.tooltipRenderer = new ReactRenderer(tooltipEl);
+
+          // Render tooltip component
+          this.tooltipRenderer.render(
+            React.createElement(TaskClickTooltip, {
+              taskText: taskText || 'Task details not available',
+              cleanText: cleanText,
+              filePath: filePath,
+              position: position,
+              onClose: () => this.closeActiveTooltip(),
+              onOpenFile: () => {
+                openTask(this.app, filePath, line);
+                this.closeActiveTooltip();
+              },
+              startDate: startDate,
+              endDate: endDate,
+              tags: tags,
+              status: status,
+              line: line,
+              isAllDay: isAllDay
+            })
+          );
+        }
       },
       customButtons: {
         todayButton: {
-          text: '📅', // カレンダーアイコンを使用
+          text: '📅',
           hint: 'Go to today',
           click: () => {
             if (this.calendar) {
@@ -173,11 +226,10 @@ export class TasksCalendarItemView extends ItemView {
           }
         }
       },
-      // Add event hover handlers to show task preview
+      // Restore hover-link functionality
       eventMouseEnter: (info) => {
         const filePath = info.event.extendedProps.filePath;
         const line = info.event.extendedProps.line;
-        const taskText = info.event.extendedProps.taskText;
 
         if (filePath && line) {
           this.app.workspace.trigger('hover-link', {
@@ -194,19 +246,10 @@ export class TasksCalendarItemView extends ItemView {
             }
           });
         }
-
-        // Show tooltip with task text if meta key is not pressed
-        if (taskText && !info.jsEvent.metaKey) {
-          this.showTooltip(info.el, taskText, info.jsEvent);
-        }
-      },
-      eventMouseLeave: (info) => {
-        // Hide tooltip when mouse leaves the event
-        this.hideTooltip();
       },
     });
 
-    // Add global keydown listener to hide tooltip when Cmd key is pressed
+    // register keydown event listener
     document.addEventListener('keydown', this.onKeydown);
 
     this.calendar = calendar;
@@ -239,58 +282,54 @@ export class TasksCalendarItemView extends ItemView {
     );
   }
 
-  // Show tooltip at the appropriate position
-  private showTooltip(eventEl: HTMLElement, text: string, event: MouseEvent) {
-    if (Platform.isMobile) return // disable tooltip on mobile
-
-    // Remove any existing tooltip
-    this.hideTooltip();
-
-    // Create tooltip element
-    const tooltip = document.createElement('div');
-    tooltip.className = 'tasks-calendar-tooltip';
-    tooltip.textContent = text;
-    tooltip.id = 'tasks-calendar-active-tooltip';
-    this.app.workspace.containerEl.appendChild(tooltip);
-
-    // Position the tooltip
+  // Calculate the best position for the tooltip
+  private calculateTooltipPosition(eventEl: HTMLElement, tooltipEl: HTMLElement) {
     const eventRect = eventEl.getBoundingClientRect();
-    const tooltipRect = tooltip.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
 
-    // Calculate initial position (centered below the event)
-    let left = eventRect.left + (eventRect.width / 2) - (tooltipRect.width / 2);
-    let top = event.clientY + 20; // Position below the cursor
+    // Default position below the event
+    let left = eventRect.left + (eventRect.width / 2);
+    let top = eventRect.bottom + 10;
 
-    // Adjust if tooltip would go off-screen
-    const rightEdge = left + tooltipRect.width;
-    const bottomEdge = top + tooltipRect.height;
+    // Measure tooltip size after adding to DOM but before making visible
+    tooltipEl.style.visibility = 'hidden';
+    tooltipEl.style.display = 'block';
 
-    // Check right edge
-    if (rightEdge > window.innerWidth) {
-      left = window.innerWidth - tooltipRect.width - 10;
-    }
+    setTimeout(() => {
+      const tooltipRect = tooltipEl.getBoundingClientRect();
 
-    // Check left edge
-    if (left < 10) {
-      left = 10;
-    }
+      // Adjust horizontal position to keep tooltip on screen
+      left = Math.min(left, viewportWidth - tooltipRect.width - 10);
+      left = Math.max(10, left);
 
-    // Check bottom edge
-    if (bottomEdge > window.innerHeight) {
-      top = event.clientY - tooltipRect.height - 10; // Position above cursor instead
-    }
+      // Center the tooltip horizontally below the event
+      left = left - (tooltipRect.width / 2);
 
-    // Apply position
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${top}px`;
+      // If tooltip would go off bottom of screen, position it above the event
+      if (top + tooltipRect.height > viewportHeight - 10) {
+        top = eventRect.top - tooltipRect.height - 10;
+      }
+
+      // Apply final position
+      tooltipEl.style.left = `${left}px`;
+      tooltipEl.style.top = `${top}px`;
+      tooltipEl.style.visibility = 'visible';
+    }, 0);
+
+    return { left, top };
   }
 
-  // Hide tooltip
-  private hideTooltip() {
-    if (Platform.isMobile) return // disable tooltip on mobile
-    const tooltip = document.getElementById('tasks-calendar-active-tooltip');
-    if (tooltip) {
-      tooltip.remove();
+  // Close current active tooltip if exists
+  private closeActiveTooltip() {
+    if (this.tooltipRenderer) {
+      this.tooltipRenderer.unmount();
+      this.tooltipRenderer = null;
+    }
+
+    if (this.activeTooltipEl) {
+      this.activeTooltipEl.remove();
+      this.activeTooltipEl = null;
     }
   }
 
@@ -329,15 +368,9 @@ export class TasksCalendarItemView extends ItemView {
     this.resizeObserver.observe(this.containerEl);
   }
 
-  private onKeydown = (event: KeyboardEvent) => {
-    if (event.metaKey) {
-      this.hideTooltip();
-    }
-  }
-
   async onClose() {
-    // Clean up tooltip if it exists
-    this.hideTooltip();
+    // Clean up tooltip
+    this.closeActiveTooltip();
 
     // Clean up React renderers
     if (this.taskPreviewRenderer) {
@@ -359,6 +392,8 @@ export class TasksCalendarItemView extends ItemView {
     if (this.closeDropdown) {
       document.removeEventListener('click', this.closeDropdown);
     }
+
+    // キーダウンリスナーの削除をコメントアウトしない
     document.removeEventListener('keydown', this.onKeydown);
 
     if (this.resizeObserver) {

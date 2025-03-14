@@ -568,20 +568,153 @@ option[value="default"] {
   }
 }
 
-.tasks-calendar-tooltip {
-  font-family: monospace;
-  font-size: 0.8em;
+/* New task click tooltip styles */
+.task-click-tooltip-container {
   position: absolute;
-  background-color: var(--background-modifier-hover);
-  border: 1px solid var(--background-modifier-border-hover);
+  z-index: 9999;
+  pointer-events: auto;
+}
+
+.task-click-tooltip {
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  font-size: 0.9em;
+  width: 340px;
+  max-width: 90vw;
+  max-height: 420px;
+  overflow-y: auto;
   color: var(--text-normal);
-  padding: 8px 12px;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  max-width: 300px;
-  word-wrap: break-word;
-  z-index: 10000;
-  pointer-events: none;
-  transition: opacity 0.1s ease;
-  animation: fadeIn 0.25s ease-in fadeOut 0.25s ease-out;
+  animation: fadeIn 0.2s ease;
+}
+
+.task-click-tooltip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var (--background-modifier-border);
+  background-color: var(--background-secondary);
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.task-click-tooltip-file-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.task-click-tooltip-icon {
+  color: var(--text-accent);
+  flex-shrink: 0;
+}
+
+.task-click-tooltip-file {
+  font-weight: 600;
+  font-size: 0.95em;
+  color: var(--text-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.task-click-tooltip-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-click-tooltip-open-button,
+.task-click-tooltip-close-button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.2em;
+  padding: 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.task-click-tooltip-open-button:hover,
+.task-click-tooltip-close-button:hover {
+  color: var(--text-accent);
+  background-color: var(--background-modifier-hover);
+}
+
+.task-click-tooltip-content {
+  padding: 16px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.task-click-tooltip-text {
+  font-family: var(--font-monospace);
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+/* Enhanced task click tooltip styles */
+.task-click-tooltip-main-text {
+  font-family: var(--font-text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  font-size: 1.05em;
+  color: var(--text-normal);
+  padding: 0 4px;
+}
+
+.task-click-tooltip-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  border-top: 1px solid var(--background-modifier-border);
+  padding-top: 16px;
+  margin-top: 4px;
+}
+
+.task-click-tooltip-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 0 4px;
+}
+
+.task-click-tooltip-icon-small {
+  flex-shrink: 0;
+  color: var(--text-accent);
+  margin-top: 2px;
+}
+
+.task-click-tooltip-info-text {
+  line-height: 1.5;
+}
+
+.task-click-tooltip-file-link {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.task-click-tooltip-file-link:hover .task-click-tooltip-info-text {
+  color: var(--text-accent);
+  text-decoration: underline;
+}
+
+/* Animation for the tooltip */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
