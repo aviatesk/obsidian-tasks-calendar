@@ -106,9 +106,187 @@
   border-color: var(--background-modifier-border);
 }
 
+/* More Popover - Completely revised styling */
 .tasks-calendar-container .fc-more-popover {
-  display: ruby;
+  display: block !important;
+  background: var(--background-primary);
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--background-modifier-border);
+  overflow: hidden;
+  max-width: calc(100% - 40px);
+  width: auto !important;
+  position: absolute !important;
+}
+
+/* Header with title and close button */
+
+/* Close button positioning and styling */
+.tasks-calendar-container .fc-more-popover .fc-popover-close {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 1.2em;
+  padding: 4px;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.tasks-calendar-container .fc-more-popover .fc-popover-close:hover {
+  color: var(--text-accent);
   background: var(--background-modifier-hover);
+}
+
+.fc-popover-header {
+  background-color: var(--background-secondary);
+}
+
+/* Content body with better padding and scrolling */
+.tasks-calendar-container .fc-more-popover .fc-popover-body {
+  padding: 12px !important;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Event container alignment */
+.tasks-calendar-container .fc-more-popover .fc-daygrid-event-harness {
+  margin-bottom: 6px !important;
+  width: 100% !important;
+}
+
+/* Event styling within popover */
+.tasks-calendar-container .fc-more-popover .fc-event {
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin: 0;
+  max-width: 100%;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center;
+  box-sizing: border-box;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border-left: 3px solid var(--interactive-accent) !important;
+  background-color: var(--background-secondary);
+}
+
+/* Event hover state */
+.tasks-calendar-container .fc-more-popover .fc-event:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+/* Event content layout */
+.tasks-calendar-container .fc-more-popover .fc-event-main {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+/* Event time formatting */
+.tasks-calendar-container .fc-more-popover .fc-event-time {
+  display: inline-block !important;
+  margin-right: 8px;
+  font-weight: 500;
+  font-size: 0.9em;
+  color: var(--text-accent);
+}
+
+/* Event title formatting */
+.tasks-calendar-container .fc-more-popover .fc-event-title {
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: calc(100% - 50px);
+  vertical-align: middle;
+  color: var(--text-normal);
+}
+
+/* Block events (all day) specific styling */
+.tasks-calendar-container .fc-more-popover .fc-daygrid-block-event {
+  border-left: 3px solid var(--interactive-accent) !important;
+}
+
+/* Dot events specific styling */
+.tasks-calendar-container .fc-more-popover .fc-daygrid-dot-event {
+  padding: 6px 10px !important;
+  border-left: 3px solid var(--interactive-accent) !important;
+}
+
+.tasks-calendar-container .fc-more-popover .fc-daygrid-dot-event .fc-event-title {
+  font-weight: normal;
+}
+
+/* Mobile specific adjustments */
+.is-mobile .tasks-calendar-container .fc-more-popover {
+  max-width: 90% !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+.is-mobile .tasks-calendar-container .fc-more-popover .fc-popover-close {
+  right: 10px;
+  width: 28px;
+  height: 28px;
+}
+
+.tasks-calendar-container .fc-more-popover .fc-popover-title {
+  background: var(--background-secondary);
+  padding: 10px 14px !important;
+  font-size: 0.95em;
+  font-weight: 600;
+  color: var(--text-accent);
+  border-bottom: 1px solid var(--background-modifier-border);
+  text-align: center; /* Center the title */
+  width: 100%;
+}
+
+.is-mobile .tasks-calendar-container .fc-more-popover .fc-popover-title {
+  padding: 12px 40px 12px 16px !important;
+  font-size: 1em;
+}
+
+.tasks-calendar-container .fc-more-popover .fc-popover-body {
+  padding: 10px !important;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.tasks-calendar-container .fc-more-popover .fc-daygrid-event-harness {
+  margin-bottom: 6px !important;
+  width: 100% !important;
+}
+
+/* Improve close button styling */
+.tasks-calendar-container .fc-more-popover .fc-popover-close {
+  opacity: 0.7;
+  font-size: 1.2em;
+  padding: 10px;
+  top: 20px;
+  right: 10px;
+  position: absolute; /* Ensure proper positioning */
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.tasks-calendar-container .fc-more-popover .fc-popover-close:hover {
+  opacity: 1;
+  background: var(--background-modifier-hover);
+  border-radius: 4px;
+}
+
+/* Mobile specific adjustments */
+.is-mobile .tasks-calendar-container .fc-more-popover {
+  max-width: 90% !important;
 }
 
 .calendar-container {
@@ -557,26 +735,7 @@ option[value="default"] {
 
 .is-mobile .fc-list-day-side-text {
   float: right;
-  padding-right: 50px;
-}
-
-.fc-list-day-side-text {
-  float: right;
-  padding-right: 0px;
-}
-
-.is-mobile .fc-list-day-side-text {
-  float: right;
   padding-right: 45px;
-}
-
-.fc-event-time {
-  display: none;
-}
-.fc-more-popover {
-  .fc-event-time {
-    display: flex;
-  }
 }
 
 /* New task click tooltip styles */
@@ -1204,4 +1363,14 @@ option[value="default"] {
 @keyframes fadeBackdrop {
   from { opacity: 0; }
   to { opacity: 0.5; }
+}
+
+/* Update the existing selector to not display event time in most places */
+.fc-event-time {
+  display: none;
+}
+
+/* But ensure it's visible ONLY in the more popover with proper styling */
+.tasks-calendar-container .fc-more-popover .fc-event-time {
+  display: inline-block !important;
 }
