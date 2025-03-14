@@ -4,7 +4,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import interactionPlugin from '@fullcalendar/interaction';
-import { CalendarSettings, VIEW_TYPE, DEFAULT_CALENDAR_SETTINGS, HOVER_LINK_SOURCE } from './TasksCalendarSettings';
+import { CalendarSettings, DEFAULT_CALENDAR_SETTINGS, VIEW_TYPE, HOVER_LINK_SOURCE, FIRST_DAY } from './TasksCalendarSettings';
 import TasksCalendarPlugin from './main';
 import { ReactRenderer } from './components/ReactRoot';
 import React from 'react';
@@ -101,7 +101,7 @@ export class TasksCalendarItemView extends ItemView {
       eventOrder: (a: EventApi, b: EventApi) => {
         return a.extendedProps.priority - b.extendedProps.priority > 0 ? -1 : 1;
       },
-      firstDay: 1,
+      firstDay: FIRST_DAY,
       eventTimeFormat: {
         hour: '2-digit',
         minute: '2-digit',
@@ -162,7 +162,18 @@ export class TasksCalendarItemView extends ItemView {
               tags: tags,
               status: status,
               line: line,
-              isAllDay: isAllDay
+              isAllDay: isAllDay,
+              // 日付更新ハンドラーを追加
+              onUpdateDates: (newStartDate, newEndDate, isAllDay) => {
+                this.handleTaskDateUpdate(
+                  info.event,
+                  newStartDate,
+                  newEndDate,
+                  isAllDay,
+                  filePath,
+                  line
+                );
+              }
             })
           );
         }
@@ -532,5 +543,63 @@ export class TasksCalendarItemView extends ItemView {
     );
 
     return new Notice("Task date updated successfully");
+  }
+
+  // Add new method for updating task dates directly from tooltip
+  private async handleTaskDateUpdate(
+    event: EventApi,
+    newStartDate: Date | null,
+    newEndDate: Date | null,
+    isAllDay: boolean,
+    filePath: string,
+    line: number
+  ) {
+    if (!filePath || !line || !newStartDate) {
+      new Notice("Unable to update task: missing required information");
+      return;
+    }
+
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!file || !(file instanceof TFile)) {
+      new Notice(`File not found: ${filePath}`);
+      return;
+    }
+
+    // Get date property names from settings getter
+    const dateProperty = this.settings.dateProperty;
+    const startDateProperty = this.settings.startDateProperty;
+
+    try {
+      // Update task dates using the helper function
+      await updateTaskDates(
+        this.app.vault,
+        file,
+        line,
+        newStartDate,
+        newEndDate || null,
+        isAllDay,
+        startDateProperty,
+        dateProperty,
+        event.allDay // Previous all-day state
+      );
+
+      // Update the event on the calendar
+      event.setStart(newStartDate);
+      if (newEndDate) {
+        event.setEnd(newEndDate);
+      }
+      event.setAllDay(isAllDay);
+
+      new Notice("Task date updated successfully");
+
+      // Close the tooltip after successful update
+      this.closeActiveTooltip();
+
+      // Refresh calendar events
+      this.calendar?.refetchEvents();
+    } catch (error) {
+      console.error("Failed to update task date:", error);
+      new Notice("Failed to update task date");
+    }
   }
 }

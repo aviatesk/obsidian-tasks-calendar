@@ -713,6 +713,253 @@ option[value="default"] {
   text-decoration: underline;
 }
 
+/* Date editable styling */
+.task-click-tooltip-date-text {
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  border-radius: 4px;
+}
+
+.task-click-tooltip-date-text:hover {
+  color: var(--text-accent);
+  background-color: var(--background-modifier-hover);
+}
+
+.task-click-tooltip-date-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Animation for the tooltip */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* DateTimePicker Modal styling */
+.date-time-picker-modal {
+  position: fixed;
+  z-index: 10000;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  width: 280px;
+  animation: fadeIn 0.2s ease;
+  overflow: hidden;
+}
+
+.date-time-picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background-color: var(--background-secondary);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.date-time-picker-title {
+  font-weight: 600;
+  font-size: 0.95em;
+  color: var(--text-accent);
+}
+
+.date-time-picker-header-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.date-time-picker-close-button,
+.date-time-picker-save-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.date-time-picker-save-button {
+  color: var(--text-accent);
+}
+
+.date-time-picker-close-button:hover {
+  color: var(--text-accent-hover);
+  background-color: var(--background-modifier-hover);
+}
+
+.date-time-picker-save-button:hover {
+  color: var(--text-accent-hover);
+  background-color: var(--background-modifier-hover);
+}
+
+.date-time-picker-calendar-container {
+  padding: 8px;
+  height: 260px;
+  overflow-y: auto;
+}
+
+.date-time-picker-calendar {
+  height: 100%;
+}
+
+.date-time-picker-calendar .fc {
+  background-color: var(--background-primary);
+  font-size: 0.85em;
+  height: 100%;
+}
+
+/* カレンダーの日付セルをクリック可能にする */
+.date-time-picker-calendar .fc-daygrid-day {
+  cursor: pointer;
+}
+
+.date-time-picker-calendar .fc-daygrid-day:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.date-time-picker-calendar .fc-toolbar-title {
+  font-size: 1em;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.date-time-picker-calendar .fc-button {
+  background-color: var(--background-secondary-alt);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  font-size: 0.9em;
+  padding: 3px 6px;
+  transition: background-color 0.15s ease;
+}
+
+.date-time-picker-calendar .fc-button:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.date-time-picker-calendar .fc-daygrid-day.fc-day-today {
+  background-color: transparent;  /* 今日のハイライトを無効化 */
+}
+
+.date-time-picker-calendar .fc-daygrid-day.fc-day-selected {
+  background-color: var(--background-modifier-hover);
+}
+
+.date-time-picker-calendar .fc-daygrid-day.fc-day-selected .fc-daygrid-day-number {
+  background-color: var(--text-accent);
+  color: var(--text-on-accent);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.date-time-picker-calendar .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  background-color: var(--text-accent);
+  color: var(--text-on-accent);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.date-time-picker-calendar .fc-daygrid-day-number {
+  padding: 2px;
+  font-size: 0.9em;
+}
+
+.date-time-picker-calendar .fc-col-header-cell {
+  padding: 6px 0;
+  font-size: 0.85em;
+  background-color: var(--background-secondary); /* 本体カレンダーと同じ背景色 */
+  color: var(--text-normal);
+}
+
+.date-time-picker-time-container {
+  padding: 10px 14px;
+  border-top: 1px solid var(--background-modifier-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.date-time-picker-all-day {
+  display: flex;
+  align-items: center;
+  font-size: 0.9em;
+}
+
+.date-time-picker-all-day input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+.date-time-picker-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-time-picker-time-icon {
+  color: var(--text-accent);
+}
+
+.time-input-with-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.time-control-button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0;
+  height: 14px;
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.time-control-button:hover {
+  color: var(--text-accent-hover);
+}
+
+.date-time-picker-time-input {
+  width: 36px;
+  padding: 2px 4px;
+  font-size: 0.9em;
+  text-align: center;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  color: var(--text-normal);
+}
+
+.date-time-picker-time-input:focus {
+  outline: none;
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb), 0.2);
+}
+
+.date-time-picker-time-separator {
+  font-weight: 600;
+  color: var(--text-accent);
+}
+
 /* Animation for the tooltip */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }

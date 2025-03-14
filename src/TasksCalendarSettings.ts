@@ -131,3 +131,5 @@ export function toUserCalendarSettings(settings: CalendarSettings): UserCalendar
 
   return userSettings;
 }
+
+export const FIRST_DAY = 1; // Monday
