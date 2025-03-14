@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { FileText, Pencil, X, Calendar, Tag, Info, CheckCircle } from 'lucide-react';
+import { FileText, Pencil, X, Calendar, Tag, Info } from 'lucide-react';
 import { DateTimePickerModal } from './DateTimePickerModal';
 import { StatusPickerModal } from './StatusPickerModal';
-import { formatStatus } from '../utils/status';
+import { formatStatus, getStatusIcon } from '../utils/status';
 import { Platform } from 'obsidian';
 
 interface TaskClickTooltipProps {
@@ -258,7 +258,13 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           <div className="task-click-tooltip-info">
             {status && (
               <div className="task-click-tooltip-info-item">
-                <CheckCircle size={18} className="task-click-tooltip-icon-small" />
+                {React.createElement(
+                  getStatusIcon(status),
+                  {
+                    size: 18,
+                    className: "task-click-tooltip-icon-small"
+                  }
+                )}
                 <span
                   className="task-click-tooltip-info-text task-click-tooltip-status-text"
                   onClick={(e) => onUpdateStatus && handleStatusClick(e)}
@@ -362,7 +368,13 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
         <div className="task-click-tooltip-info">
           {status && (
             <div className="task-click-tooltip-info-item">
-              <CheckCircle size={16} className="task-click-tooltip-icon-small" />
+              {React.createElement(
+                getStatusIcon(status),
+                {
+                  size: 16,
+                  className: "task-click-tooltip-icon-small"
+                }
+              )}
               <span
                 className="task-click-tooltip-info-text task-click-tooltip-status-text"
                 onClick={(e) => onUpdateStatus && handleStatusClick(e)}

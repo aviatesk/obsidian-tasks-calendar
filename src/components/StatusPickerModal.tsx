@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Check } from 'lucide-react';
-import { DROPDOWN_STATUS_OPTIONS } from '../utils/status';
+import { DROPDOWN_STATUS_OPTIONS, getStatusIcon } from '../utils/status';
 import { calculateOptimalPosition } from '../utils/position';
 import { Platform } from 'obsidian';
 
@@ -94,6 +94,10 @@ export const StatusPickerModal: React.FC<StatusPickerModalProps> = ({
                   {option.value === currentStatus && <Check size={14} />}
                 </div>
                 <div className="status-picker-option-text">
+                  {React.createElement(
+                    getStatusIcon(option.value),
+                    { size: 14, style: { marginRight: '6px' } }
+                  )}
                   <span className="status-markdown-preview">[{option.value === ' ' ? ' ' : option.value}]</span>
                   <span className="status-label">{option.label}</span>
                 </div>
@@ -139,6 +143,10 @@ export const StatusPickerModal: React.FC<StatusPickerModalProps> = ({
                 {option.value === currentStatus && <Check size={14} />}
               </div>
               <div className="status-picker-option-text">
+                {React.createElement(
+                  getStatusIcon(option.value),
+                  { size: 14, style: { marginRight: '6px' } }
+                )}
                 <span className="status-markdown-preview">[{option.value === ' ' ? ' ' : option.value}]</span>
                 <span className="status-label">{option.label}</span>
               </div>

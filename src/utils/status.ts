@@ -1,4 +1,13 @@
 import { Vault, TFile } from 'obsidian';
+import {
+  Circle,
+  CircleChevronRight,
+  CircleSlash,
+  CircleMinus,
+  CircleAlert,
+  CircleHelp,
+  CircleCheck
+} from 'lucide-react';
 
 /**
  * Task status options
@@ -8,8 +17,8 @@ import { Vault, TFile } from 'obsidian';
 export const STATUS_OPTIONS = [
   { value: ' ', label: 'Incomplete' },
   { value: '/', label: 'In Progress' },
-  { value: 'x', label: 'Complete' },
-  { value: 'X', label: 'Complete' },  // Capital X also treated as "Complete"
+  { value: 'x', label: 'Completed' },
+  { value: 'X', label: 'Completed' },  // Capital X also treated as "Complete"
   { value: '-', label: 'Cancelled' },
   { value: '>', label: 'Deferred' },
   { value: '!', label: 'Important' },
@@ -55,6 +64,29 @@ export function formatStatus(status?: string): string {
 
   return status;
 }
+
+// Add a new function to get the appropriate icon component for a status
+export const getStatusIcon = (status: string) => {
+  switch (status.trim().toLowerCase()) {
+    case '':
+    case ' ':
+      return Circle; // Todo/Not started
+    case 'x':
+      return CircleCheck; // Complete/Done
+    case '/':
+      return CircleSlash; // In Progress
+    case '-':
+      return CircleMinus; // Cancelled
+    case '>':
+      return CircleChevronRight; // Forwarded/Deferred
+    case '!':
+      return CircleAlert; // Important/Urgent
+    case '?':
+      return CircleHelp; // Question/Maybe
+    default:
+      return Circle; // Default icon
+  }
+};
 
 /**
  * Update task status in Obsidian document
