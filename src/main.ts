@@ -1,12 +1,21 @@
 import { Plugin, WorkspaceLeaf } from 'obsidian';
 import { getAPI } from "obsidian-dataview";
-import { CalendarSettings, PluginSettings, DEFAULT_PLUGIN_SETTINGS, DEFAULT_CALENDAR_SETTINGS, HOVER_LINK_SOURCE, VIEW_TYPE } from './TasksCalendarSettings';
+import {
+  CalendarSettings,
+  UserCalendarSettings,
+  PluginSettings,
+  DEFAULT_PLUGIN_SETTINGS,
+  DEFAULT_CALENDAR_SETTINGS,
+  HOVER_LINK_SOURCE,
+  VIEW_TYPE,
+  toCalendarSettings,
+  toUserCalendarSettings
+} from './TasksCalendarSettings';
 import { TasksCalendarItemView } from './TasksCalendarItemView';
 import { SettingTab } from './TasksCalendarSettingsTab';
 
-// メインのプラグインクラス
 export default class TasksCalendarPlugin extends Plugin {
-  settings: PluginSettings;
+  private _settings: PluginSettings;
   dataviewApi = getAPI();
   _onChangeCallback = () => {};
 
@@ -71,64 +80,79 @@ export default class TasksCalendarPlugin extends Plugin {
     this.app.workspace.detachLeavesOfType(VIEW_TYPE);
   }
 
-  async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_PLUGIN_SETTINGS, await this.loadData());
-
-    if (!this.settings.activeCalendar) {
-      this.settings.activeCalendar = DEFAULT_PLUGIN_SETTINGS.activeCalendar;
-    }
-
-    // 各カレンダー設定のデフォルト値を確実に設定
-    this.settings.calendars = this.settings.calendars.map(cal => {
-      return {
-        id: cal.id,
-        name: cal.name,
-        viewType: cal.viewType || DEFAULT_CALENDAR_SETTINGS.viewType,
-        query: cal.query || DEFAULT_CALENDAR_SETTINGS.query,
-        dateProperty: cal.dateProperty || DEFAULT_CALENDAR_SETTINGS.dateProperty,
-        startDateProperty: cal.startDateProperty || DEFAULT_CALENDAR_SETTINGS.startDateProperty,
-        includedStatuses: cal.includedStatuses || DEFAULT_CALENDAR_SETTINGS.includedStatuses,
-        includedTags: cal.includedTags || DEFAULT_CALENDAR_SETTINGS.includedTags,
-      };
-    });
+  private async loadSettings() {
+    this._settings = await this.loadData();
   }
 
   async saveSettings() {
-    await this.saveData(this.settings);
+    await this.saveData(this._settings);
   }
 
-  // 指定IDのカレンダー設定を取得
-  getCalendarSettings(id: string): CalendarSettings {
-    const calendar = this.settings.calendars.find(c => c.id === id);
-
-    // カレンダーが見つからない場合はデフォルトを使用
-    if (!calendar) {
-      return { ...DEFAULT_CALENDAR_SETTINGS };
-    }
-
-    // 設定が不足している場合、デフォルト値で補完
-    const result: CalendarSettings = {
-      id: calendar.id,
-      name: calendar.name,
-      viewType: calendar.viewType || DEFAULT_CALENDAR_SETTINGS.viewType,
-      query: calendar.query || DEFAULT_CALENDAR_SETTINGS.query,
-      dateProperty: calendar.dateProperty || DEFAULT_CALENDAR_SETTINGS.dateProperty,
-      startDateProperty: calendar.startDateProperty || DEFAULT_CALENDAR_SETTINGS.startDateProperty,
-      includedStatuses: calendar.includedStatuses || DEFAULT_CALENDAR_SETTINGS.includedStatuses,
-      includedTags: calendar.includedTags || DEFAULT_CALENDAR_SETTINGS.includedTags,
-    };
-
-    return result;
+  // Accessor methods for plugin settings
+  getActiveCalendarId(): string {
+    return this._settings.activeCalendar;
   }
 
-  // カレンダー設定を保存
-  saveCalendarSettings(settings: CalendarSettings) {
-    const index = this.settings.calendars.findIndex(c => c.id === settings.id);
+  async setActiveCalendarId(id: string): Promise<void> {
+    this._settings.activeCalendar = id;
+    await this.saveSettings();
+  }
+
+  getCalendarsList(): { id: string, name: string }[] {
+    return this._settings.calendars.map(cal => ({
+      id: cal.id,
+      name: cal.name
+    }));
+  }
+
+  async addCalendar(settings: CalendarSettings): Promise<void> {
+    const userSettings = toUserCalendarSettings(settings);
+    this._settings.calendars.push(userSettings);
+    await this.saveSettings();
+  }
+
+  async deleteCalendar(id: string): Promise<void> {
+    const index = this._settings.calendars.findIndex(c => c.id === id);
     if (index > -1) {
-      this.settings.calendars[index] = settings;
-    } else {
-      this.settings.calendars.push(settings);
+      this._settings.calendars.splice(index, 1);
     }
+
+    if (this._settings.activeCalendar === id) {
+      this._settings.activeCalendar = DEFAULT_PLUGIN_SETTINGS.activeCalendar;
+    }
+
+    await this.saveSettings();
+  }
+
+  async getCalendarSettings({
+    id = this._settings.activeCalendar,
+    reload = false
+  } = {}): Promise<CalendarSettings> {
+    if (reload) {
+      await this.loadSettings();
+    }
+
+    const userSettings = this._settings.calendars.find(c => c.id === id);
+    if (!userSettings) {
+      return DEFAULT_CALENDAR_SETTINGS;
+    }
+
+    // Convert from UserCalendarSettings to CalendarSettings
+    return toCalendarSettings(userSettings);
+  }
+
+  async saveCalendarSettings(settings: CalendarSettings): Promise<void> {
+    // Convert to minimal user settings before saving
+    const userSettings = toUserCalendarSettings(settings);
+
+    const index = this._settings.calendars.findIndex(c => c.id === settings.id);
+    if (index > -1) {
+      this._settings.calendars[index] = userSettings;
+    } else {
+      this._settings.calendars.push(userSettings);
+    }
+
+    await this.saveSettings();
   }
 
   async activateView() {

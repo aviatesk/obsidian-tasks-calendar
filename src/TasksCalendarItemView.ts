@@ -4,7 +4,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import interactionPlugin from '@fullcalendar/interaction';
-import { CalendarSettings, VIEW_TYPE, DEFAULT_CALENDAR_SETTINGS, HOVER_LINK_SOURCE } from './TasksCalendarSettings';
+import { CalendarSettings, VIEW_TYPE, DEFAULT_CALENDAR_SETTINGS, HOVER_LINK_SOURCE, DEFAULT_PLUGIN_SETTINGS } from './TasksCalendarSettings';
 import TasksCalendarPlugin from './main';
 import { ReactRenderer } from './components/ReactRoot';
 import React from 'react';
@@ -18,7 +18,7 @@ export class TasksCalendarItemView extends ItemView {
   private resizeObserver: ResizeObserver | null = null;
   private taskPreviewRenderer: ReactRenderer | null = null;
   private footerRenderer: ReactRenderer | null = null;
-  private currentSettings: CalendarSettings;
+  private settings: CalendarSettings = DEFAULT_CALENDAR_SETTINGS;
   private plugin: TasksCalendarPlugin;
   private footerEl: HTMLElement | null = null;
   private closeDropdown: (event: MouseEvent) => void;
@@ -26,10 +26,6 @@ export class TasksCalendarItemView extends ItemView {
   constructor(leaf: WorkspaceLeaf, plugin: TasksCalendarPlugin) {
     super(leaf);
     this.plugin = plugin;
-
-    // 現在のアクティブカレンダー設定を取得
-    const activeId = this.plugin.settings.activeCalendar || 'default';
-    this.currentSettings = this.plugin.getCalendarSettings(activeId);
   }
 
   getViewType(): string {
@@ -52,12 +48,12 @@ export class TasksCalendarItemView extends ItemView {
 
     const calendarEl = container.createDiv('calendar-container');
 
-    // フッター領域を追加
     this.footerEl = container.createDiv('calendar-footer');
     this.renderFooter();
 
     // Delay calendar initialization to ensure container is properly sized
-    setTimeout(() => {
+    setTimeout(async () => {
+      this.settings = await this.plugin.getCalendarSettings()
       this.initializeCalendar(calendarEl);
     }, 100);
   }
@@ -65,7 +61,7 @@ export class TasksCalendarItemView extends ItemView {
   private initializeCalendar(calendarEl: HTMLElement) {
     const calendar = new Calendar(calendarEl, {
       plugins: [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin],
-      initialView: this.currentSettings.viewType,
+      initialView: this.settings.viewType,
       headerToolbar: {
         left: 'prev,next todayButton',
         center: 'title',
@@ -92,6 +88,9 @@ export class TasksCalendarItemView extends ItemView {
       events: (fetchInfo, successCallback, failureCallback) => {
         this.fetchCalendarEvents(fetchInfo, successCallback, failureCallback);
       },
+      eventOrder: (a: EventApi, b: EventApi) => {
+        return a.extendedProps.priority - b.extendedProps.priority > 0 ? -1 : 1;
+      },
       firstDay: 1,
       eventTimeFormat: {
         hour: '2-digit',
@@ -110,8 +109,8 @@ export class TasksCalendarItemView extends ItemView {
       },
       // Add event click handler to navigate to tasks
       eventClick: (info) => {
-        const filePath = info.event.extendedProps?.filePath;
-        const line = info.event.extendedProps?.line;
+        const filePath = info.event.extendedProps.filePath;
+        const line = info.event.extendedProps.line;
         if (filePath)
           openTask(this.app, filePath, line);
       },
@@ -153,9 +152,8 @@ export class TasksCalendarItemView extends ItemView {
                   if (this.calendar) {
                     this.calendar.changeView(view.value);
                     dropdown.classList.remove('show');
-                    this.currentSettings.viewType = view.value;
-                    await this.plugin.saveCalendarSettings(this.currentSettings);
-                    await this.plugin.saveSettings();
+                    this.settings.viewType = view.value;
+                    this.plugin.saveCalendarSettings(this.settings);
                   }
                 });
                 dropdown.appendChild(option);
@@ -177,9 +175,9 @@ export class TasksCalendarItemView extends ItemView {
       },
       // Add event hover handlers to show task preview
       eventMouseEnter: (info) => {
-        const filePath = info.event.extendedProps?.filePath;
-        const line = info.event.extendedProps?.line;
-        const taskText = info.event.extendedProps?.taskText;
+        const filePath = info.event.extendedProps.filePath;
+        const line = info.event.extendedProps.line;
+        const taskText = info.event.extendedProps.taskText;
 
         if (filePath && line) {
           this.app.workspace.trigger('hover-link', {
@@ -304,7 +302,8 @@ export class TasksCalendarItemView extends ItemView {
       return failureCallback(new Error("Dataview plugin is not available"));
     }
     try {
-      const events = getTasksAsEvents(dataviewApi, this.currentSettings);
+      // Use the settings getter instead of accessing currentSettings directly
+      const events = getTasksAsEvents(dataviewApi, this.settings);
       successCallback(events);
     } catch (error) {
       console.error("Error fetching events:", error);
@@ -387,15 +386,19 @@ export class TasksCalendarItemView extends ItemView {
     // Render React component
     this.footerRenderer.render(
       React.createElement(CalendarFooter, {
-        calendars: this.plugin.settings.calendars,
-        activeCalendarId: this.currentSettings.id,
+        getCalendarSettings: async (calendarId: string) => {
+          return await this.plugin.getCalendarSettings({ id: calendarId });
+        },
+        getCalendarsList: () => {
+          return this.plugin.getCalendarsList();
+        },
+        activeCalendarId: this.settings.id,
         onCalendarChange: async (calendarId) => {
-          this.currentSettings = this.plugin.getCalendarSettings(calendarId);
-          this.plugin.settings.activeCalendar = calendarId;
-          await this.plugin.saveSettings();
+          await this.plugin.setActiveCalendarId(calendarId);
 
+          this.settings = await this.plugin.getCalendarSettings();
           if (this.calendar) {
-            this.calendar.changeView(this.currentSettings.viewType);
+            this.calendar.changeView(this.settings.viewType);
             this.calendar.refetchEvents();
           }
 
@@ -404,16 +407,15 @@ export class TasksCalendarItemView extends ItemView {
         },
         onCalendarAdd: async () => {
           const newId = `calendar-${Date.now()}`;
-          const newCalendar: CalendarSettings = {
+          const newCalendarSettings: CalendarSettings = {
             ...DEFAULT_CALENDAR_SETTINGS,
             id: newId,
-            name: `New Calendar ${this.plugin.settings.calendars.length + 1}`,
+            name: `New Calendar ${this.plugin.getCalendarsList().length + 1}`,
           };
 
-          this.plugin.settings.calendars.push(newCalendar);
-          this.plugin.settings.activeCalendar = newId;
-          this.currentSettings = newCalendar;
-          await this.plugin.saveSettings();
+          await this.plugin.addCalendar(newCalendarSettings);
+          await this.plugin.setActiveCalendarId(newId);
+          this.settings = newCalendarSettings;
 
           this.renderFooter();
           if (this.calendar) {
@@ -421,30 +423,27 @@ export class TasksCalendarItemView extends ItemView {
           }
         },
         onCalendarDelete: async (calendarId) => {
-          const index = this.plugin.settings.calendars.findIndex(c => c.id === calendarId);
-          if (index > -1) {
-            this.plugin.settings.calendars.splice(index, 1);
-          }
+          await this.plugin.deleteCalendar(calendarId);
 
-          this.plugin.settings.activeCalendar = 'default';
-          this.currentSettings = this.plugin.getCalendarSettings('default');
-          await this.plugin.saveSettings();
+          this.settings = await this.plugin.getCalendarSettings();
 
           this.renderFooter();
           if (this.calendar) {
             this.calendar.refetchEvents();
           }
         },
-        onSettingsChange: async (settings) => {
-          this.currentSettings = settings;
-          this.plugin.saveCalendarSettings(settings);
-          await this.plugin.saveSettings();
+        onSettingsChange: async (settings: CalendarSettings) => {
+          this.settings = settings;
+          await this.plugin.saveCalendarSettings(settings);
 
+          // Refresh events but don't re-render the footer
+          // Let React handle the UI update internally
           if (this.calendar) {
             this.calendar.refetchEvents();
           }
         },
-        onRefresh: () => {
+        onRefresh: async () => {
+          this.settings = await this.plugin.getCalendarSettings({ reload: true });
           if (this.calendar) {
             this.calendar.refetchEvents();
           }
@@ -471,9 +470,9 @@ export class TasksCalendarItemView extends ItemView {
       return;
     }
 
-    // Get date property names from current settings
-    const dateProperty = this.currentSettings.dateProperty || DEFAULT_CALENDAR_SETTINGS.dateProperty;
-    const startDateProperty = this.currentSettings.startDateProperty || DEFAULT_CALENDAR_SETTINGS.startDateProperty;
+    // Get date property names from settings getter
+    const dateProperty = this.settings.dateProperty;
+    const startDateProperty = this.settings.startDateProperty;
 
     // Get the new start and end dates from the event
     const newStart = newEvent.start;
