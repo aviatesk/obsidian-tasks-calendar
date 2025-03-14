@@ -583,17 +583,43 @@ export class TasksCalendarItemView extends ItemView {
         event.allDay // Previous all-day state
       );
 
-      // Update the event on the calendar
-      event.setStart(newStartDate);
-      if (newEndDate) {
-        event.setEnd(newEndDate);
-      }
-      event.setAllDay(isAllDay);
-
       new Notice("Task date updated successfully");
 
-      // Close the tooltip after successful update
-      this.closeActiveTooltip();
+      if (this.tooltipRenderer && this.activeTooltipEl) {
+        // Re-render the tooltip with updated dates
+        this.tooltipRenderer.render(
+          React.createElement(TaskClickTooltip, {
+            taskText: event.extendedProps.taskText || 'Task details not available',
+            cleanText: event.extendedProps.cleanText || event.title,
+            filePath: filePath,
+            position: {
+              left: parseInt(this.activeTooltipEl.style.left),
+              top: parseInt(this.activeTooltipEl.style.top)
+            },
+            onClose: () => this.closeActiveTooltip(),
+            onOpenFile: () => {
+              openTask(this.app, filePath, line);
+              this.closeActiveTooltip();
+            },
+            startDate: newStartDate?.toISOString(),
+            endDate: newEndDate?.toISOString(),
+            tags: event.extendedProps.tags,
+            status: event.extendedProps.status,
+            line: line,
+            isAllDay: isAllDay,
+            onUpdateDates: (updatedStart, updatedEnd, updatedAllDay) => {
+              this.handleTaskDateUpdate(
+                event,
+                updatedStart,
+                updatedEnd,
+                updatedAllDay,
+                filePath,
+                line
+              );
+            }
+          })
+        );
+      }
 
       // Refresh calendar events
       this.calendar?.refetchEvents();

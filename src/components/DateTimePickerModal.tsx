@@ -1,3 +1,4 @@
+import { Platform } from 'obsidian';
 import React, { useEffect, useState, useRef } from 'react';
 import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -37,6 +38,9 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   // 入力フォーカス状態を追加
   const [hoursInputFocused, setHoursInputFocused] = useState(false);
   const [minutesInputFocused, setMinutesInputFocused] = useState(false);
+
+  // Determine if on mobile or desktop
+  const isMobile = Platform.isMobile;
 
   useEffect(() => {
     // モーダルの外側をクリックした時に閉じる処理
@@ -95,7 +99,10 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
           const days = calendarRef.current.querySelectorAll('.fc-daygrid-day');
           days.forEach(day => {
-            day.addEventListener('click', () => {
+            day.addEventListener('click', (e) => {
+              // イベント伝播を停止してmodalが閉じるのを防ぐ
+              e.stopPropagation();
+
               const dateStr = day.getAttribute('data-date');
               if (dateStr) {
                 const clickedDate = new Date(dateStr);
@@ -103,6 +110,12 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
                 newDate.setFullYear(clickedDate.getFullYear());
                 newDate.setMonth(clickedDate.getMonth());
                 newDate.setDate(clickedDate.getDate());
+
+                // 既存の時間を保持
+                const currentHours = parseInt(hours, 10) || 0;
+                const currentMinutes = parseInt(minutes, 10) || 0;
+                newDate.setHours(currentHours);
+                newDate.setMinutes(currentMinutes);
 
                 // 選択された日付を更新してハイライト
                 setSelectedDate(newDate);
@@ -117,7 +130,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
         calendar.destroy();
       };
     }
-  }, [initialDate]);
+  }, [selectedDate, hours, minutes]);
 
   // 選択中の日付をハイライトする関数
   const updateSelectedDateHighlight = (date: Date) => {
@@ -240,31 +253,6 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     }
   };
 
-  // 時間を増減するための関数
-  const incrementHours = () => {
-    const current = parseInt(hours, 10) || 0;
-    const newValue = (current + 1) % 24;
-    setHours(newValue.toString().padStart(2, '0'));
-  };
-
-  const decrementHours = () => {
-    const current = parseInt(hours, 10) || 0;
-    const newValue = (current - 1 + 24) % 24;
-    setHours(newValue.toString().padStart(2, '0'));
-  };
-
-  const incrementMinutes = () => {
-    const current = parseInt(minutes, 10) || 0;
-    const newValue = (current + 1) % 60;
-    setMinutes(newValue.toString().padStart(2, '0'));
-  };
-
-  const decrementMinutes = () => {
-    const current = parseInt(minutes, 10) || 0;
-    const newValue = (current - 1 + 60) % 60;
-    setMinutes(newValue.toString().padStart(2, '0'));
-  };
-
   const handleSave = () => {
     const resultDate = new Date(selectedDate);
     if (!isAllDay) {
@@ -332,15 +320,10 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
           </label>
         </div>
 
-        {!isAllDay && (
+        {!isAllDay && !isMobile && (
           <div className="date-time-picker-time">
             <Clock size={16} className="date-time-picker-time-icon" />
             <div className="time-input-with-controls">
-              <button
-                className="time-control-button"
-                onClick={incrementHours}
-                title="Increment hour"
-              >▲</button>
               <input
                 type="text"
                 inputMode="numeric"
@@ -352,19 +335,9 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
                 maxLength={2}
                 placeholder="00"
               />
-              <button
-                className="time-control-button"
-                onClick={decrementHours}
-                title="Decrement hour"
-              >▼</button>
             </div>
             <span className="date-time-picker-time-separator">:</span>
             <div className="time-input-with-controls">
-              <button
-                className="time-control-button"
-                onClick={incrementMinutes}
-                title="Increment minute"
-              >▲</button>
               <input
                 type="text"
                 inputMode="numeric"
@@ -376,11 +349,33 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
                 maxLength={2}
                 placeholder="00"
               />
-              <button
-                className="time-control-button"
-                onClick={decrementMinutes}
-                title="Decrement minute"
-              >▼</button>
+            </div>
+          </div>
+        )}
+
+        {!isAllDay && isMobile && (
+          <div className="date-time-picker-time">
+            <Clock size={16} className="date-time-picker-time-icon" />
+            <div className="time-input-with-controls">
+              <select
+                value={hours}
+                onChange={(e) => setHours(e.target.value)}
+              >
+                {Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0')).map((val) => (
+                  <option key={val} value={val}>{val}</option>
+                ))}
+              </select>
+            </div>
+            <span className="date-time-picker-time-separator">:</span>
+            <div className="time-input-with-controls">
+              <select
+                value={minutes}
+                onChange={(e) => setMinutes(e.target.value)}
+              >
+                {Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0')).map((val) => (
+                  <option key={val} value={val}>{val}</option>
+                ))}
+              </select>
             </div>
           </div>
         )}
