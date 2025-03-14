@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { X, Check } from 'lucide-react';
 import { DROPDOWN_STATUS_OPTIONS } from '../utils/status';
 import { calculateOptimalPosition } from '../utils/position';
+import { Platform } from 'obsidian';
 
 interface StatusPickerModalProps {
   currentStatus: string;
@@ -18,10 +19,11 @@ export const StatusPickerModal: React.FC<StatusPickerModalProps> = ({
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const [finalPosition, setFinalPosition] = useState(position);
+  const isMobile = Platform.isMobile;
 
   useEffect(() => {
-    // Calculate optimal position after the component mounts
-    if (modalRef.current) {
+    // Calculate optimal position after the component mounts only for desktop
+    if (modalRef.current && !isMobile) {
       // Create a temporary element to represent the source of the click
       const sourceEl = document.createElement('div');
       sourceEl.style.position = 'absolute';
@@ -37,8 +39,11 @@ export const StatusPickerModal: React.FC<StatusPickerModalProps> = ({
 
       // Clean up temporary element
       document.body.removeChild(sourceEl);
+    } else if (isMobile) {
+      // On mobile, position doesn't matter as it will be centered by CSS
+      setFinalPosition({ top: 0, left: 0 });
     }
-  }, [position]);
+  }, [position, isMobile]);
 
   useEffect(() => {
     // Close modal when clicking outside
@@ -58,7 +63,47 @@ export const StatusPickerModal: React.FC<StatusPickerModalProps> = ({
     onSave(statusValue);
   };
 
-  return (
+  // Render different container based on mobile or desktop
+  return isMobile ? (
+    <div className="mobile-modal-overlay">
+      <div className="status-picker-modal" ref={modalRef}>
+        <div className="status-picker-header">
+          <div className="status-picker-title">
+            Task Status
+          </div>
+          <div className="status-picker-header-buttons">
+            <button
+              className="status-picker-close-button"
+              onClick={onClose}
+              title="Close"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+
+        <div className="status-picker-content">
+          <div className="status-picker-options">
+            {DROPDOWN_STATUS_OPTIONS.map((option) => (
+              <div
+                key={option.label}
+                className={`status-picker-option ${option.value === currentStatus ? 'selected' : ''}`}
+                onClick={() => handleStatusSelect(option.value)}
+              >
+                <div className="status-picker-checkbox">
+                  {option.value === currentStatus && <Check size={14} />}
+                </div>
+                <div className="status-picker-option-text">
+                  <span className="status-markdown-preview">[{option.value === ' ' ? ' ' : option.value}]</span>
+                  <span className="status-label">{option.label}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : (
     <div
       className="status-picker-modal"
       style={{

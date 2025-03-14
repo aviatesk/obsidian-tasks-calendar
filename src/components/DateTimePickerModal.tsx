@@ -46,7 +46,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
   useEffect(() => {
     // Calculate optimal position after the component mounts
-    if (modalRef.current) {
+    if (modalRef.current && !isMobile) {
       // Create a temporary element to represent the source of the click
       const sourceEl = document.createElement('div');
       sourceEl.style.position = 'absolute';
@@ -62,8 +62,11 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
       // Clean up temporary element
       document.body.removeChild(sourceEl);
+    } else if (isMobile) {
+      // On mobile, position doesn't matter as it will be centered by CSS
+      setFinalPosition({ top: 0, left: 0 });
     }
-  }, [position]);
+  }, [position, isMobile]);
 
   useEffect(() => {
     // モーダルの外側をクリックした時に閉じる処理
@@ -296,7 +299,78 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     onSave(resultDate, isAllDay);
   };
 
-  return (
+  // Render different container based on mobile or desktop
+  return isMobile ? (
+    <div className="mobile-modal-overlay">
+      <div className="date-time-picker-modal" ref={modalRef}>
+        <div className="date-time-picker-header">
+          <div className="date-time-picker-title">
+            {isStartDate ? 'Start' : 'End'} Date
+          </div>
+          <div className="date-time-picker-header-buttons">
+            <button
+              className="date-time-picker-save-button"
+              onClick={handleSave}
+              title="Save changes"
+            >
+              <Check size={18} />
+            </button>
+            <button
+              className="date-time-picker-close-button"
+              onClick={onClose}
+              title="Close"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+
+        <div className="date-time-picker-calendar-container">
+          <div className="date-time-picker-calendar" ref={calendarRef}></div>
+        </div>
+
+        <div className="date-time-picker-time-container">
+          <div className="date-time-picker-all-day">
+            <label>
+              <input
+                type="checkbox"
+                checked={isAllDay}
+                onChange={(e) => setIsAllDay(e.target.checked)}
+              />
+              All day
+            </label>
+          </div>
+
+          {!isAllDay && (
+            <div className="date-time-picker-time">
+              <Clock size={16} className="date-time-picker-time-icon" />
+              <div className="time-input-with-controls">
+                <select
+                  value={hours}
+                  onChange={(e) => setHours(e.target.value)}
+                >
+                  {Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0')).map((val) => (
+                    <option key={val} value={val}>{val}</option>
+                  ))}
+                </select>
+              </div>
+              <span className="date-time-picker-time-separator">:</span>
+              <div className="time-input-with-controls">
+                <select
+                  value={minutes}
+                  onChange={(e) => setMinutes(e.target.value)}
+                >
+                  {Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0')).map((val) => (
+                    <option key={val} value={val}>{val}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  ) : (
     <div
       className="date-time-picker-modal"
       style={{

@@ -1,4 +1,4 @@
-import { ItemView, Notice, WorkspaceLeaf, debounce, TFile } from 'obsidian';
+import { ItemView, Notice, WorkspaceLeaf, debounce, TFile, Platform } from 'obsidian';
 import { Calendar, EventApi } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -141,11 +141,17 @@ export class TasksCalendarItemView extends ItemView {
           document.body.appendChild(tooltipEl);
           this.activeTooltipEl = tooltipEl;
 
-          // Calculate tooltip position
-          const position = this.calculateTooltipPosition(info.el, tooltipEl);
+          let tooltipPosition;
+          if (Platform.isMobile) {
+            tooltipPosition = { top: 0, left: 0 }; // Mobile - center positioning handled by CSS
+          } else {
+            tooltipPosition = this.calculateTooltipPosition(info.el, tooltipEl); // Desktop - calculate position
+          }
 
           // Create tooltip renderer
           this.tooltipRenderer = new ReactRenderer(tooltipEl);
+
+          console.log(`rendering tooltip`)
 
           // Render tooltip component
           this.tooltipRenderer.render(
@@ -153,7 +159,7 @@ export class TasksCalendarItemView extends ItemView {
               taskText: taskText || 'Task details not available',
               cleanText: cleanText,
               filePath: filePath,
-              position: position,
+              position: tooltipPosition,
               onClose: () => this.closeActiveTooltip(),
               onOpenFile: () => {
                 openTask(this.app, filePath, line);
@@ -165,7 +171,6 @@ export class TasksCalendarItemView extends ItemView {
               status: status,
               line: line,
               isAllDay: isAllDay,
-              // 日付更新ハンドラーを追加
               onUpdateDates: (newStartDate, newEndDate, isAllDay) => {
                 this.handleTaskDateUpdate(
                   info.event,
@@ -176,7 +181,6 @@ export class TasksCalendarItemView extends ItemView {
                   line
                 );
               },
-              // Status update handler
               onUpdateStatus: (newStatus) => {
                 this.handleTaskStatusUpdate(
                   info.event,

@@ -1102,3 +1102,91 @@ option[value="default"] {
   font-weight: 500;
   color: var(--text-normal);
 }
+
+/* Mobile-specific modal styling */
+.is-mobile .mobile-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+/* Center modals on mobile */
+.is-mobile .date-time-picker-modal,
+.is-mobile .status-picker-modal,
+.is-mobile .task-click-tooltip {
+  position: relative !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 90% !important;
+  max-width: 400px !important;
+  margin: 0 auto !important;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3) !important;
+  animation: zoomIn 0.3s ease !important;
+}
+
+.is-mobile .task-click-tooltip {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+/* Add a modern zoom animation for mobile modals */
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Additional mobile styling improvements */
+.is-mobile .task-click-tooltip-header,
+.is-mobile .date-time-picker-header,
+.is-mobile .status-picker-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary-alt);
+}
+
+.is-mobile .task-click-tooltip-content,
+.is-mobile .date-time-picker-content,
+.is-mobile .status-picker-content {
+  padding: 16px;
+}
+
+.is-mobile .task-click-tooltip-close-button,
+.is-mobile .date-time-picker-close-button,
+.is-mobile .status-picker-close-button {
+  padding: 10px;
+}
+
+/* Increase touch target sizes on mobile */
+.is-mobile .status-picker-option {
+  padding: 12px;
+}
+
+.is-mobile .time-input-with-controls select {
+  padding: 8px;
+  font-size: 16px;
+}
+
+/* Backdrop for mobile modals */
+.mobile-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 8000;
+  animation: fadeBackdrop 0.2s ease;
+}
+
+@keyframes fadeBackdrop {
+  from { opacity: 0; }
+  to { opacity: 0.5; }
+}
