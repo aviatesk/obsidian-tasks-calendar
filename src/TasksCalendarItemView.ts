@@ -299,7 +299,10 @@ export class TasksCalendarItemView extends ItemView {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    // Default position below the event
+    // Calculate container boundaries
+    const containerRect = this.containerEl.children[1].getBoundingClientRect();
+
+    // Default position - try to center below the event
     let left = eventRect.left + (eventRect.width / 2);
     let top = eventRect.bottom + 10;
 
@@ -310,17 +313,31 @@ export class TasksCalendarItemView extends ItemView {
     setTimeout(() => {
       const tooltipRect = tooltipEl.getBoundingClientRect();
 
-      // Adjust horizontal position to keep tooltip on screen
-      left = Math.min(left, viewportWidth - tooltipRect.width - 10);
-      left = Math.max(10, left);
-
       // Center the tooltip horizontally below the event
-      left = left - (tooltipRect.width / 2);
+      left = eventRect.left + (eventRect.width / 2) - (tooltipRect.width / 2);
 
-      // If tooltip would go off bottom of screen, position it above the event
-      if (top + tooltipRect.height > viewportHeight - 10) {
-        top = eventRect.top - tooltipRect.height - 10;
+      // Make sure the tooltip stays within the container horizontally
+      if (left < containerRect.left + 10) {
+        left = containerRect.left + 10;
+      } else if (left + tooltipRect.width > containerRect.right - 10) {
+        left = containerRect.right - tooltipRect.width - 10;
       }
+
+      // If tooltip would go off bottom of container, position it above the event
+      if (top + tooltipRect.height > containerRect.bottom - 10) {
+        // Check if there's enough space above the event
+        if (eventRect.top - tooltipRect.height - 10 >= containerRect.top) {
+          top = eventRect.top - tooltipRect.height - 10;
+        } else {
+          // Not enough space above or below, position at optimal location within container
+          top = Math.max(containerRect.top + 10,
+                Math.min(containerRect.bottom - tooltipRect.height - 10, top));
+        }
+      }
+
+      // Ensure we're not going outside the viewport in any case
+      left = Math.max(10, Math.min(viewportWidth - tooltipRect.width - 10, left));
+      top = Math.max(10, Math.min(viewportHeight - tooltipRect.height - 10, top));
 
       // Apply final position
       tooltipEl.style.left = `${left}px`;
