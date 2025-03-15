@@ -186,6 +186,22 @@ export class TasksCalendarItemView extends ItemView {
                   filePath,
                   line
                 );
+              },
+              // Add hover link handler
+              onHoverLink: (event, hoverFilePath, hoverLine) => {
+                this.app.workspace.trigger('hover-link', {
+                  event: event.nativeEvent,
+                  source: HOVER_LINK_SOURCE,
+                  targetEl: event.currentTarget as HTMLElement,
+                  hoverParent: {
+                    hoverPopover: null,
+                  },
+                  linktext: hoverFilePath,
+                  sourcePath: hoverFilePath,
+                  state: {
+                    scroll: hoverLine
+                  }
+                });
               }
             })
           );

@@ -710,7 +710,7 @@
 /* New task click tooltip styles */
 .task-click-tooltip-container {
   position: absolute;
-  z-index: 9999;
+  /* z-index: 9999; */
   pointer-events: auto;
 }
 

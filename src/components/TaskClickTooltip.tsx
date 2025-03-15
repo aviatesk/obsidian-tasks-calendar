@@ -21,6 +21,8 @@ interface TaskClickTooltipProps {
   // Add handlers for updates
   onUpdateDates?: (startDate: Date | null, endDate: Date | null, isAllDay: boolean) => void;
   onUpdateStatus?: (newStatus: string) => void;
+  // Add hover link handler
+  onHoverLink?: (event: React.MouseEvent, filePath: string, line?: number) => void;
 }
 
 export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
@@ -37,7 +39,8 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   line,
   isAllDay: initialIsAllDay = false,
   onUpdateDates,
-  onUpdateStatus
+  onUpdateStatus,
+  onHoverLink
 }) => {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const fileName = filePath.split('/').pop() || filePath;
@@ -68,6 +71,13 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [onClose]);
+
+  // Helper to handle hover link functionality
+  const handleHover = (event: React.MouseEvent) => {
+    if (onHoverLink && filePath) {
+      onHoverLink(event, filePath, line);
+    }
+  };
 
   // Helper to format date strings
   const formatDateString = (dateStr: string, isAllDayFormat = false) => {
@@ -255,6 +265,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
             <button
               className="task-click-tooltip-open-button"
               onClick={onOpenFile}
+              onMouseEnter={handleHover}
               title="Open file"
             >
               <Pencil size={18} />
@@ -300,6 +311,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
             <div
               className="task-click-tooltip-info-item task-click-tooltip-file-link"
               onClick={onOpenFile}
+              onMouseEnter={handleHover}
               title="Click to open task"
             >
               <Info size={18} className="task-click-tooltip-icon-small" />
@@ -360,6 +372,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           <button
             className="task-click-tooltip-open-button"
             onClick={onOpenFile}
+            onMouseEnter={handleHover}
             title="Open file"
           >
             <Pencil size={16} />
@@ -405,6 +418,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           <div
             className="task-click-tooltip-info-item task-click-tooltip-file-link"
             onClick={onOpenFile}
+            onMouseEnter={handleHover}
             title="Click to open task"
           >
             <Info size={16} className="task-click-tooltip-icon-small" />
