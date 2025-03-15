@@ -1,7 +1,6 @@
 export interface EventProps {
   textColor?: string,
   backgroundColor?: string,
-  editable?: boolean,
   priority?: number,
   forceAllDay?: boolean, // HACK for styling with past non-all-day events
 }
@@ -26,7 +25,9 @@ export interface UserCalendarSettings {
   query?: string;                // Dataview query
   dateProperty?: string;         // property name to get the date
   startDateProperty?: string;    // property name to get the start date
+  excludedStatuses?: string[];   // excluded statuses, tasks with these statuses will be filtered out
   includedStatuses?: string[];   // included statuses, empty array means including every task
+  excludedTags?: string[];       // excluded tags, tasks with these tags will be filtered out
   includedTags?: string[];       // included tags, empty array means including every task
   eventPropsMap?: EventPropsMap  // event info map
 }
@@ -42,7 +43,9 @@ export interface CalendarSettings {
   query: string;                // Dataview query
   dateProperty: string;         // property name to get the date
   startDateProperty: string;    // property name to get the start date
+  excludedStatuses: string[];   // excluded statuses, tasks with these statuses will be filtered out
   includedStatuses: string[];   // included statuses, empty array means including every task
+  excludedTags: string[];       // excluded tags, tasks with these tags will be filtered out
   includedTags: string[];       // included tags, empty array means including every task
   eventPropsMap: EventPropsMap  // event info map
 }
@@ -59,7 +62,6 @@ export const HOVER_LINK_SOURCE = "tasks-calendar-hover-link"
 export const DEFAULT_EVENT_PROPS = {
   textColor: 'var(--text-on-accent)',
   backgroundColor: 'var(--interactive-accent)',
-  editable: true,
   priority: 0,
   forceAllDay: false,
 }
@@ -71,13 +73,17 @@ export const DEFAULT_CALENDAR_SETTINGS: CalendarSettings = {
   dateProperty: 'due',
   startDateProperty: 'start',
   query: '""',
+  excludedStatuses: [
+    "x", // completed
+    "X", // completed
+    "-" // cancelled
+  ],
   includedStatuses: [],
+  excludedTags: [],
   includedTags: [],
   eventPropsMap: {
-    // completed status
-    'x': { textColor: 'var(--text-faint)', backgroundColor: 'var(--background-secondary)', editable: false, forceAllDay: true, priority: -1 },
-    // cancelled status
-    '-': { textColor: 'var(--text-faint)', backgroundColor: 'var(--background-secondary)', editable: false, forceAllDay: true, priority: -2 },
+    // E.g., include completed status with a different style
+    // 'x': { textColor: 'var(--text-faint)', backgroundColor: 'var(--background-secondary)', forceAllDay: true, priority: -1 },
   },
 }
 
@@ -124,6 +130,12 @@ export function toUserCalendarSettings(settings: CalendarSettings): UserCalendar
   }
   if (JSON.stringify(settings.includedTags) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.includedTags)) {
     userSettings.includedTags = settings.includedTags;
+  }
+  if (JSON.stringify(settings.excludedStatuses) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.excludedStatuses)) {
+    userSettings.excludedStatuses = settings.excludedStatuses;
+  }
+  if (JSON.stringify(settings.excludedTags) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.excludedTags)) {
+    userSettings.excludedTags = settings.excludedTags;
   }
   if (JSON.stringify(settings.eventPropsMap) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.eventPropsMap)) {
     userSettings.eventPropsMap = settings.eventPropsMap;

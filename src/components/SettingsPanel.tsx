@@ -19,9 +19,13 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const [localSettings, setLocalSettings] = useState<CalendarSettings>({...settings});
   const [newStatus, setNewStatus] = useState<string>('');
   const [newTag, setNewTag] = useState<string>('');
+  const [newExcludedStatus, setNewExcludedStatus] = useState<string>('');
+  const [newExcludedTag, setNewExcludedTag] = useState<string>('');
   const panelRef = useRef<HTMLDivElement>(null);
   const statusInputRef = useRef<HTMLInputElement>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
+  const excludedStatusInputRef = useRef<HTMLInputElement>(null);
+  const excludedTagInputRef = useRef<HTMLInputElement>(null);
 
   // Update local settings when props change
   useEffect(() => {
@@ -59,59 +63,42 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     handleChange(field, defaultValue);
   };
 
-  // Status management functions
-  const addStatus = () => {
-    if (newStatus.trim()) {
-      const currentStatuses = localSettings.includedStatuses || [];
-      if (!currentStatuses.includes(newStatus.trim())) {
-        const updatedStatuses = [...currentStatuses, newStatus.trim()];
-        handleChange('includedStatuses', updatedStatuses);
+  // Generic item management functions for both statuses and tags
+  type ItemField = 'includedStatuses' | 'includedTags' | 'excludedStatuses' | 'excludedTags';
+
+  const addItem = (
+    value: string,
+    field: ItemField,
+    setValue: React.Dispatch<React.SetStateAction<string>>,
+    inputRef: React.RefObject<HTMLInputElement>
+  ) => {
+    if (value.trim()) {
+      const currentItems = localSettings[field] || [];
+      if (!currentItems.includes(value.trim())) {
+        const updatedItems = [...currentItems, value.trim()];
+        handleChange(field, updatedItems);
       }
-      setNewStatus('');
-      // Focus back to input field
-      statusInputRef.current?.focus();
+      setValue('');
+      inputRef.current?.focus();
     }
   };
 
-  const removeStatus = (statusToRemove: string) => {
-    const currentStatuses = localSettings.includedStatuses || [];
-    const updatedStatuses = currentStatuses.filter(status => status !== statusToRemove);
-    handleChange('includedStatuses', updatedStatuses);
+  const removeItem = (itemToRemove: string, field: ItemField) => {
+    const currentItems = localSettings[field] || [];
+    const updatedItems = currentItems.filter(item => item !== itemToRemove);
+    handleChange(field, updatedItems);
   };
 
-  // Add status on Enter key press
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleItemKeyDown = (
+    e: React.KeyboardEvent,
+    value: string,
+    field: ItemField,
+    setValue: React.Dispatch<React.SetStateAction<string>>,
+    inputRef: React.RefObject<HTMLInputElement>
+  ) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      addStatus();
-    }
-  };
-
-  // Tag management functions
-  const addTag = () => {
-    if (newTag.trim()) {
-      const currentTags = localSettings.includedTags || [];
-      if (!currentTags.includes(newTag.trim())) {
-        const updatedTags = [...currentTags, newTag.trim()];
-        handleChange('includedTags', updatedTags);
-      }
-      setNewTag('');
-      // Focus back to input field
-      tagInputRef.current?.focus();
-    }
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    const currentTags = localSettings.includedTags || [];
-    const updatedTags = currentTags.filter(tag => tag !== tagToRemove);
-    handleChange('includedTags', updatedTags);
-  };
-
-  // Add tag on Enter key press
-  const handleTagKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addTag();
+      addItem(value, field, setValue, inputRef);
     }
   };
 
@@ -119,6 +106,74 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const getDefaultName = () => {
     return `Calendar ${settings.id === 'default' ? 'Default' : ''}`;
   };
+
+  // Helper to render item list (statuses or tags)
+  const renderItemList = (
+    label: string,
+    field: ItemField,
+    value: string,
+    setValue: React.Dispatch<React.SetStateAction<string>>,
+    inputRef: React.RefObject<HTMLInputElement>,
+    placeholder: string,
+    description: string,
+    emptyMessage: string
+  ) => (
+    <div className="setting-item status-list-container">
+      <label>{label}</label>
+      <div className="setting-item-input">
+        <div className="status-input-container">
+          <input
+            ref={inputRef}
+            type="text"
+            value={value}
+            placeholder={placeholder}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => handleItemKeyDown(e, value, field, setValue, inputRef)}
+            className="status-input"
+          />
+          <button
+            type="button"
+            onClick={() => addItem(value, field, setValue, inputRef)}
+            className="status-add-button"
+          >
+            Add
+          </button>
+        </div>
+        <button
+          type="button"
+          className="setting-reset-button"
+          onClick={() => resetField(field, [...(DEFAULT_CALENDAR_SETTINGS[field] || [])])}
+          aria-label={`Reset ${field}`}
+          title="Reset to default"
+        >
+          <RefreshCw size={16} />
+        </button>
+      </div>
+      <div className="setting-item-description">
+        {description}
+      </div>
+
+      <div className="status-chips-container">
+        {(localSettings[field] || []).length > 0 ? (
+          (localSettings[field] || []).map((item: string, index: number) => (
+            <div key={index} className="status-chip">
+              <span className="status-text">{item}</span>
+              <button
+                type="button"
+                onClick={() => removeItem(item, field)}
+                className="status-remove-button"
+                aria-label={`Remove ${item}`}
+              >
+                ×
+              </button>
+            </div>
+          ))
+        ) : (
+          <div className="empty-status-message">{emptyMessage}</div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="calendar-settings-panel" ref={panelRef}>
@@ -219,121 +274,53 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           </div>
         </div>
 
-        {/* Status Filter Section */}
-        <div className="setting-item status-list-container">
-          <label>Include task statuses:</label>
-          <div className="setting-item-input">
-            <div className="status-input-container">
-              <input
-                ref={statusInputRef}
-                type="text"
-                value={newStatus}
-                placeholder="Add new status..."
-                onChange={(e) => setNewStatus(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="status-input"
-              />
-              <button
-                type="button"
-                onClick={addStatus}
-                className="status-add-button"
-              >
-                Add
-              </button>
-            </div>
-            <button
-              type="button"
-              className="setting-reset-button"
-              onClick={() => resetField('includedStatuses', [...DEFAULT_CALENDAR_SETTINGS.includedStatuses])}
-              aria-label="Reset to default statuses"
-              title="Reset to default"
-            >
-              <RefreshCw size={16} />
-            </button>
-          </div>
-          <div className="setting-item-description">
-            Current statuses shown below. Add or remove as needed.
-          </div>
+        {/* Exclusion/Inclusion Sections using the reusable render function */}
+        {renderItemList(
+          "Exclude task statuses:",
+          "excludedStatuses",
+          newExcludedStatus,
+          setNewExcludedStatus,
+          excludedStatusInputRef,
+          "Add status to exclude...",
+          "Tasks with these statuses will be excluded from the calendar, regardless of inclusion settings.",
+          "No statuses excluded."
+        )}
 
-          {/* Status list display */}
-          <div className="status-chips-container">
-            {(localSettings.includedStatuses || []).length > 0 ? (
-              (localSettings.includedStatuses || []).map((status, index) => (
-                <div key={index} className="status-chip">
-                  <span className="status-text">{status}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeStatus(status)}
-                    className="status-remove-button"
-                    aria-label={`Remove ${status}`}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))
-            ) : (
-              <div className="empty-status-message">No statuses added. No status filtering will be applied.</div>
-            )}
-          </div>
-        </div>
+        {renderItemList(
+          "Include task statuses:",
+          "includedStatuses",
+          newStatus,
+          setNewStatus,
+          statusInputRef,
+          "Add new status...",
+          "Add tags to filter tasks by status. Leave empty to include all tasks regardless of statuses (except the excluded statuses).." +
+          "Note that if specified this filtering will exclude tasks with statuses not included here.",
+          "No statuses added. No status inclusion filtering will be applied."
+        )}
 
-        {/* Tag Filter Section */}
-        <div className="setting-item status-list-container">
-          <label>Include tags:</label>
-          <div className="setting-item-input">
-            <div className="status-input-container">
-              <input
-                ref={tagInputRef}
-                type="text"
-                value={newTag}
-                placeholder="Add new tag..."
-                onChange={(e) => setNewTag(e.target.value)}
-                onKeyDown={handleTagKeyDown}
-                className="status-input"
-              />
-              <button
-                type="button"
-                onClick={addTag}
-                className="status-add-button"
-              >
-                Add
-              </button>
-            </div>
-            <button
-              type="button"
-              className="setting-reset-button"
-              onClick={() => resetField('includedTags', [...(DEFAULT_CALENDAR_SETTINGS.includedTags || [])])}
-              aria-label="Reset to default tags"
-              title="Reset to default"
-            >
-              <RefreshCw size={16} />
-            </button>
-          </div>
-          <div className="setting-item-description">
-            Add tags to filter tasks by tag. Leave empty to include all tasks regardless of tags.
-          </div>
+        {renderItemList(
+          "Exclude tags:",
+          "excludedTags",
+          newExcludedTag,
+          setNewExcludedTag,
+          excludedTagInputRef,
+          "Add tag to exclude...",
+          "Tasks with these tags will be excluded from the calendar, regardless of inclusion settings.",
+          "No tags excluded."
+        )}
 
-          {/* Tags list display */}
-          <div className="status-chips-container">
-            {(localSettings.includedTags || []).length > 0 ? (
-              (localSettings.includedTags || []).map((tag, index) => (
-                <div key={index} className="status-chip">
-                  <span className="status-text">{tag}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeTag(tag)}
-                    className="status-remove-button"
-                    aria-label={`Remove ${tag}`}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))
-            ) : (
-              <div className="empty-status-message">No tags added. No tag filtering will be applied.</div>
-            )}
-          </div>
-        </div>
+        {renderItemList(
+          "Include tags:",
+          "includedTags",
+          newTag,
+          setNewTag,
+          tagInputRef,
+          "Add new tag...",
+          "Add tags to filter tasks by tag. Leave empty to include all tasks regardless of tags (except the excluded tags)." +
+          "Note that if specified this filtering will exclude tasks with tags not included here.",
+          "No tags added. No tag inclusion filtering will be applied."
+        )}
+
 
         {/* Delete Calendar Button (only for non-default calendars) */}
         {settings.id !== 'default' && onDeleteCalendar && (

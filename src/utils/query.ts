@@ -22,6 +22,14 @@ export default function getTasksAsEvents(
       if (page && page.file.tasks) {
         page.file.tasks
           .filter(task => {
+            const excludedStatuses = settings.excludedStatuses
+            if (excludedStatuses.length && excludedStatuses.includes(task.status))
+              return false;
+
+            const excludedTags = settings.excludedTags
+            if (excludedTags.length && task.tags.some(tag => excludedTags.includes(tag)))
+              return false;
+
             const includedStatuses = settings.includedStatuses
             if (includedStatuses.length && !includedStatuses.includes(task.status))
               return false;
@@ -88,7 +96,6 @@ export default function getTasksAsEvents(
             events.push({
               textColor: eventProps.textColor,
               backgroundColor: eventProps.backgroundColor,
-              editable: eventProps.editable,
               title: cleanText,
               start: startDate,
               end: endDate,
