@@ -70,6 +70,22 @@ export class TasksCalendarItemView extends ItemView {
     }
   }
 
+  private onHoverLink = (event: React.MouseEvent, hoverFilePath: string, hoverLine: number) => {
+    this.app.workspace.trigger('hover-link', {
+      event: event.nativeEvent,
+      source: HOVER_LINK_SOURCE,
+      targetEl: event.currentTarget as HTMLElement,
+      hoverParent: {
+        hoverPopover: null,
+      },
+      linktext: hoverFilePath,
+      sourcePath: hoverFilePath,
+      state: {
+        scroll: hoverLine
+      }
+    });
+  }
+
   private initializeCalendar(calendarEl: HTMLElement) {
     const calendar = new Calendar(calendarEl, {
       plugins: [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin],
@@ -151,58 +167,20 @@ export class TasksCalendarItemView extends ItemView {
           // Create tooltip renderer
           this.tooltipRenderer = new ReactRenderer(tooltipEl);
 
-          // Render tooltip component
+          // Render tooltip component using the helper method
           this.tooltipRenderer.render(
-            React.createElement(TaskClickTooltip, {
+            this.createTaskTooltipElement({
               taskText: taskText || 'Task details not available',
               cleanText: cleanText,
               filePath: filePath,
               position: tooltipPosition,
-              onClose: () => this.closeActiveTooltip(),
-              onOpenFile: () => {
-                openTask(this.app, filePath, line);
-                this.closeActiveTooltip();
-              },
               startDate: startDate,
               endDate: endDate,
               tags: tags,
               status: status,
               line: line,
               isAllDay: isAllDay,
-              onUpdateDates: (newStartDate, newEndDate, isAllDay) => {
-                this.handleTaskDateUpdate(
-                  info.event,
-                  newStartDate,
-                  newEndDate,
-                  isAllDay,
-                  filePath,
-                  line
-                );
-              },
-              onUpdateStatus: (newStatus) => {
-                this.handleTaskStatusUpdate(
-                  info.event,
-                  newStatus,
-                  filePath,
-                  line
-                );
-              },
-              // Add hover link handler
-              onHoverLink: (event, hoverFilePath, hoverLine) => {
-                this.app.workspace.trigger('hover-link', {
-                  event: event.nativeEvent,
-                  source: HOVER_LINK_SOURCE,
-                  targetEl: event.currentTarget as HTMLElement,
-                  hoverParent: {
-                    hoverPopover: null,
-                  },
-                  linktext: hoverFilePath,
-                  sourcePath: hoverFilePath,
-                  state: {
-                    scroll: hoverLine
-                  }
-                });
-              }
+              event: info.event
             })
           );
         }
@@ -325,6 +303,58 @@ export class TasksCalendarItemView extends ItemView {
   // Calculate the best position for the tooltip
   private calculateTooltipPosition(eventEl: HTMLElement, tooltipEl: HTMLElement) {
     return calculateOptimalPosition(eventEl, tooltipEl, 10);
+  }
+
+  // Helper method to create tooltip React element with consistent props
+  private createTaskTooltipElement(props: {
+    taskText: string;
+    cleanText: string;
+    filePath: string;
+    position: { top: number; left: number };
+    startDate: string;
+    endDate: string | undefined;
+    tags: string[];
+    status: string;
+    line: number;
+    isAllDay: boolean;
+    event?: EventApi;
+  }) {
+    return React.createElement(TaskClickTooltip, {
+      taskText: props.taskText || 'Task details not available',
+      cleanText: props.cleanText,
+      filePath: props.filePath,
+      position: props.position,
+      onClose: () => this.closeActiveTooltip(),
+      onOpenFile: () => {
+        openTask(this.app, props.filePath, props.line);
+        this.closeActiveTooltip();
+      },
+      startDate: props.startDate,
+      endDate: props.endDate,
+      tags: props.tags,
+      status: props.status,
+      line: props.line,
+      isAllDay: props.isAllDay,
+      onUpdateDates: (newStartDate, newEndDate, isAllDay) => {
+        this.handleTaskDateUpdate(
+          props.event || {} as EventApi,
+          newStartDate,
+          newEndDate,
+          isAllDay,
+          props.filePath,
+          props.line
+        );
+      },
+      onUpdateStatus: (newStatus) => {
+        this.handleTaskStatusUpdate(
+          props.event || {} as EventApi,
+          newStatus,
+          props.filePath,
+          props.line
+        );
+      },
+      onHoverLink: this.onHoverLink,
+    });
   }
 
   // Close current active tooltip if exists
@@ -582,9 +612,9 @@ export class TasksCalendarItemView extends ItemView {
       new Notice("Task date updated successfully");
 
       if (this.tooltipRenderer && this.activeTooltipEl) {
-        // Re-render the tooltip with updated dates
+        // Re-render the tooltip with updated dates using the helper method
         this.tooltipRenderer.render(
-          React.createElement(TaskClickTooltip, {
+          this.createTaskTooltipElement({
             taskText: event.extendedProps.taskText || 'Task details not available',
             cleanText: event.extendedProps.cleanText || event.title,
             filePath: filePath,
@@ -592,35 +622,13 @@ export class TasksCalendarItemView extends ItemView {
               left: parseInt(this.activeTooltipEl.style.left),
               top: parseInt(this.activeTooltipEl.style.top)
             },
-            onClose: () => this.closeActiveTooltip(),
-            onOpenFile: () => {
-              openTask(this.app, filePath, line);
-              this.closeActiveTooltip();
-            },
             startDate: newStartDate?.toISOString(),
             endDate: newEndDate?.toISOString(),
             tags: event.extendedProps.tags,
             status: event.extendedProps.status,
             line: line,
             isAllDay: isAllDay,
-            onUpdateDates: (updatedStart, updatedEnd, updatedAllDay) => {
-              this.handleTaskDateUpdate(
-                event,
-                updatedStart,
-                updatedEnd,
-                updatedAllDay,
-                filePath,
-                line
-              );
-            },
-            onUpdateStatus: (updatedStatus) => {
-              this.handleTaskStatusUpdate(
-                event,
-                updatedStatus,
-                filePath,
-                line
-              );
-            }
+            event: event
           })
         );
       }
@@ -663,9 +671,9 @@ export class TasksCalendarItemView extends ItemView {
       new Notice("Task status updated successfully");
 
       if (this.tooltipRenderer && this.activeTooltipEl) {
-        // Re-render the tooltip with updated status
+        // Re-render the tooltip with updated status using the helper method
         this.tooltipRenderer.render(
-          React.createElement(TaskClickTooltip, {
+          this.createTaskTooltipElement({
             taskText: event.extendedProps.taskText || 'Task details not available',
             cleanText: event.extendedProps.cleanText || event.title,
             filePath: filePath,
@@ -673,35 +681,13 @@ export class TasksCalendarItemView extends ItemView {
               left: parseInt(this.activeTooltipEl.style.left),
               top: parseInt(this.activeTooltipEl.style.top)
             },
-            onClose: () => this.closeActiveTooltip(),
-            onOpenFile: () => {
-              openTask(this.app, filePath, line);
-              this.closeActiveTooltip();
-            },
             startDate: event.startStr,
             endDate: event.endStr,
             tags: event.extendedProps.tags,
             status: newStatus, // Use new status
             line: line,
             isAllDay: event.allDay,
-            onUpdateDates: (updatedStart, updatedEnd, updatedAllDay) => {
-              this.handleTaskDateUpdate(
-                event,
-                updatedStart,
-                updatedEnd,
-                updatedAllDay,
-                filePath,
-                line
-              );
-            },
-            onUpdateStatus: (updatedStatus) => {
-              this.handleTaskStatusUpdate(
-                event,
-                updatedStatus,
-                filePath,
-                line
-              );
-            }
+            event: event
           })
         );
       }
