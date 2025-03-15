@@ -10,7 +10,7 @@ import { ReactRenderer } from './components/ReactRoot';
 import React from 'react';
 import { CalendarFooter } from './components/CalendarFooter';
 import { TaskClickTooltip } from './components/TaskClickTooltip';
-import getTasksAsEvents from './utils/query';
+import getTasksAsEvents, { ExtendedProps } from './utils/query';
 import updateTaskDates from './utils/update';
 import openTask from './utils/open';
 import updateTaskStatus from './utils/status';

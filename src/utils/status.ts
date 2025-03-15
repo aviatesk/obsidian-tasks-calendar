@@ -8,19 +8,28 @@ import {
   CircleHelp,
   CircleCheck
 } from 'lucide-react';
+import { getCurrentDateFormatted } from './update';
+
+/**
+ * Interface defining a task status option
+ */
+export interface TaskStatusOption {
+  value: string;        // The actual status character
+  label: string;        // Display name
+  prop?: string;        // Property name to add (optional)
+  preserveOldProp?: boolean; // Whether to preserve old properties when changing to this status
+}
 
 /**
  * Task status options
- * value: actual status character used in markdown
- * label: name displayed in UI
  */
-export const STATUS_OPTIONS = [
+export const STATUS_OPTIONS: TaskStatusOption[] = [
   { value: ' ', label: 'Incomplete' },
   { value: '/', label: 'In Progress' },
-  { value: 'x', label: 'Completed' },
-  { value: 'X', label: 'Completed' },  // Capital X also treated as "Complete"
-  { value: '-', label: 'Cancelled' },
-  { value: '>', label: 'Deferred' },
+  { value: 'x', label: 'Completed', prop: "completion" },
+  { value: 'X', label: 'Completed', prop: "completion" },  // Capital X also treated as "Complete"
+  { value: '-', label: 'Cancelled', prop: "cancelled" },
+  { value: '>', label: 'Deferred', prop: "deferred", preserveOldProp: true },
   { value: '!', label: 'Important' },
   { value: '?', label: 'Question' },
 ];
@@ -118,10 +127,43 @@ export async function updateTaskStatus(
     throw new Error(`Line ${line} is not a valid task`);
   }
 
-  // Update status
-  lines[line] = taskLine.replace(/^\s*- \[.\]/, `- [${newStatus}]`);
+  // Get current status from task line
+  const currentStatusMatch = taskLine.match(/^\s*- \[(.)\]/);
+  const currentStatus = currentStatusMatch ? currentStatusMatch[1] : ' ';
+
+  // Find status properties for old and new status
+  const oldStatusOption = STATUS_OPTIONS.find(option => option.value === currentStatus);
+  const newStatusOption = STATUS_OPTIONS.find(option => option.value === newStatus);
+
+  const oldProp = oldStatusOption?.prop;
+  const newProp = newStatusOption?.prop;
+
+  // Update status in the task marker
+  let updatedLine = taskLine.replace(/^\s*- \[.\]/, `- [${newStatus}]`);
+
+  // Only remove old property if:
+  // 1. It exists
+  // 2. It's different from the new property
+  // 3. The new status does NOT have preserveOldProp set to true
+  if (oldProp && oldProp !== newProp && newStatusOption?.preserveOldProp !== true) {
+    const oldPropertyRegex = new RegExp(`\\s*\\[${oldProp}::\\s*[^\\]]*\\]`);
+    updatedLine = updatedLine.replace(oldPropertyRegex, '');
+  }
+
+  // Add new property if needed
+  if (newProp) {
+    const currentDate = getCurrentDateFormatted();
+    const newPropertyText = ` [${newProp}:: ${currentDate}]`;
+
+    // Check if property already exists
+    const propertyRegex = new RegExp(`\\[${newProp}::\\s*[^\\]]*\\]`);
+    if (!propertyRegex.test(updatedLine)) {
+      updatedLine += newPropertyText;
+    }
+  }
 
   // Write back to file
+  lines[line] = updatedLine;
   await vault.modify(file, lines.join('\n'));
 }
 

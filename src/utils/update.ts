@@ -1,6 +1,26 @@
 import { TFile, Vault } from "obsidian";
 
 /**
+ * Returns current date formatted as YYYY-MM-DD in local time zone
+ *
+ * This function ensures the date is formatted based on the user's local time,
+ * not UTC, which is important for task completion dates to reflect when
+ * the user actually marked the task as complete in their time zone.
+ *
+ * @returns Formatted date string YYYY-MM-DD
+ */
+export function getCurrentDateFormatted(): string {
+  const now = new Date();
+
+  // Get local date components
+  const year = now.getFullYear();
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const day = now.getDate().toString().padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Formats a date for task properties.
  *
  * @param date The date to format

@@ -322,7 +322,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 <div className="section-title">Task Filtering</div>
 
                 {renderItemList(
-                  "Exclude Task Statuses",
+                  "Excluded Task Statuses",
                   "excludedStatuses",
                   newExcludedStatus,
                   setNewExcludedStatus,
@@ -333,7 +333,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 )}
 
                 {renderItemList(
-                  "Include Task Statuses",
+                  "Included Task Statuses",
                   "includedStatuses",
                   newStatus,
                   setNewStatus,
@@ -344,7 +344,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 )}
 
                 {renderItemList(
-                  "Exclude Tags",
+                  "Excluded Tags",
                   "excludedTags",
                   newExcludedTag,
                   setNewExcludedTag,
@@ -355,7 +355,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 )}
 
                 {renderItemList(
-                  "Include Tags",
+                  "Included Tags",
                   "includedTags",
                   newTag,
                   setNewTag,
