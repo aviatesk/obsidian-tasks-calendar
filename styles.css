@@ -466,65 +466,6 @@
   text-align: center;
 }
 
-/* 設定パネルのスタイル */
-.tasks-calendar-container .calendar-settings-panel {
-  position: absolute;
-  bottom: 100%;
-  background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
-  padding: 12px;
-  min-width: 280px;
-  max-height: 70vh; /* Add maximum height for scrollability */
-  overflow-y: auto; /* Enable vertical scrolling when needed */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  margin-bottom: 8px;
-}
-
-/* Mobile-specific adjustments */
-@media screen and (max-width: 768px) {
-  .tasks-calendar-container .calendar-settings-panel {
-    max-height: 60vh; /* Smaller max height on mobile */
-    width: calc(100vw - 40px); /* Take most of the screen width but leave margins */
-    min-width: unset; /* Override min-width for small screens */
-  }
-}
-
-.tasks-calendar-container .tasks-calendar-settings-form .setting-item {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 12px;
-}
-
-.tasks-calendar-container .tasks-calendar-settings-form .setting-item label {
-  margin-bottom: 4px;
-  color: var(--text-muted);
-  font-size: 0.9em;
-  font-weight: 500;
-}
-
-.tasks-calendar-container .tasks-calendar-settings-form .setting-item input[type="text"] {
-  background-color: var(--background-secondary);
-  color: var(--text-normal);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  padding: 6px 8px;
-  font-size: 0.9em;
-}
-
-.tasks-calendar-container .tasks-calendar-checkbox {
-  align-self: flex-start;
-}
-
-/* 設定パネルのヘルプテキスト */
-.tasks-calendar-container .setting-item-description {
-  font-size: 0.8em;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-  font-style: italic;
-}
-
 /* デフォルトカレンダーのセレクション表示強調 */
 option[value="default"] {
   font-weight: bold;
@@ -1373,4 +1314,430 @@ option[value="default"] {
 /* But ensure it's visible ONLY in the more popover with proper styling */
 .tasks-calendar-container .fc-more-popover .fc-event-time {
   display: inline-block !important;
+}
+
+/* Settings Modal - Using hierarchical styling with a parent class */
+.tasks-calendar-settings-modal-portal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.tasks-calendar-settings-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: opacity;
+}
+
+/* Backdrop */
+.tasks-calendar-settings-modal .backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1;
+  animation: fadeIn 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+  pointer-events: auto;
+  will-change: opacity;
+}
+
+/* Content container */
+.tasks-calendar-settings-modal .content {
+  position: relative;
+  z-index: 2;
+  background-color: var(--background-primary);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  width: 560px;
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+  pointer-events: auto;
+  animation: modalSlideIn 0.35s cubic-bezier(0.19, 1, 0.22, 1) both;
+  scrollbar-width: thin;
+  will-change: transform, opacity;
+}
+
+/* Scrollbar styling */
+.tasks-calendar-settings-modal .content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tasks-calendar-settings-modal .content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tasks-calendar-settings-modal .content::-webkit-scrollbar-thumb {
+  background-color: var(--background-modifier-border);
+  border-radius: 3px;
+}
+
+.tasks-calendar-settings-modal .content::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-muted);
+}
+
+/* Header */
+.tasks-calendar-settings-modal .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary-alt);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tasks-calendar-settings-modal .header h2 {
+  margin: 0;
+  font-size: 1.3em;
+  color: var(--text-normal);
+  font-weight: 500;
+  text-align: center;
+  width: 100%;
+}
+
+.tasks-calendar-settings-modal .close-button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: absolute;
+  right: 16px;
+}
+
+.tasks-calendar-settings-modal .close-button:hover {
+  color: var(--text-normal);
+  background-color: var(--background-modifier-hover);
+}
+
+/* Body */
+.tasks-calendar-settings-modal .body {
+  padding: 24px;
+}
+
+/* Form */
+.tasks-calendar-settings-modal .form {
+  width: 100%;
+}
+
+/* Section styling */
+.tasks-calendar-settings-modal .section {
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tasks-calendar-settings-modal .section-title {
+  font-size: 1.1em;
+  font-weight: 500;
+  color: var(--text-accent);
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding-bottom: 8px;
+  width: 100%;
+  text-align: center;
+}
+
+/* Field container */
+.tasks-calendar-settings-modal .field-container {
+  margin-bottom: 24px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Label */
+.tasks-calendar-settings-modal .label {
+  margin-bottom: 8px;
+  color: var(--text-normal);
+  font-weight: 500;
+  font-size: 0.95em;
+  text-align: center;
+}
+
+/* Description */
+.tasks-calendar-settings-modal .description {
+  font-size: 0.8em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  text-align: center;
+  max-width: 90%;
+  line-height: 1.5;
+}
+
+/* Input wrapper */
+.tasks-calendar-settings-modal .input-wrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+/* Input */
+.tasks-calendar-settings-modal input[type="text"] {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+  color: var(--text-normal);
+  width: 100%;
+  font-size: 0.95em;
+  transition: all 0.2s ease;
+}
+
+.tasks-calendar-settings-modal input[type="text"]:focus {
+  border-color: var(--text-accent);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb), 0.2);
+}
+
+/* Input container for status/tags */
+.tasks-calendar-settings-modal .input-container {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+/* Add button */
+.tasks-calendar-settings-modal .add-button {
+  background-color: var(--text-accent);
+  color: var(--text-on-accent);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.tasks-calendar-settings-modal .add-button:hover {
+  background-color: var(--text-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Chips container */
+.tasks-calendar-settings-modal .chips-container {
+  margin-top: 12px;
+  min-height: 45px;
+  padding: 12px;
+  background-color: var(--background-secondary);
+  border-radius: 8px;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+/* Chip */
+.tasks-calendar-settings-modal .chip {
+  display: flex;
+  align-items: center;
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.9em;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.tasks-calendar-settings-modal .chip:hover {
+  border-color: var(--text-accent-hover);
+  background-color: var(--background-secondary-alt);
+}
+
+.tasks-calendar-settings-modal .chip .text {
+  margin-right: 8px;
+}
+
+/* Remove button */
+.tasks-calendar-settings-modal .remove-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.tasks-calendar-settings-modal .remove-button:hover {
+  background-color: rgba(var(--text-accent-rgb), 0.1);
+  color: var(--text-accent);
+}
+
+/* Empty message */
+.tasks-calendar-settings-modal .empty-message {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.9em;
+  text-align: center;
+  width: 100%;
+}
+
+/* Delete button container */
+.tasks-calendar-settings-modal .delete-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--background-modifier-border);
+  width: 100%;
+}
+
+/* Delete button */
+.tasks-calendar-settings-modal .delete-button {
+  background-color: #e57373;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95em;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.tasks-calendar-settings-modal .delete-button:hover {
+  background-color: #f44336;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(244, 67, 54, 0.3);
+}
+
+/* Done button container */
+.tasks-calendar-settings-modal .done-button-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  width: 100%;
+}
+
+/* Done button */
+.tasks-calendar-settings-modal .done-button {
+  background-color: var(--text-accent);
+  color: var(--text-on-accent);
+  padding: 12px 30px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tasks-calendar-settings-modal .done-button:hover {
+  background-color: var(--text-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.tasks-calendar-settings-modal .done-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Add separation between delete and done buttons when they're both present */
+.tasks-calendar-settings-modal .delete-container + .done-button-container {
+  margin-top: 12px;
+  padding-top: 0;
+  border-top: none;
+}
+
+/* Reset button */
+.tasks-calendar-settings-modal .reset-button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 5px;
+  margin-left: 8px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  opacity: 0.6;
+}
+
+.tasks-calendar-settings-modal .field-container:hover .reset-button {
+  opacity: 1;
+}
+
+.tasks-calendar-settings-modal .reset-button:hover {
+  color: var(--text-accent);
+  background-color: var(--background-modifier-hover);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile responsiveness */
+@media screen and (max-width: 768px) {
+  .tasks-calendar-settings-modal .content {
+    width: 95vw;
+    max-height: 85vh;
+  }
+
+  .tasks-calendar-settings-modal .header {
+    padding: 16px;
+  }
+
+  .tasks-calendar-settings-modal .body {
+    padding: 16px;
+  }
+
+  .tasks-calendar-settings-modal .field-container {
+    width: 100%;
+  }
 }
