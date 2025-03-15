@@ -434,41 +434,230 @@
   opacity: 1;
 }
 
-/* カレンダーフッターのスタイル */
+/* ============== CALENDAR FOOTER - NEW STYLING =============== */
 .tasks-calendar-container .calendar-footer {
-  display: flex;
-  align-items: center;
-  padding: 8px 0;
   border-top: 1px solid var(--background-modifier-border);
+  padding: 12px 0 8px;
   margin-top: 10px;
-  font-size: 0.85em;
   position: relative;
 }
 
+.tasks-calendar-container .calendar-footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Calendar Selector Styling */
+.tasks-calendar-container .calendar-selector-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin-right: 16px;
+}
+
 .tasks-calendar-container .calendar-selector-container {
+  position: relative;
   display: flex;
   align-items: center;
-  flex-grow: 1;
+  max-width: 300px;
+  width: 100%;
+  background-color: var(--background-secondary-alt);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 0 8px;
+  height: 42px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.25s ease;
+}
+
+.tasks-calendar-container .calendar-selector-container:hover,
+.tasks-calendar-container .calendar-selector-container:focus-within {
+  border-color: var(--text-accent);
+  background-color: var(--background-secondary);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.tasks-calendar-container .calendar-selector-icon {
+  color: var(--text-accent);
   margin-right: 10px;
+  flex-shrink: 0;
 }
 
 .tasks-calendar-container .calendar-selector {
-  background-color: var(--background-secondary);
+  flex: 1;
+  background: transparent;
+  border: none;
   color: var(--text-normal);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  padding: 4px 8px;
-  margin-left: 8px;
-  font-size: 0.9em;
-  height: auto;
-  width: auto;
-  min-width: 50px;
-  text-align: center;
+  font-size: 0.95em;
+  font-weight: 500;
+  height: 100%;
+  width: 100%;
+  appearance: none;
+  outline: none;
+  cursor: pointer;
 }
 
-/* デフォルトカレンダーのセレクション表示強調 */
-option[value="default"] {
-  font-weight: bold;
+.tasks-calendar-container .calendar-selector-chevron {
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: transform 0.3s ease;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+.tasks-calendar-container .calendar-selector:focus + .calendar-selector-chevron {
+  transform: rotate(180deg);
+  color: var(--text-accent);
+}
+
+.tasks-calendar-container .calendar-selector option {
+  font-size: 14px;
+  padding: 8px;
+}
+
+.tasks-calendar-container .active-calendar-name {
+  margin-top: 4px;
+  font-size: 0.8em;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 250px;
+}
+
+/* Calendar Actions Styling */
+.tasks-calendar-container .calendar-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.tasks-calendar-container .calendar-action-button {
+  background-color: var(--background-secondary-alt);
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.tasks-calendar-container .calendar-action-button:hover {
+  background-color: var(--background-secondary);
+  color: var(--text-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.tasks-calendar-container .calendar-action-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.05);
+}
+
+.tasks-calendar-container .calendar-action-button.active {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-accent);
+  border-color: var(--text-accent);
+}
+
+/* Button-specific styling */
+.tasks-calendar-container .calendar-add-button,
+.tasks-calendar-container .calendar-settings-button,
+.tasks-calendar-container .calendar-refresh-button {
+  color: var(--text-normal);
+  background-color: var(--background-secondary);
+}
+.tasks-calendar-container .calendar-add-button:hover,
+.tasks-calendar-container .calendar-settings-button:hover,
+.tasks-calendar-container .calendar-refresh-button:hover {
+  color: var(--text-accent-hover);
+  background-color: var(--background-modifier-hover);
+}
+
+.tasks-calendar-container .calendar-delete-button {
+  color: var(--text-error);
+  background-color: var(--background-modifier-error);
+}
+.tasks-calendar-container .calendar-delete-button:hover {
+  color: var(--text-error);
+  background-color: var(--background-modifier-error-hover);
+}
+
+/* Default option styling */
+.tasks-calendar-container .calendar-selector option[value="default"] {
+  font-weight: 600;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .tasks-calendar-container .calendar-footer-content {
+    flex-direction: row; /* Keep elements in a row */
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .tasks-calendar-container .calendar-selector-container {
+    max-width: 60%; /* Allow room for action buttons */
+    min-width: 140px;
+    height: 42px;
+    flex: 1;
+  }
+
+  .tasks-calendar-container .calendar-selector {
+    text-overflow: ellipsis;
+    font-size: 0.9em;
+    padding-right: 20px; /* Ensure text doesn't overlap with chevron */
+  }
+
+  .tasks-calendar-container .calendar-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+  }
+
+  .tasks-calendar-container .calendar-action-button {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto; /* Don't allow buttons to grow/shrink */
+  }
+
+  .tasks-calendar-container .calendar-selector-icon,
+  .tasks-calendar-container .calendar-action-button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Make sure very small screens still look good */
+  @media (max-width: 370px) {
+    .tasks-calendar-container .calendar-selector-container {
+      max-width: 50%;
+      min-width: 110px;
+    }
+
+    .tasks-calendar-container .calendar-action-button {
+      width: 34px;
+      height: 34px;
+    }
+
+    .tasks-calendar-container .calendar-actions {
+      gap: 4px;
+    }
+
+    .tasks-calendar-container .calendar-selector-icon,
+    .tasks-calendar-container .calendar-action-button svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
 }
 
 /* Now indicator styling */
@@ -490,7 +679,7 @@ option[value="default"] {
 
 .calendar-action-button {
   background-color: var(--background-secondary);
-  color: var(--text-normal);
+  color: var (--text-normal);
   border: 1px solid var(--background-modifier-border);
   border-radius: 4px;
   width: 28px;
