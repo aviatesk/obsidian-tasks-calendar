@@ -4,14 +4,14 @@ import { DROPDOWN_STATUS_OPTIONS, getStatusIcon } from '../utils/status';
 import { calculateOptimalPosition } from '../utils/position';
 import { Platform } from 'obsidian';
 
-interface StatusPickerModalProps {
+interface StatusPickerDropdownProps {
   currentStatus: string;
   onClose: () => void;
   onSave: (status: string) => void;
   position: { top: number; left: number };
 }
 
-export const StatusPickerModal: React.FC<StatusPickerModalProps> = ({
+export const StatusPickerDropdown: React.FC<StatusPickerDropdownProps> = ({
   currentStatus,
   onClose,
   onSave,

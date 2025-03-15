@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FileText, Pencil, X, Calendar, Tag, Info } from 'lucide-react';
 import { DateTimePickerModal } from './DateTimePickerModal';
-import { StatusPickerModal } from './StatusPickerModal';
+import { StatusPickerDropdown } from './StatusPickerDropdown';
 import { formatStatus, getStatusIcon } from '../utils/status';
 import { Platform } from 'obsidian';
 
@@ -134,7 +134,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     } else {
       // Get clicked element position for the status picker
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-      // Simple positioning - will be refined by calculateOptimalPosition in StatusPickerModal
+      // Simple positioning - will be refined by calculateOptimalPosition in StatusPickerDropdown
       const top = rect.bottom + 5;
       const left = rect.left;
       setStatusPickerPosition({ top, left });
@@ -320,7 +320,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
 
         {/* StatusPicker modal */}
         {showStatusPicker && (
-          <StatusPickerModal
+          <StatusPickerDropdown
             currentStatus={status}
             onClose={() => setShowStatusPicker(false)}
             onSave={handleStatusSave}
@@ -430,7 +430,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
 
       {/* StatusPicker modal */}
       {showStatusPicker && (
-        <StatusPickerModal
+        <StatusPickerDropdown
           currentStatus={status}
           onClose={() => setShowStatusPicker(false)}
           onSave={handleStatusSave}
