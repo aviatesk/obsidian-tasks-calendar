@@ -143,7 +143,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   // Function to get default name based on calendar ID
   const getDefaultName = () => {
-    return `Calendar ${settings.id === 'default' ? 'Default' : ''}`;
+    return settings.id.toUpperCase();
   };
 
   // Helper to render item list (statuses or tags)

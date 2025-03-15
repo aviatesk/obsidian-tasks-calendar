@@ -196,7 +196,6 @@
   margin-right: 8px;
   font-weight: 500;
   font-size: 0.9em;
-  color: var(--text-accent);
 }
 
 /* Event title formatting */
@@ -218,7 +217,11 @@
 /* Dot events specific styling */
 .tasks-calendar-container .fc-more-popover .fc-daygrid-dot-event {
   padding: 6px 10px !important;
-  border-left: 3px solid var(--interactive-accent) !important;
+  background-color: var(--interactive-accent);
+  border-left: 3px solid var(--fc-event-border-color) !important;
+}
+.tasks-calendar-container .fc-more-popover .fc-daygrid-dot-event:hover {
+  background-color: var(--interactive-accent-hover) !important;
 }
 
 .tasks-calendar-container .fc-more-popover .fc-daygrid-dot-event .fc-event-title {
@@ -1354,11 +1357,6 @@
 /* Update the existing selector to not display event time in most places */
 .fc-event-time {
   display: none;
-}
-
-/* But ensure it's visible ONLY in the more popover with proper styling */
-.tasks-calendar-container .fc-more-popover .fc-event-time {
-  display: inline-block !important;
 }
 
 /* Settings Modal - Using hierarchical styling with a parent class */

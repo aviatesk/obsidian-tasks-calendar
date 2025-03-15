@@ -2,7 +2,6 @@ import { Plugin, WorkspaceLeaf } from 'obsidian';
 import { getAPI } from "obsidian-dataview";
 import {
   CalendarSettings,
-  UserCalendarSettings,
   PluginSettings,
   DEFAULT_PLUGIN_SETTINGS,
   DEFAULT_CALENDAR_SETTINGS,

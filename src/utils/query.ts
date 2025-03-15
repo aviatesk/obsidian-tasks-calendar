@@ -76,8 +76,8 @@ export default function getTasksAsEvents(
             // Then check for tag matches
             else if (task.tags && task.tags.length > 0) {
               for (const tag of task.tags) {
-                if (settings.eventPropsMap['#' + tag]) {
-                  eventProps = Object.assign({}, DEFAULT_EVENT_PROPS, settings.eventPropsMap['#' + tag]);
+                if (settings.eventPropsMap[tag]) {
+                  eventProps = Object.assign({}, DEFAULT_EVENT_PROPS, settings.eventPropsMap[tag]);
                   break;
                 }
               }
