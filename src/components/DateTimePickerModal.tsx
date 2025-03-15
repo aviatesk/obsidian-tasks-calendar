@@ -2,6 +2,7 @@ import { Platform } from 'obsidian';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
 import { X, Clock } from 'lucide-react';
 import { FIRST_DAY } from 'src/TasksCalendarSettings';
 import { calculateOptimalPosition } from '../utils/position';
@@ -98,7 +99,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     }
 
     onSave(resultDate, isAllDay);
-  }, [isAllDay, hours, minutes, onSave]);
+  }, [isAllDay, hours, minutes, onSave, selectedDate]); // Added selectedDate to dependency array
 
   // Handle all-day toggle - update immediately
   const handleAllDayChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -192,7 +193,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   useEffect(() => {
     if (calendarRef.current) {
       const calendar = new Calendar(calendarRef.current, {
-        plugins: [dayGridPlugin],
+        plugins: [dayGridPlugin, interactionPlugin ],
         initialView: 'dayGridMonth',
         initialDate: selectedDate,
         headerToolbar: {
@@ -201,7 +202,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
           right: 'next'
         },
         aspectRatio: 0.75,
-        selectable: false,
+        selectable: true,
         events: [],
         navLinks: false,
         firstDay: FIRST_DAY,
@@ -216,6 +217,28 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
             info.el.classList.add('fc-day-selected');
           }
         },
+        dateClick: (info) => {
+          const clickedDate = new Date(info.dateStr);
+          const newDate = new Date(selectedDate);
+          newDate.setFullYear(clickedDate.getFullYear());
+          newDate.setMonth(clickedDate.getMonth());
+          newDate.setDate(clickedDate.getDate());
+
+          // Preserve existing time
+          const currentHours = parseInt(hours, 10) || 0;
+          const currentMinutes = parseInt(minutes, 10) || 0;
+          newDate.setHours(currentHours);
+          newDate.setMinutes(currentMinutes);
+
+          updateSelectedDateHighlight(info.dayEl);
+
+          // Update UI and save immediately
+          handleDateChange(newDate);
+        },
+        datesSet: () => {
+          // Update highlighting when the view changes (e.g., month changes)
+          updateSelectedDateHighlight(selectedDate);
+        },
         dayHeaderFormat: { weekday: 'narrow' },
         fixedWeekCount: false
       });
@@ -223,21 +246,9 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
       calendar.render();
       calendarInstance.current = calendar;
 
+      // Apply the selected date highlight after render
       setTimeout(() => {
-        if (calendarRef.current) {
-          updateSelectedDateHighlight(selectedDate);
-
-          const days = calendarRef.current.querySelectorAll('.fc-daygrid-day');
-          days.forEach(day => {
-            day.addEventListener('click', (e) => {
-              e.stopPropagation();
-              const dateStr = day.getAttribute('data-date');
-              if (dateStr) {
-                handleDateClick(dateStr);
-              }
-            });
-          });
-        }
+        updateSelectedDateHighlight(selectedDate);
       }, 100);
 
       return () => {
@@ -246,50 +257,29 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     }
   }, []); // Only run once on mount
 
-  // Update calendar when selected date changes
-  useEffect(() => {
-    if (calendarInstance.current) {
-      updateSelectedDateHighlight(selectedDate);
-      calendarInstance.current.gotoDate(selectedDate);
-    }
-  }, [selectedDate]);
-
   // Function to highlight the selected date
-  const updateSelectedDateHighlight = (date: Date) => {
+  const updateSelectedDateHighlight = (date: Date | HTMLElement) => {
     if (!calendarRef.current) return;
 
-    // Remove existing selections
+    // Remove existing selections and today highlights
     const selectedCells = calendarRef.current.querySelectorAll('.fc-day-selected');
-    selectedCells.forEach(el => el.classList.remove('fc-day-selected'));
+    selectedCells.forEach((el) => el.classList.remove('fc-day-selected'));
 
-    // Remove today highlights
     const todayCells = calendarRef.current.querySelectorAll('.fc-day-today');
-    todayCells.forEach(el => el.classList.remove('fc-day-today'));
+    todayCells.forEach((el) => el.classList.remove('fc-day-today'));
 
-    // Add new selection
-    const dateStr = date.toISOString().split('T')[0];
-    const newSelectedCell = calendarRef.current.querySelector(`[data-date="${dateStr}"]`);
-    if (newSelectedCell) {
-      newSelectedCell.classList.add('fc-day-selected');
+    if (date instanceof HTMLElement) {
+      date.classList.add('fc-day-selected');
+    } else {
+      // Ensure the date is normalized (time cleared)
+      const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      const dateStr = `${normalizedDate.getFullYear()}-${pad(normalizedDate.getMonth() + 1)}-${pad(normalizedDate.getDate())}`;
+      const newSelectedCell = calendarRef.current.querySelector(`[data-date="${dateStr}"]`);
+      if (newSelectedCell) {
+        newSelectedCell.classList.add('fc-day-selected');
+      }
     }
-  };
-
-  // Handle date click (immediate update)
-  const handleDateClick = (dateStr: string) => {
-    const clickedDate = new Date(dateStr);
-    const newDate = new Date(selectedDate);
-    newDate.setFullYear(clickedDate.getFullYear());
-    newDate.setMonth(clickedDate.getMonth());
-    newDate.setDate(clickedDate.getDate());
-
-    // Preserve existing time
-    const currentHours = parseInt(hours, 10) || 0;
-    const currentMinutes = parseInt(minutes, 10) || 0;
-    newDate.setHours(currentHours);
-    newDate.setMinutes(currentMinutes);
-
-    // Update UI and save immediately
-    handleDateChange(newDate);
   };
 
   // Hours input change handler with validation
