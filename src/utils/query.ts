@@ -9,6 +9,7 @@ export interface ExtendedProps {
   taskText: string;
   status: string;
   priority: number;
+  tags: string[];
 }
 
 export default function getTasksAsEvents(
@@ -91,6 +92,7 @@ export default function getTasksAsEvents(
               line: task.line,
               taskText: task.text,
               status: task.status,
+              tags: task.tags,
               priority,
             };
             events.push({

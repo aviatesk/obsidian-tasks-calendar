@@ -224,6 +224,24 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     );
   };
 
+  // Format tags with code-like styling
+  const formatTagsDisplay = () => {
+    if (!tags || tags.length === 0) return null;
+
+    return (
+      <div className="task-click-tooltip-info-item">
+        <Tag size={isMobile ? 18 : 16} className="task-click-tooltip-icon-small" />
+        <div className="task-click-tooltip-tags-container">
+          {tags.map((tag, index) => (
+            <span key={index} className="task-click-tooltip-tag-code">
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   // Render different container based on mobile or desktop
   return isMobile ? (
     <div className="mobile-modal-overlay">
@@ -275,14 +293,9 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
               </div>
             )}
 
-            {tags && tags.length > 0 && (
-              <div className="task-click-tooltip-info-item">
-                <Tag size={18} className="task-click-tooltip-icon-small" />
-                <span className="task-click-tooltip-info-text">{tags.join(', ')}</span>
-              </div>
-            )}
-
             {formatDateDisplay()}
+
+            {formatTagsDisplay()}
 
             <div
               className="task-click-tooltip-info-item task-click-tooltip-file-link"
@@ -385,14 +398,9 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
             </div>
           )}
 
-          {tags && tags.length > 0 && (
-            <div className="task-click-tooltip-info-item">
-              <Tag size={16} className="task-click-tooltip-icon-small" />
-              <span className="task-click-tooltip-info-text">{tags.join(', ')}</span>
-            </div>
-          )}
-
           {formatDateDisplay()}
+
+          {formatTagsDisplay()}
 
           <div
             className="task-click-tooltip-info-item task-click-tooltip-file-link"
