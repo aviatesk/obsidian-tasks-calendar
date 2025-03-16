@@ -1,4 +1,4 @@
-import { TFile, Vault } from "obsidian";
+import { Notice, TFile, Vault } from "obsidian";
 
 /**
  * Returns current date formatted as YYYY-MM-DD in local time zone
@@ -54,6 +54,37 @@ function formatDateForTask(date: Date, isAllDay: boolean, isEndDate: boolean): s
 }
 
 /**
+ * Helper function to update or add a date property in a task line
+ *
+ * @param line Current line text
+ * @param property Property name
+ * @param formattedDate Formatted date value
+ * @returns Updated line text
+ */
+function updateDateProperty(line: string, property: string, formattedDate: string): string {
+  const propertyPattern = new RegExp(`\\[${property}::\\s*[^\\]]*\\]`);
+  const updatedProperty = `[${property}:: ${formattedDate}]`;
+
+  if (propertyPattern.test(line)) {
+    return line.replace(propertyPattern, updatedProperty);
+  } else {
+    return `${line} ${updatedProperty}`;
+  }
+}
+
+/**
+ * Removes a specific property from a task line
+ *
+ * @param line Current line text
+ * @param property Property name to remove
+ * @returns Updated line with property removed
+ */
+function removeProperty(line: string, property: string): string {
+  const propertyPattern = new RegExp(`\\s*\\[${property}::\\s*[^\\]]*\\]`);
+  return line.replace(propertyPattern, '');
+}
+
+/**
  * Updates task dates in a file.
  *
  * @param vault The Obsidian vault to access files
@@ -78,79 +109,54 @@ export default async function updateTaskDates(
   wasAllDay: boolean,
 ): Promise<void> {
   try {
-    // Read the file content once
-    const content = await vault.read(file);
-    const lines = content.split('\n');
+    await vault.process(file, (content) => {
+      const lines = content.split('\n');
 
-    if (line >= lines.length) {
-      throw new Error(`Invalid line number: ${line}`);
-    }
-
-    const taskLine = lines[line];
-    let updatedLine = taskLine;
-
-    // Handle conversion from non-all-day to all-day without end date
-    if (isAllDay && !wasAllDay && !newEnd) {
-      // Remove start date property
-      const startPropertyPattern = new RegExp(`\\s*\\[${startDateProperty}::\\s*[^\\]]*\\]`);
-      updatedLine = updatedLine.replace(startPropertyPattern, '');
-
-      // Update end date property
-      const formattedDate = formatDateForTask(newStart, isAllDay, false);
-      const endPropertyPattern = new RegExp(`\\[${endDateProperty}::\\s*[^\\]]*\\]`);
-      const updatedEndProperty = `[${endDateProperty}:: ${formattedDate}]`;
-
-      if (endPropertyPattern.test(updatedLine)) {
-        updatedLine = updatedLine.replace(endPropertyPattern, updatedEndProperty);
-      } else {
-        updatedLine += ` ${updatedEndProperty}`;
-      }
-    }
-    // Handle events with both start and end dates
-    else if (newEnd) {
-      // Update start date property
-      const formattedStartDate = formatDateForTask(newStart, isAllDay, false);
-      const startPropertyPattern = new RegExp(`\\[${startDateProperty}::\\s*[^\\]]*\\]`);
-      const updatedStartProperty = `[${startDateProperty}:: ${formattedStartDate}]`;
-
-      if (startPropertyPattern.test(updatedLine)) {
-        updatedLine = updatedLine.replace(startPropertyPattern, updatedStartProperty);
-      } else {
-        updatedLine += ` ${updatedStartProperty}`;
+      if (line >= lines.length) {
+        throw new Error(`Line number ${line} exceeds file length (${lines.length} lines)`);
       }
 
-      // Update end date property
-      const formattedEndDate = formatDateForTask(newEnd, isAllDay, true);
-      const endPropertyPattern = new RegExp(`\\[${endDateProperty}::\\s*[^\\]]*\\]`);
-      const updatedEndProperty = `[${endDateProperty}:: ${formattedEndDate}]`;
+      const taskLine = lines[line];
+      let updatedLine = taskLine;
 
-      if (endPropertyPattern.test(updatedLine)) {
-        updatedLine = updatedLine.replace(endPropertyPattern, updatedEndProperty);
-      } else {
-        updatedLine += ` ${updatedEndProperty}`;
+      // Handle conversion from non-all-day to all-day without end date
+      if (isAllDay && !wasAllDay && !newEnd) {
+        // Remove start date property
+        updatedLine = removeProperty(updatedLine, startDateProperty);
+
+        // Update end date property
+        const formattedDate = formatDateForTask(newStart, isAllDay, false);
+        updatedLine = updateDateProperty(updatedLine, endDateProperty, formattedDate);
       }
-    }
-    // Handle single-date events
-    else {
-      // Update only end date property
-      const formattedDate = formatDateForTask(newStart, isAllDay, false);
-      const endPropertyPattern = new RegExp(`\\[${endDateProperty}::\\s*[^\\]]*\\]`);
-      const updatedEndProperty = `[${endDateProperty}:: ${formattedDate}]`;
+      // Handle events with both start and end dates
+      else if (newEnd) {
+        // Update start date property
+        const formattedStartDate = formatDateForTask(newStart, isAllDay, false);
+        updatedLine = updateDateProperty(updatedLine, startDateProperty, formattedStartDate);
 
-      if (endPropertyPattern.test(updatedLine)) {
-        updatedLine = updatedLine.replace(endPropertyPattern, updatedEndProperty);
-      } else {
-        updatedLine += ` ${updatedEndProperty}`;
+        // Update end date property
+        const formattedEndDate = formatDateForTask(newEnd, isAllDay, true);
+        updatedLine = updateDateProperty(updatedLine, endDateProperty, formattedEndDate);
       }
-    }
+      // Handle single-date events
+      else {
+        // Update only end date property
+        const formattedDate = formatDateForTask(newStart, isAllDay, false);
+        updatedLine = updateDateProperty(updatedLine, endDateProperty, formattedDate);
+      }
 
-    // Only write to the file if there was a change
-    if (updatedLine !== taskLine) {
-      lines[line] = updatedLine;
-      await vault.modify(file, lines.join('\n'));
-    }
+      // Only update the line if there was a change
+      if (updatedLine !== taskLine) {
+        lines[line] = updatedLine;
+        return lines.join('\n');
+      }
+
+      // Return original content if no changes were made
+      return content;
+    });
   } catch (error) {
     console.error("Error updating task dates:", error);
+    new Notice(`Failed to update task: ${error.message}`);
     throw error;
   }
 }
