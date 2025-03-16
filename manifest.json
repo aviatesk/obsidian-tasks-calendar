@@ -6,5 +6,9 @@
 	"description": "Display tasks with date using FullCalendar",
 	"author": "",
 	"authorUrl": "",
-	"isDesktopOnly": false
+	"isDesktopOnly": false,
+	"fundingUrl": {
+		"Buy Me a Coffee": "https://buymeacoffee.com/aviatesk",
+		"Ko-fi": "https://ko-fi.com/aviatesk"
+	}
 }

@@ -21,6 +21,9 @@ export default class TasksCalendarPlugin extends Plugin {
   async onload() {
     await this.loadSettings();
 
+    // for first time users, save the default settings
+    await this.saveSettings();
+
     const dataviewApi = this.dataviewApi
     if (dataviewApi) {
       const oldOnChange = dataviewApi.index.onChange;
@@ -80,11 +83,18 @@ export default class TasksCalendarPlugin extends Plugin {
   }
 
   private async loadSettings() {
-    this._settings = await this.loadData();
+    let loaded: PluginSettings = await this.loadData();
+    if (!loaded)
+      loaded = DEFAULT_PLUGIN_SETTINGS;
+    this._settings = loaded;
   }
 
   async saveSettings() {
-    await this.saveData(this._settings);
+    const calendars = this._settings.calendars.map(toUserCalendarSettings);
+    await this.saveData({
+      activeCalendar: this._settings.activeCalendar,
+      calendars
+    });
   }
 
   // Accessor methods for plugin settings
@@ -105,8 +115,7 @@ export default class TasksCalendarPlugin extends Plugin {
   }
 
   async addCalendar(settings: CalendarSettings): Promise<void> {
-    const userSettings = toUserCalendarSettings(settings);
-    this._settings.calendars.push(userSettings);
+    this._settings.calendars.push(settings);
     await this.saveSettings();
   }
 
@@ -141,16 +150,12 @@ export default class TasksCalendarPlugin extends Plugin {
   }
 
   async saveCalendarSettings(settings: CalendarSettings): Promise<void> {
-    // Convert to minimal user settings before saving
-    const userSettings = toUserCalendarSettings(settings);
-
     const index = this._settings.calendars.findIndex(c => c.id === settings.id);
     if (index > -1) {
-      this._settings.calendars[index] = userSettings;
+      this._settings.calendars[index] = settings;
     } else {
-      this._settings.calendars.push(userSettings);
+      this._settings.calendars.push(settings);
     }
-
     await this.saveSettings();
   }
 

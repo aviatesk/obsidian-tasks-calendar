@@ -586,11 +586,10 @@
 
 .tasks-calendar-container .calendar-delete-button {
   color: var(--text-error);
-  background-color: var(--background-modifier-error);
 }
 .tasks-calendar-container .calendar-delete-button:hover {
   color: var(--text-error);
-  background-color: var(--background-modifier-error-hover);
+  background-color: var(--background-modifier-hover);
 }
 
 /* Default option styling */

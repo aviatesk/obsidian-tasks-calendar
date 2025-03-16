@@ -1,101 +1,146 @@
 # Tasks Calendar
 
-An obsidian plugin to show tasks with dates with [FullCalendar](https://fullcalendar.io/).
-Just being used for myself. Don't expect any documentation or anything.
+Tasks Calendar is an [Obsidian.md](https://obsidian.md/) plugin that leverages [FullCalendar](https://fullcalendar.io/) to visualize tasks on an interactive calendar. By integrating with the [Dataview](https://blacksmithgu.github.io/obsidian-dataview/) plugin, it automatically gathers tasks from your notes and presents them in a flexible, easy-to-manage interface.
 
----
+## Supported Task Formats
 
-# Obsidian Sample Plugin
+- Supports tasks defined with basic dates:
+  ```
+  - [ ] Task description [due:: YYYY-MM-DD]
+  ```
+- Supports multi-day tasks:
+  ```
+  - [ ] Task description [start:: YYYY-MM-DD] [due:: YYYY-MM-DD]
+  ```
+- Supports tasks with specific date and time:
+  ```
+  - [ ] Task description [due:: YYYY-MM-DDTHH:mm]
+  ```
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+That's it. You are free to write your tasks wherever you want.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## Features
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+- **Dynamic Task Aggregation**:
+  Scans your vault for tasks regardless of location.
+  - Customizable Dataview queries to filter target files
+  - Filter tasks by status or tags
+  - Supports multi-day tasks and events with specific times
 
-## First time developing plugins?
+- **Interactive Calendar Interface**:
+  Offers multiple views: Month, Week, 3 Days, Day, and List.
+  - Drag & drop to update task dates
+  - Intuitive tooltips and popovers for quick task edits
 
-Quick starting guide for new plugin devs:
+- **Customization Options**:
+  Configure calendar settings such as view type, first day of the week, and date properties.
+  Manage multiple calendars with individual settings.
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+## Preview
 
-## Releasing new releases
+### Calendar Views
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="./images/month-view.png" width="300" style="height:auto;" /><br>
+        <strong>Month View</strong><br>
+        <small>Overview of all tasks for the month</small>
+      </td>
+      <td align="center">
+        <img src="./images/3days-view.png" width="300" style="height:auto;" /><br>
+        <strong>3 Days View</strong><br>
+        <small>Focused view of upcoming days</small>
+      </td>
+    </tr>
+  </table>
+</div>
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+### Task Management
 
-## Adding your plugin to the community plugin list
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="./images/eventpopover.png" width="300" style="height:auto;" /><br>
+        <strong>Task Popover</strong><br>
+        <small>Quickly edit task details</small>
+      </td>
+      <td align="center">
+        <img src="./images/eventclicktooltip.png" width="300" style="height:auto;" /><br>
+        <strong>Task Tooltip</strong><br>
+        <small>View task information at a glance</small>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <img src="./images/statuspicker.png" width="300" style="height:auto;" /><br>
+        <strong>Status Picker</strong><br>
+        <small>Update task status effortlessly</small>
+      </td>
+      <td align="center">
+        <img src="./images/datetimepicker.png" width="300" style="height:auto;" /><br>
+        <strong>Date Time Picker</strong><br>
+        <small>Set precise task schedules</small>
+      </td>
+    </tr>
+  </table>
+</div>
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+## Installation
 
-## How to use
+1. Ensure the [Dataview](https://blacksmithgu.github.io/obsidian-dataview/) plugin is installed.
+2. Run `npm install && npm run build` to generate the `main.js` file.
+3. Copy `main.js`, `styles.css`, and `manifest.json` to:
+   ```
+   VaultFolder/.obsidian/plugins/tasks-calendar/
+   ```
+4. Enable the plugin via Obsidian’s settings.
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+## Usage
 
-## Manually installing the plugin
+- **Opening the Calendar**
+  Use the ribbon icon or the `Open Tasks Calendar` command. The calendar view opens automatically on startup after a brief delay.
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+- **Interacting with Tasks**
+  Click a task to update its details, or drag & drop to adjust dates. The view refreshes automatically when tasks are updated in your vault.
 
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code.
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint .\src\`
+## Related Plugins
 
-## Funding URL
+### Comparison with obsidian-full-calendar
 
-You can include funding URLs where people who use your plugin can financially support it.
+[obsidian-full-calendar](https://github.com/obsidian-community/obsidian-full-calendar) is a similar plugin that also uses the FullCalendar library. The key difference is in how tasks are managed:
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+|  | Tasks Calendar | obsidian-full-calendar |
+|--|---------------|---------------|
+| **Task Storage** | Tasks can be written anywhere in your vault | One note per task approach |
+| **Task Discovery** | Uses Dataview to scan and aggregate tasks | Relies on dedicated note properties |
+| **Philosophy** | Freedom to organize tasks in any note structure | Structured approach with dedicated notes |
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
-```
+### Compatibility with Tasks Plugin
 
-If you have multiple URLs, you can also do:
+Tasks Calendar works seamlessly with the [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin as both share similar philosophies for task management:
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
-```
+- Both allow tasks to be written anywhere in your vault
+- Both scan your vault to gather and display tasks
+- Use Tasks for powerful task filtering and management
+- Use Tasks Calendar for visual calendar representation and simple task management
 
-## API Documentation
+### Feature Parity Note
 
-See https://github.com/obsidianmd/obsidian-api
+Tasks Calendar is not intended to be a direct replacement for obsidian-full-calendar.
+Certain obsidian-full-calendar features (like Google Calendar integration) may or may not be added in the future.
+
+## License
+
+Distributed under the MIT License.
+
+## Support
+
+If you find this plugin useful and would like to support its development, you can donate via:
+
+- [Ko-fi](https://ko-fi.com/aviatesk)
+- [Buy Me A Coffee](https://www.buymeacoffee.com/aviatesk)
+
+Your support helps maintain and improve Tasks Calendar! Thank you!🙏

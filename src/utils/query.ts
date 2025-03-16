@@ -82,8 +82,6 @@ export default function getTasksAsEvents(
                 }
               }
             }
-            if (eventProps.forceAllDay)
-              allDay = true;
             let priority = eventProps.priority;
             if (!allDay) // give a priority to non-all-day events
               priority += 1;
@@ -98,6 +96,7 @@ export default function getTasksAsEvents(
             events.push({
               textColor: eventProps.textColor,
               backgroundColor: eventProps.backgroundColor,
+              display: eventProps.display,
               title: cleanText,
               start: startDate,
               end: endDate,

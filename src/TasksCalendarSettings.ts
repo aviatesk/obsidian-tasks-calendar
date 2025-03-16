@@ -1,8 +1,14 @@
 export interface EventProps {
   textColor?: string,
   backgroundColor?: string,
+  display?: string,
   priority?: number,
-  forceAllDay?: boolean, // HACK for styling with past non-all-day events
+}
+interface DefaultEventProps {
+  textColor: string,
+  backgroundColor: string,
+  display: string,
+  priority: number,
 }
 
 /**
@@ -52,18 +58,18 @@ export interface CalendarSettings {
 
 export interface PluginSettings {
   activeCalendar: string;
-  calendars: UserCalendarSettings[];
+  calendars: CalendarSettings[];
 }
 
 export const VIEW_TYPE = 'tasks-calendar-view';
 
 export const HOVER_LINK_SOURCE = "tasks-calendar-hover-link"
 
-export const DEFAULT_EVENT_PROPS = {
+export const DEFAULT_EVENT_PROPS: DefaultEventProps = {
   textColor: 'var(--text-on-accent)',
   backgroundColor: 'var(--interactive-accent)',
+  display: 'auto',
   priority: 0,
-  forceAllDay: false,
 }
 
 export const DEFAULT_CALENDAR_SETTINGS: CalendarSettings = {
@@ -83,13 +89,13 @@ export const DEFAULT_CALENDAR_SETTINGS: CalendarSettings = {
   includedTags: [],
   eventPropsMap: {
     // E.g., include completed status with a different style
-    // 'x': { textColor: 'var(--text-faint)', backgroundColor: 'var(--background-secondary)', forceAllDay: true, priority: -1 },
+    // 'x': { textColor: 'var(--text-faint)', backgroundColor: 'var(--background-secondary)', display: 'block', priority: -1 },
   },
 }
 
 export const DEFAULT_PLUGIN_SETTINGS: PluginSettings = {
   activeCalendar: 'default',
-  calendars: [],
+  calendars: [DEFAULT_CALENDAR_SETTINGS],
 };
 
 /**
