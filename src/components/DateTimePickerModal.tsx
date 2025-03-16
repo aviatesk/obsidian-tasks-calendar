@@ -70,7 +70,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     }
 
     return resultDate;
-  }, [selectedDate, isAllDay, hours, minutes]);
+  },  [selectedDate, isAllDay, hours, minutes]);
 
   // Handle date changes - update immediately
   const handleDateChange = useCallback((newDate: Date) => {
