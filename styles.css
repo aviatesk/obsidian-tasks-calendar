@@ -1320,6 +1320,7 @@
   padding: 16px;
 }
 
+.is-mobile .task-click-tooltip-open-button,
 .is-mobile .task-click-tooltip-close-button,
 .is-mobile .date-time-picker-close-button,
 .is-mobile .status-picker-close-button {
@@ -1782,4 +1783,187 @@
   .tasks-calendar-settings-modal .field-container {
     width: 100%;
   }
+}
+
+/* Task text editing container */
+.task-click-tooltip-main-text-container {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.task-click-tooltip-main-text {
+  font-family: var(--font-text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.6;
+  font-size: 1.05em;
+  color: var(--text-normal);
+  padding: 4px 8px;
+  flex-grow: 1;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.task-click-tooltip-main-text:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+/* Edit button styling */
+.task-click-tooltip-edit-button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  padding: 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  margin-top: 2px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.task-click-tooltip-main-text-container:hover .task-click-tooltip-edit-button {
+  opacity: 0.8;
+}
+
+.task-click-tooltip-edit-button:hover {
+  opacity: 1 !important;
+  color: var(--text-accent);
+  background-color: var(--background-modifier-hover);
+}
+
+/* Text editing container */
+.task-click-tooltip-edit-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+/* Text editing textarea */
+.task-click-tooltip-edit-textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary-alt, var(--background-secondary));
+  color: var(--text-normal);
+  font-family: var(--font-text);
+  font-size: 1em;
+  line-height: 1.5;
+  resize: none;
+  overflow-y: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  align-content: center;
+}
+
+.task-click-tooltip-edit-textarea:focus {
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb, 0, 120, 212), 0.1);
+  outline: none;
+}
+
+/* Edit action buttons */
+.task-click-tooltip-edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.task-click-tooltip-save-button,
+.task-click-tooltip-cancel-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.9em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 70px;
+  justify-content: center;
+}
+
+.task-click-tooltip-save-button {
+  background-color: var(--text-accent);
+  color: var(--text-on-accent);
+  border: none;
+}
+
+.task-click-tooltip-save-button:hover {
+  background-color: var(--text-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.task-click-tooltip-save-button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.task-click-tooltip-cancel-button {
+  background-color: var(--background-secondary-alt, var(--background-secondary));
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.task-click-tooltip-cancel-button:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.task-click-tooltip-save-button:disabled,
+.task-click-tooltip-cancel-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Mobile-specific styles */
+.is-mobile .task-click-tooltip-edit-container {
+  gap: 12px;
+}
+
+.is-mobile .task-click-tooltip-edit-textarea {
+  padding: 14px;
+  font-size: 1.05em;
+  min-height: 80px;
+}
+
+.is-mobile .task-click-tooltip-edit-actions {
+  flex-direction: row; /* Keep normal order on mobile */
+}
+
+.is-mobile .task-click-tooltip-edit-actions button {
+  padding: 8px 12px;
+  font-size: 0.95em;
+  flex: 1; /* Make buttons expand to fill space */
+}
+
+/* Improve focus styles for accessibility */
+.task-click-tooltip-save-button:focus,
+.task-click-tooltip-cancel-button:focus {
+  outline: 2px solid var(--text-accent);
+  outline-offset: 2px;
+}
+
+.task-click-tooltip-save-button:focus:not(:focus-visible),
+.task-click-tooltip-cancel-button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.task-click-tooltip-save-button:focus-visible,
+.task-click-tooltip-cancel-button:focus-visible {
+  outline: 2px solid var(--text-accent);
+  outline-offset: 2px;
 }

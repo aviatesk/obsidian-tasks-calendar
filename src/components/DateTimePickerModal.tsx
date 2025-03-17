@@ -126,7 +126,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   }, [createResultDate, onSave]);
 
   // Handle time input changes with a short debounce
-  const handleTimeInputChange = useCallback((newValue: string, setter: React.Dispatch<React.SetStateAction<string>>, isHoursSetter: boolean) => {
+  const handleTimeInputChange = useCallback((newValue: string, setter: React.Dispatch<React.SetStateAction<string>>) => {
     setter(newValue);
 
     // Use a short debounce for time inputs to avoid excessive updates while typing
@@ -287,7 +287,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     const value = e.target.value;
 
     if (value === '') {
-      handleTimeInputChange('', setHours, true);
+      handleTimeInputChange('', setHours);
       return;
     }
 
@@ -298,11 +298,11 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
     if (hoursInputFocused) {
       if (numValue <= 23) {
-        handleTimeInputChange(numericValue, setHours, true);
+        handleTimeInputChange(numericValue, setHours);
       }
     } else {
       if (numValue >= 0 && numValue <= 23) {
-        handleTimeInputChange(numValue.toString().padStart(2, '0'), setHours, true);
+        handleTimeInputChange(numValue.toString().padStart(2, '0'), setHours);
       }
     }
   };
@@ -312,7 +312,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     const value = e.target.value;
 
     if (value === '') {
-      handleTimeInputChange('', setMinutes, false);
+      handleTimeInputChange('', setMinutes);
       return;
     }
 
@@ -323,11 +323,11 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
     if (minutesInputFocused) {
       if (numValue <= 59) {
-        handleTimeInputChange(numericValue, setMinutes, false);
+        handleTimeInputChange(numericValue, setMinutes);
       }
     } else {
       if (numValue >= 0 && numValue <= 59) {
-        handleTimeInputChange(numValue.toString().padStart(2, '0'), setMinutes, false);
+        handleTimeInputChange(numValue.toString().padStart(2, '0'), setMinutes);
       }
     }
   };
@@ -378,7 +378,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   };
 
   // Handle select changes for mobile (immediate update)
-  const handleSelectChange = (value: string, setter: React.Dispatch<React.SetStateAction<string>>, isHours: boolean) => {
+  const handleSelectChange = (value: string, setter: React.Dispatch<React.SetStateAction<string>>) => {
     setter(value);
 
     // Save immediately
@@ -429,7 +429,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
               <div className="time-input-with-controls">
                 <select
                   value={hours}
-                  onChange={(e) => handleSelectChange(e.target.value, setHours, true)}
+                  onChange={(e) => handleSelectChange(e.target.value, setHours)}
                 >
                   {Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0')).map((val) => (
                     <option key={val} value={val}>{val}</option>
@@ -440,7 +440,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
               <div className="time-input-with-controls">
                 <select
                   value={minutes}
-                  onChange={(e) => handleSelectChange(e.target.value, setMinutes, false)}
+                  onChange={(e) => handleSelectChange(e.target.value, setMinutes)}
                 >
                   {Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0')).map((val) => (
                     <option key={val} value={val}>{val}</option>

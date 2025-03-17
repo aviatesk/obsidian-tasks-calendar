@@ -9,6 +9,12 @@ import {
   CircleCheck
 } from 'lucide-react';
 import { getCurrentDateFormatted } from './update';
+import {
+  parseTask,
+  reconstructTask,
+  updateTaskStatus as updateTaskStatusInParser,
+  setTaskProperty
+} from './parse';
 
 /**
  * Interface defining a task status option
@@ -112,65 +118,63 @@ export async function updateTaskStatus(
   newStatus: string
 ): Promise<void> {
   try {
-    await vault.process(file, (content) => {
-      const lines = content.split('\n');
+    const content = await vault.read(file);
+    const lines = content.split('\n');
 
-      // Check if line number is valid
-      if (line < 0 || line >= lines.length) {
-        throw new Error(`Invalid line number: ${line}`);
+    // Check if line number is valid
+    if (line < 0 || line >= lines.length) {
+      throw new Error(`Invalid line number: ${line}`);
+    }
+
+    const taskLine = lines[line];
+
+    // Parse the task using our new parser
+    const parsedTask = parseTask(taskLine);
+
+    // Verify line contains a valid task
+    if (!parsedTask) {
+      throw new Error(`Line ${line} is not a valid task`);
+    }
+
+    // Get the current status and find options
+    const currentStatus = parsedTask.status;
+    const oldStatusOption = STATUS_OPTIONS.find(option => option.value === currentStatus);
+    const newStatusOption = STATUS_OPTIONS.find(option => option.value === newStatus);
+
+    const oldProp = oldStatusOption?.prop;
+    const newProp = newStatusOption?.prop;
+
+    // Update the task status
+    let updatedTask = updateTaskStatusInParser(parsedTask, newStatus);
+
+    // Only remove old property if:
+    // 1. It exists
+    // 2. It's different from the new property
+    // 3. The new status does NOT have preserveOldProp set to true
+    if (oldProp && oldProp !== newProp && newStatusOption?.preserveOldProp !== true) {
+      // Remove old property using our helper function
+      if (updatedTask.propertiesBeforeContent.has(oldProp)) {
+        updatedTask.propertiesBeforeContent.delete(oldProp);
       }
-
-      const taskLine = lines[line];
-
-      // Verify line contains a task
-      if (!taskLine.match(/^\s*- \[.\]/)) {
-        throw new Error(`Line ${line} is not a valid task`);
+      if (updatedTask.propertiesAfterContent.has(oldProp)) {
+        updatedTask.propertiesAfterContent.delete(oldProp);
       }
+    }
 
-      // Get current status from task line
-      const currentStatusMatch = taskLine.match(/^\s*- \[(.)\]/);
-      const currentStatus = currentStatusMatch ? currentStatusMatch[1] : ' ';
+    // Add new property if needed
+    if (newProp) {
+      const currentDate = getCurrentDateFormatted();
+      updatedTask = setTaskProperty(updatedTask, newProp, currentDate);
+    }
 
-      // Find status properties for old and new status
-      const oldStatusOption = STATUS_OPTIONS.find(option => option.value === currentStatus);
-      const newStatusOption = STATUS_OPTIONS.find(option => option.value === newStatus);
+    // Reconstruct the task line
+    const updatedLine = reconstructTask(updatedTask);
 
-      const oldProp = oldStatusOption?.prop;
-      const newProp = newStatusOption?.prop;
-
-      // Update status in the task marker
-      let updatedLine = taskLine.replace(/^\s*- \[.\]/, `- [${newStatus}]`);
-
-      // Only remove old property if:
-      // 1. It exists
-      // 2. It's different from the new property
-      // 3. The new status does NOT have preserveOldProp set to true
-      if (oldProp && oldProp !== newProp && newStatusOption?.preserveOldProp !== true) {
-        const oldPropertyRegex = new RegExp(`\\s*\\[${oldProp}::\\s*[^\\]]*\\]`);
-        updatedLine = updatedLine.replace(oldPropertyRegex, '');
-      }
-
-      // Add new property if needed
-      if (newProp) {
-        const currentDate = getCurrentDateFormatted();
-        const newPropertyText = ` [${newProp}:: ${currentDate}]`;
-
-        // Check if property already exists
-        const propertyRegex = new RegExp(`\\[${newProp}::\\s*[^\\]]*\\]`);
-        if (!propertyRegex.test(updatedLine)) {
-          updatedLine += newPropertyText;
-        }
-      }
-
-      // Only update the line if there was a change
-      if (updatedLine !== taskLine) {
-        lines[line] = updatedLine;
-        return lines.join('\n');
-      }
-
-      // Return original content if no changes were made
-      return content;
-    });
+    // Only update the line if there was a change
+    if (updatedLine !== taskLine) {
+      lines[line] = updatedLine;
+      await vault.modify(file, lines.join('\n'));
+    }
   } catch (error) {
     console.error("Error updating task status:", error);
     new Notice(`Failed to update task status: ${error.message}`);

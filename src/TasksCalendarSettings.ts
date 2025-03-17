@@ -36,6 +36,7 @@ export interface UserCalendarSettings {
   excludedTags?: string[];       // excluded tags, tasks with these tags will be filtered out
   includedTags?: string[];       // included tags, empty array means including every task
   eventPropsMap?: EventPropsMap  // event info map
+  newTaskFilePath?: string;      // New setting for task creation file path
 }
 
 /**
@@ -54,6 +55,7 @@ export interface CalendarSettings {
   excludedTags: string[];       // excluded tags, tasks with these tags will be filtered out
   includedTags: string[];       // included tags, empty array means including every task
   eventPropsMap: EventPropsMap  // event info map
+  newTaskFilePath: string;      // New setting for task creation file path
 }
 
 export interface PluginSettings {
@@ -91,6 +93,7 @@ export const DEFAULT_CALENDAR_SETTINGS: CalendarSettings = {
     // E.g., include completed status with a different style
     // 'x': { textColor: 'var(--text-faint)', backgroundColor: 'var(--background-secondary)', display: 'block', priority: -1 },
   },
+  newTaskFilePath: 'Tasks.md' // Default file path for new tasks
 }
 
 export const DEFAULT_PLUGIN_SETTINGS: PluginSettings = {
@@ -117,35 +120,28 @@ export function toUserCalendarSettings(settings: CalendarSettings): UserCalendar
   };
 
   // Only include properties that differ from defaults
-  if (settings.viewType !== DEFAULT_CALENDAR_SETTINGS.viewType) {
+  if (settings.viewType !== DEFAULT_CALENDAR_SETTINGS.viewType)
     userSettings.viewType = settings.viewType;
-  }
-  if (settings.query !== DEFAULT_CALENDAR_SETTINGS.query) {
+  if (settings.query !== DEFAULT_CALENDAR_SETTINGS.query)
     userSettings.query = settings.query;
-  }
-  if (settings.dateProperty !== DEFAULT_CALENDAR_SETTINGS.dateProperty) {
+  if (settings.dateProperty !== DEFAULT_CALENDAR_SETTINGS.dateProperty)
     userSettings.dateProperty = settings.dateProperty;
-  }
-  if (settings.startDateProperty !== DEFAULT_CALENDAR_SETTINGS.startDateProperty) {
+  if (settings.startDateProperty !== DEFAULT_CALENDAR_SETTINGS.startDateProperty)
     userSettings.startDateProperty = settings.startDateProperty;
-  }
+  if (settings.newTaskFilePath !== DEFAULT_CALENDAR_SETTINGS.newTaskFilePath)
+    userSettings.newTaskFilePath = settings.newTaskFilePath;
 
   // For arrays and objects, we need to check if they're different
-  if (JSON.stringify(settings.includedStatuses) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.includedStatuses)) {
+  if (JSON.stringify(settings.includedStatuses) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.includedStatuses))
     userSettings.includedStatuses = settings.includedStatuses;
-  }
-  if (JSON.stringify(settings.includedTags) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.includedTags)) {
+  if (JSON.stringify(settings.includedTags) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.includedTags))
     userSettings.includedTags = settings.includedTags;
-  }
-  if (JSON.stringify(settings.excludedStatuses) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.excludedStatuses)) {
+  if (JSON.stringify(settings.excludedStatuses) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.excludedStatuses))
     userSettings.excludedStatuses = settings.excludedStatuses;
-  }
-  if (JSON.stringify(settings.excludedTags) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.excludedTags)) {
+  if (JSON.stringify(settings.excludedTags) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.excludedTags))
     userSettings.excludedTags = settings.excludedTags;
-  }
-  if (JSON.stringify(settings.eventPropsMap) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.eventPropsMap)) {
+  if (JSON.stringify(settings.eventPropsMap) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.eventPropsMap))
     userSettings.eventPropsMap = settings.eventPropsMap;
-  }
 
   return userSettings;
 }

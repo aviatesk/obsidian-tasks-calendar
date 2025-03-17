@@ -1,4 +1,13 @@
 import { Notice, TFile, Vault } from "obsidian";
+import {
+  parseTask,
+  reconstructTask,
+  hasEmbeddedTags,
+  setTaskProperty,
+  removeTaskProperty,
+  detectTaskIssues, // Added missing import
+  cloneTask // Added missing import
+} from "./parse";
 
 /**
  * Returns current date formatted as YYYY-MM-DD in local time zone
@@ -54,37 +63,6 @@ function formatDateForTask(date: Date, isAllDay: boolean, isEndDate: boolean): s
 }
 
 /**
- * Helper function to update or add a date property in a task line
- *
- * @param line Current line text
- * @param property Property name
- * @param formattedDate Formatted date value
- * @returns Updated line text
- */
-function updateDateProperty(line: string, property: string, formattedDate: string): string {
-  const propertyPattern = new RegExp(`\\[${property}::\\s*[^\\]]*\\]`);
-  const updatedProperty = `[${property}:: ${formattedDate}]`;
-
-  if (propertyPattern.test(line)) {
-    return line.replace(propertyPattern, updatedProperty);
-  } else {
-    return `${line} ${updatedProperty}`;
-  }
-}
-
-/**
- * Removes a specific property from a task line
- *
- * @param line Current line text
- * @param property Property name to remove
- * @returns Updated line with property removed
- */
-function removeProperty(line: string, property: string): string {
-  const propertyPattern = new RegExp(`\\s*\\[${property}::\\s*[^\\]]*\\]`);
-  return line.replace(propertyPattern, '');
-}
-
-/**
  * Updates task dates in a file.
  *
  * @param vault The Obsidian vault to access files
@@ -109,54 +87,155 @@ export default async function updateTaskDates(
   wasAllDay: boolean,
 ): Promise<void> {
   try {
-    await vault.process(file, (content) => {
-      const lines = content.split('\n');
+    // Read the file content
+    const content = await vault.read(file);
+    const lines = content.split('\n');
 
-      if (line >= lines.length) {
-        throw new Error(`Line number ${line} exceeds file length (${lines.length} lines)`);
-      }
+    if (line >= lines.length) {
+      throw new Error(`Line number ${line} exceeds file length (${lines.length} lines)`);
+    }
 
-      const taskLine = lines[line];
-      let updatedLine = taskLine;
+    const taskLine = lines[line];
 
-      // Handle conversion from non-all-day to all-day without end date
-      if (isAllDay && !wasAllDay && !newEnd) {
-        // Remove start date property
-        updatedLine = removeProperty(updatedLine, startDateProperty);
+    // Parse the task using our new parser
+    const parsedTask = parseTask(taskLine);
+    if (!parsedTask) {
+      throw new Error("Failed to parse task");
+    }
 
-        // Update end date property
-        const formattedDate = formatDateForTask(newStart, isAllDay, false);
-        updatedLine = updateDateProperty(updatedLine, endDateProperty, formattedDate);
-      }
-      // Handle events with both start and end dates
-      else if (newEnd) {
-        // Update start date property
-        const formattedStartDate = formatDateForTask(newStart, isAllDay, false);
-        updatedLine = updateDateProperty(updatedLine, startDateProperty, formattedStartDate);
+    let updatedTask = { ...parsedTask };
 
-        // Update end date property
-        const formattedEndDate = formatDateForTask(newEnd, isAllDay, true);
-        updatedLine = updateDateProperty(updatedLine, endDateProperty, formattedEndDate);
-      }
-      // Handle single-date events
-      else {
-        // Update only end date property
-        const formattedDate = formatDateForTask(newStart, isAllDay, false);
-        updatedLine = updateDateProperty(updatedLine, endDateProperty, formattedDate);
-      }
+    // Handle conversion from non-all-day to all-day without end date
+    if (isAllDay && !wasAllDay && !newEnd) {
+      // Remove start date property
+      updatedTask = removeTaskProperty(updatedTask, startDateProperty);
 
-      // Only update the line if there was a change
-      if (updatedLine !== taskLine) {
-        lines[line] = updatedLine;
-        return lines.join('\n');
-      }
+      // Update end date property
+      const formattedDate = formatDateForTask(newStart, isAllDay, false);
+      updatedTask = setTaskProperty(updatedTask, endDateProperty, formattedDate);
+    }
+    // Handle events with both start and end dates
+    else if (newEnd) {
+      // Update start date property
+      const formattedStartDate = formatDateForTask(newStart, isAllDay, false);
+      updatedTask = setTaskProperty(updatedTask, startDateProperty, formattedStartDate);
 
-      // Return original content if no changes were made
-      return content;
-    });
+      // Update end date property
+      const formattedEndDate = formatDateForTask(newEnd, isAllDay, true);
+      updatedTask = setTaskProperty(updatedTask, endDateProperty, formattedEndDate);
+    }
+    // Handle single-date events
+    else {
+      // Update only end date property
+      const formattedDate = formatDateForTask(newStart, isAllDay, false);
+      updatedTask = setTaskProperty(updatedTask, endDateProperty, formattedDate);
+    }
+
+    // Reconstruct the task line
+    const updatedLine = reconstructTask(updatedTask);
+
+    // Update file if the line has changed
+    if (updatedLine !== taskLine) {
+      lines[line] = updatedLine;
+      await vault.modify(file, lines.join('\n'));
+    }
   } catch (error) {
     console.error("Error updating task dates:", error);
     new Notice(`Failed to update task: ${error.message}`);
     throw error;
+  }
+}
+
+/**
+ * Updates the text of a task in a file.
+ *
+ * @param vault The Obsidian vault to access files
+ * @param file The file containing the task
+ * @param line The line number of the task
+ * @param originalText The original task text
+ * @param newText The new task text to set
+ * @returns Whether the update was successful
+ */
+export async function updateTaskText(
+  vault: Vault,
+  file: TFile,
+  line: number,
+  originalText: string,
+  newText: string,
+): Promise<boolean> {
+  try {
+    // Get the full task line from the file
+    const content = await vault.read(file);
+    const lines = content.split('\n');
+
+    if (line >= lines.length) {
+      throw new Error(`Line number ${line} exceeds file length (${lines.length} lines)`);
+    }
+
+    const fullTaskLine = lines[line];
+
+    // Parse the task to extract components
+    const parsedTask = parseTask(fullTaskLine);
+
+    if (!parsedTask) {
+      new Notice("This line doesn't appear to be a valid task. Task format must begin with '- [ ]'.");
+      return false;
+    }
+
+    // Check for potential issues that would make editing unsafe
+    const issues = detectTaskIssues(parsedTask, fullTaskLine);
+
+    // Safety check: Reject if the task has multiple content fragments
+    if (issues.hasSplitContent) {
+      const fragmentsText = issues.contentFragments.map((f: {text: string}) => `"${f.text}"`).join(", "); // Added type annotation for parameter f
+      new Notice(`Task has content in multiple places (${fragmentsText}). Please edit the task directly in the file to resolve the ambiguity.`);
+      return false;
+    }
+
+    // Safety check: Reject if the new text contains embedded tags
+    if (hasEmbeddedTags(newText)) {
+      new Notice("Cannot update task: The new text contains text attached to tags (e.g., 'text#tag'). Please add spaces between text and tags.");
+      return false;
+    }
+
+    // Check if we can find the original text in the content
+    const contentMatch = parsedTask.content.trim() === originalText.trim();
+    const contentIncludes = parsedTask.content.includes(originalText.trim());
+
+    // Create a deep copy of the task to avoid modifying the original
+    let updatedTask = cloneTask(parsedTask);
+
+    if (!contentMatch && !contentIncludes) {
+      // Cannot find the exact text - try to be helpful in the error message
+      if (parsedTask.content.length === 0 && originalText.trim().length === 0) {
+        // Both are empty - handle as updating an empty task
+        updatedTask.content = newText.trim();
+      } else {
+        new Notice(`Cannot safely update: The original text "${originalText.trim()}" doesn't match the task's content "${parsedTask.content.trim()}".`);
+        return false;
+      }
+    } else if (contentMatch) {
+      // Direct match, simply update the content
+      updatedTask.content = newText.trim();
+    } else {
+      // Partial match - update only the matching part
+      updatedTask.content = parsedTask.content.replace(originalText.trim(), newText.trim());
+    }
+
+    // Reconstruct the task line with the updated content
+    const updatedTaskLine = reconstructTask(updatedTask);
+
+    // Update file if the line has changed
+    if (updatedTaskLine !== fullTaskLine) {
+      lines[line] = updatedTaskLine;
+      await vault.modify(file, lines.join('\n'));
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error("Error updating task text:", error);
+    new Notice(`Failed to update task: ${error.message}`);
+    return false;
   }
 }

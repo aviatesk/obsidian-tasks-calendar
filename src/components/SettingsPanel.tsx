@@ -251,6 +251,31 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   </div>
                 </div>
 
+                {/* Add new field for task file path */}
+                <div className="field-container">
+                  <label className="label">New Task File Path</label>
+                  <div className="description">
+                    Path where new tasks will be created when clicking on dates
+                  </div>
+                  <div className="input-wrapper">
+                    <input
+                      type="text"
+                      value={localSettings.newTaskFilePath || ''}
+                      onChange={(e) => handleChange('newTaskFilePath', e.target.value)}
+                      placeholder="Tasks.md"
+                    />
+                    <button
+                      type="button"
+                      className="reset-button"
+                      onClick={() => resetField('newTaskFilePath', DEFAULT_CALENDAR_SETTINGS.newTaskFilePath)}
+                      aria-label="Reset task file path"
+                      title="Reset to default"
+                    >
+                      <RefreshCw size={16} />
+                    </button>
+                  </div>
+                </div>
+
                 <div className="field-container">
                   <label className="label">Due Date Property</label>
                   <div className="input-wrapper">

@@ -14,7 +14,9 @@ import getTasksAsEvents from './utils/query';
 import updateTaskDates from './utils/update';
 import openTask from './utils/open';
 import updateTaskStatus from './utils/status';
+import { updateTaskText } from './utils/update';
 import { calculateOptimalPosition } from './utils/position';
+import { createTask } from './utils/create';
 
 export class TasksCalendarItemView extends ItemView {
   calendar: Calendar | null = null;
@@ -102,13 +104,14 @@ export class TasksCalendarItemView extends ItemView {
           buttonText: '3 days'
         }
       },
-      nowIndicator: true, // 現在時刻のインジケーターを表示
-      navLinks: true, // 日付をクリック可能にする
-      navLinkDayClick: (date, jsEvent) => {
-        // 日付をクリックしたら、その日のDay viewに移動
-        if (this.calendar) {
-          this.calendar.changeView('timeGridDay', date);
-        }
+      nowIndicator: true,
+      // navLinks: true,
+      // navLinkDayClick: (date, jsEvent) => {
+      //   // Instead of changing view, show task creation tooltip
+      //   this.showTaskCreationTooltip(date, jsEvent);
+      // },
+      dateClick: (info) => {
+        this.showTaskCreationTooltip(info.date, info.jsEvent);
       },
       editable: true, // Enable dragging and resizing
       dayMaxEvents: true,
@@ -353,8 +356,99 @@ export class TasksCalendarItemView extends ItemView {
           props.line
         );
       },
+      onUpdateText: (newText, originalText, taskText) => {
+        return this.handleTaskTextUpdate(
+          props.event || {} as EventApi,
+          newText,
+          originalText,
+          taskText,
+          props.filePath,
+          props.line
+        );
+      },
       onHoverLink: this.onHoverLink,
     });
+  }
+
+  // Add new method for updating task text
+  private async handleTaskTextUpdate(
+    event: EventApi,
+    newText: string,
+    originalText: string,
+    taskText: string,
+    filePath: string,
+    line: number
+  ): Promise<boolean> {
+    if (!filePath || line === undefined) {
+      new Notice("Unable to update task: missing file information");
+      return false;
+    }
+
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!file || !(file instanceof TFile)) {
+      new Notice(`File not found: ${filePath}`);
+      return false;
+    }
+
+    try {
+      // Update task text using the utility function
+      const success = await updateTaskText(
+        this.app.vault,
+        file,
+        line,
+        originalText,
+        newText,
+      );
+
+      if (success) {
+        new Notice("Task text updated successfully");
+
+        // Update tooltip if needed
+        if (this.tooltipRenderer && this.activeTooltipEl) {
+          // Re-render the tooltip with updated text
+          const updatedEvent = {...event};
+
+          // Update title for display
+          updatedEvent.title = newText;
+
+          // Update extendedProps
+          updatedEvent.extendedProps = {
+            ...updatedEvent.extendedProps,
+            cleanText: newText
+          };
+
+          this.tooltipRenderer.render(
+            this.createTaskTooltipElement({
+              taskText: taskText.replace(originalText, newText),
+              cleanText: newText,
+              filePath: filePath,
+              position: {
+                left: parseInt(this.activeTooltipEl.style.left),
+                top: parseInt(this.activeTooltipEl.style.top)
+              },
+              startDate: event.startStr,
+              endDate: event.endStr,
+              tags: event.extendedProps.tags,
+              status: event.extendedProps.status,
+              line: line,
+              isAllDay: event.allDay,
+              event: updatedEvent
+            })
+          );
+        }
+
+        // Refresh calendar events to reflect the text change
+        this.calendar?.refetchEvents();
+
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error("Failed to update task text:", error);
+      new Notice("Failed to update task text");
+      return false;
+    }
   }
 
   // Close current active tooltip if exists
@@ -371,7 +465,7 @@ export class TasksCalendarItemView extends ItemView {
   }
 
   // カレンダーイベントをフェッチするカスタム関数
-  private async fetchCalendarEvents(fetchInfo: any, successCallback: any, failureCallback: any) {
+  private async fetchCalendarEvents(_: any, successCallback: any, failureCallback: any) {
     const dataviewApi = this.plugin.dataviewApi;
     if (!dataviewApi) {
       new Notice("Dataview plugin is not available, Tasks Calendar may not work correctly.");
@@ -522,6 +616,125 @@ export class TasksCalendarItemView extends ItemView {
         }
       })
     );
+  }
+
+  // Add new method for handling date clicks and showing task creation tooltip
+  private showTaskCreationTooltip(date: Date, jsEvent: MouseEvent) {
+    // Close any existing tooltip first
+    this.closeActiveTooltip();
+
+    // Get the target file path from settings
+    const targetFilePath = this.settings.newTaskFilePath || 'Tasks.md';
+
+    // Create tooltip container element
+    const tooltipEl = document.createElement('div');
+    tooltipEl.className = 'task-click-tooltip-container';
+    document.body.appendChild(tooltipEl);
+    this.activeTooltipEl = tooltipEl;
+
+    let tooltipPosition;
+    if (Platform.isMobile) {
+      tooltipPosition = { top: 0, left: 0 }; // Mobile - center positioning handled by CSS
+    } else {
+      // For desktop, position near the click
+      const clickX = jsEvent.clientX;
+      const clickY = jsEvent.clientY;
+      tooltipPosition = {
+        top: clickY + 10,
+        left: clickX + 10
+      };
+
+      // Adjust position to ensure it's fully visible
+      const targetEl = jsEvent.target as HTMLElement;
+      if (targetEl) {
+        tooltipPosition = calculateOptimalPosition(targetEl, tooltipEl, 10);
+      }
+    }
+
+    // Create tooltip renderer
+    this.tooltipRenderer = new ReactRenderer(tooltipEl);
+
+    // Render task creation tooltip with state variables for status and dates
+    this.tooltipRenderer.render(
+      React.createElement(TaskClickTooltip, {
+        taskText: "",
+        cleanText: "",
+        filePath: targetFilePath,
+        position: tooltipPosition,
+        onClose: () => this.closeActiveTooltip(),
+        onOpenFile: () => {}, // No-op for creation mode
+        startDate: date.toISOString(),
+        endDate: undefined, // Add endDate property
+        tags: [], // Add empty tags array
+        line: 0, // Add a default line value
+        isAllDay: true,
+        status: " ", // Default empty status
+        isCreateMode: true,
+        selectedDate: date,
+        onCreateTask: (text, startDate, endDate, isAllDay, status) =>
+          this.handleTaskCreation(text, startDate, endDate, isAllDay, status),
+        // Add functional callbacks that actually update the internal state of TaskClickTooltip
+        onUpdateDates: (..._) => {
+          // These state changes will be managed by the TaskClickTooltip component itself
+          // No need to make backend updates until actual creation
+          return Promise.resolve(true);
+        },
+        onUpdateStatus: (_) => {
+          // Status changes will be preserved by the component's internal state
+          // and passed to onCreateTask when submitted
+          return Promise.resolve();
+        },
+        onHoverLink: this.onHoverLink,
+        onUpdateText: () => Promise.resolve(false),
+      })
+    );
+  }
+
+  // Add method to handle task creation
+  private async handleTaskCreation(
+    taskText: string,
+    startDate: Date | null,
+    endDate: Date | null,
+    isAllDay: boolean,
+    status: string
+  ): Promise<boolean> {
+    // Validate input
+    if (!taskText.trim()) {
+      new Notice("Task text cannot be empty");
+      return false;
+    }
+
+    // Get the target file path from settings
+    const targetFilePath = this.settings.newTaskFilePath || 'Tasks.md';
+
+    try {
+      // Create the task using the utility function
+      const success = await createTask(
+        this.app.vault,
+        targetFilePath,
+        taskText,
+        status,
+        startDate,
+        endDate,
+        isAllDay,
+        this.settings.startDateProperty,
+        this.settings.dateProperty
+      );
+
+      if (success) {
+        // Refresh calendar events
+        this.calendar?.refetchEvents();
+        new Notice("Task created successfully");
+        return true;
+      } else {
+        new Notice(`Failed to create task in: ${targetFilePath}`);
+        return false;
+      }
+    } catch (error) {
+      console.error("Failed to create task:", error);
+      new Notice("Failed to create task");
+      return false;
+    }
   }
 
   // Helper method to update task date in the original file
