@@ -74,6 +74,7 @@ function formatDateForTask(date: Date, isAllDay: boolean, isEndDate: boolean): s
  * @param startDateProperty The property name for the start date
  * @param endDateProperty The property name for the end date
  * @param wasAllDay Whether the event was previously an all-day event
+ * @param wasMultiDay Whether the event was previously a multi-day event
  */
 export default async function updateTaskDates(
   vault: Vault,
@@ -85,6 +86,7 @@ export default async function updateTaskDates(
   startDateProperty: string,
   endDateProperty: string,
   wasAllDay: boolean,
+  wasMultiDay: boolean = false,  // Add this parameter with a default value
 ): Promise<void> {
   try {
     // Read the file content
@@ -108,6 +110,15 @@ export default async function updateTaskDates(
     // Handle conversion from non-all-day to all-day without end date
     if (isAllDay && !wasAllDay && !newEnd) {
       // Remove start date property
+      updatedTask = removeTaskProperty(updatedTask, startDateProperty);
+
+      // Update end date property
+      const formattedDate = formatDateForTask(newStart, isAllDay, false);
+      updatedTask = setTaskProperty(updatedTask, endDateProperty, formattedDate);
+    }
+    // Handle conversion from multi-day to single-day
+    else if (wasMultiDay && !newEnd) {
+      // Remove start date property - this was previously missing
       updatedTask = removeTaskProperty(updatedTask, startDateProperty);
 
       // Update end date property
@@ -138,7 +149,9 @@ export default async function updateTaskDates(
     if (updatedLine !== taskLine) {
       lines[line] = updatedLine;
       await vault.modify(file, lines.join('\n'));
-    }
+      new Notice("Task date updated successfully");
+    } else
+      new Notice("Task date already updated");
   } catch (error) {
     console.error("Error updating task dates:", error);
     new Notice(`Failed to update task: ${error.message}`);

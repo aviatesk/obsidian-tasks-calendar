@@ -111,7 +111,9 @@ export class TasksCalendarItemView extends ItemView {
       //   this.showTaskCreationTooltip(date, jsEvent);
       // },
       dateClick: (info) => {
-        this.showTaskCreationTooltip(info.date, info.jsEvent);
+        // Determine if we're in a time grid view where time is important
+        const isTimeGridView = info.view.type.includes('timeGrid');
+        this.showTaskCreationTooltip(info.date, info.jsEvent, !isTimeGridView);
       },
       editable: true, // Enable dragging and resizing
       dayMaxEvents: true,
@@ -338,12 +340,13 @@ export class TasksCalendarItemView extends ItemView {
       status: props.status,
       line: props.line,
       isAllDay: props.isAllDay,
-      onUpdateDates: (newStartDate, newEndDate, isAllDay) => {
+      onUpdateDates: (newStartDate, newEndDate, isAllDay, wasMultiDay) => {
         this.handleTaskDateUpdate(
           props.event || {} as EventApi,
           newStartDate,
           newEndDate,
           isAllDay,
+          wasMultiDay,
           props.filePath,
           props.line
         );
@@ -619,7 +622,7 @@ export class TasksCalendarItemView extends ItemView {
   }
 
   // Add new method for handling date clicks and showing task creation tooltip
-  private showTaskCreationTooltip(date: Date, jsEvent: MouseEvent) {
+  private showTaskCreationTooltip(date: Date, jsEvent: MouseEvent, isAllDay: boolean = true) {
     // Close any existing tooltip first
     this.closeActiveTooltip();
 
@@ -667,7 +670,7 @@ export class TasksCalendarItemView extends ItemView {
         endDate: undefined, // Add endDate property
         tags: [], // Add empty tags array
         line: 0, // Add a default line value
-        isAllDay: true,
+        isAllDay: isAllDay, // Use the passed isAllDay parameter
         status: " ", // Default empty status
         isCreateMode: true,
         selectedDate: date,
@@ -780,8 +783,6 @@ export class TasksCalendarItemView extends ItemView {
       dateProperty,
       wasAllDay
     );
-
-    return new Notice("Task date updated successfully");
   }
 
   // Add new method for updating task dates directly from tooltip
@@ -790,8 +791,9 @@ export class TasksCalendarItemView extends ItemView {
     newStartDate: Date | null,
     newEndDate: Date | null,
     isAllDay: boolean,
+    wasMultiDay: boolean,
     filePath: string,
-    line: number
+    line: number,
   ) {
     if (!filePath || !line || !newStartDate) {
       new Notice("Unable to update task: missing required information");
@@ -819,10 +821,9 @@ export class TasksCalendarItemView extends ItemView {
         isAllDay,
         startDateProperty,
         dateProperty,
-        event.allDay // Previous all-day state
+        event.allDay, // Previous all-day state
+        wasMultiDay  // Pass the wasMultiDay flag to updateTaskDates
       );
-
-      new Notice("Task date updated successfully");
 
       if (this.tooltipRenderer && this.activeTooltipEl) {
         // Re-render the tooltip with updated dates using the helper method

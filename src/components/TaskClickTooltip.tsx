@@ -19,7 +19,7 @@ interface TaskClickTooltipProps {
   line?: number;
   isAllDay?: boolean;
   // Add handlers for updates
-  onUpdateDates?: (startDate: Date | null, endDate: Date | null, isAllDay: boolean) => void;
+  onUpdateDates?: (startDate: Date | null, endDate: Date | null, isAllDay: boolean, wasMultiDay: boolean) => void;
   onUpdateStatus?: (newStatus: string) => void;
   onUpdateText?: (newText: string, originalText: string, taskText: string) => Promise<boolean>;
   // Add hover link handler
@@ -73,9 +73,8 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   const [editedText, setEditedText] = useState<string>(isCreateMode ? "" : cleanText || '');
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  // Date picker state
-  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
-  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  // Date picker state - simplified to a single date picker
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [showStatusPicker, setShowStatusPicker] = useState(false);
   const [datePickerPosition, setDatePickerPosition] = useState({ top: 0, left: 0 });
   const [statusPickerPosition, setStatusPickerPosition] = useState({ top: 0, left: 0 });
@@ -183,6 +182,16 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     }
   };
 
+  // Helper to adjust end date for all-day events (convert exclusive end to inclusive end for display)
+  const adjustEndDateForDisplay = (dateStr: string, isAllDayFormat: boolean): string => {
+    if (!dateStr || !isAllDayFormat) return dateStr;
+    // For all-day events, we need to subtract a day from the end date for display
+    // This converts the exclusive end date (stored value) to inclusive end date (display value)
+    const date = new Date(dateStr);
+    date.setDate(date.getDate() - 1);
+    return date.toISOString();
+  };
+
   // Helper to format date strings
   const formatDateString = (dateStr: string, isAllDayFormat = false) => {
     try {
@@ -210,9 +219,9 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     }
   };
 
-  // Date click handler
-  const handleDateClick = (e: React.MouseEvent, isStart: boolean) => {
-    if (!onUpdateDates) return;
+  // Date click handler - simplified for unified date picker
+  const handleDateClick = (e: React.MouseEvent) => {
+    if (!onUpdateDates && !isCreateMode) return;
 
     if (isMobile) {
       // For mobile, we don't need specific positioning as it will be centered
@@ -226,13 +235,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
       setDatePickerPosition({ top, left });
     }
 
-    if (isStart) {
-      setShowStartDatePicker(true);
-      setShowEndDatePicker(false);
-    } else {
-      setShowStartDatePicker(false);
-      setShowEndDatePicker(true);
-    }
+    setShowDatePicker(true);
 
     e.preventDefault();
     e.stopPropagation();
@@ -271,76 +274,57 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     setShowStatusPicker(false);
   };
 
-  // Date save handler - now automatically updates UI
-  const handleDateSave = (date: Date, allDay: boolean, isStart: boolean) => {
-    if (!onUpdateDates && !isCreateMode) return;
+  // Updated date save handler - stores changes locally without updating parent
+  const handleDateDone = (newStartDate: Date, newEndDate: Date | null, newAllDay: boolean, wasMultiDay: boolean) => {
+    const startDate = newStartDate.toISOString();
+    const endDate = newEndDate ? newEndDate.toISOString() : undefined;
 
-    // Update local state to reflect changes immediately
-    const isoDate = date.toISOString();
+    // Update local display state
+    setStartDate(startDate);
+    setEndDate(endDate);
+    setIsAllDay(newAllDay);
 
-    if (isStart) {
-      setStartDate(isoDate);
-      if (onUpdateDates && !isCreateMode) {
-        const endDateObj = endDate ? new Date(endDate) : null;
-        onUpdateDates(date, endDateObj, allDay);
-      }
-    } else {
-      setEndDate(isoDate);
-      if (onUpdateDates && !isCreateMode) {
-        const startDateObj = startDate ? new Date(startDate) : null;
-        onUpdateDates(startDateObj, date, allDay);
-      }
+    // Only update if we're not in create mode - always update with current date values
+    if (onUpdateDates && !isCreateMode) {
+      // Use the current date values - whether they were explicitly changed or not
+      const startDateObj = startDate ? new Date(startDate) : null;
+      const endDateObj = endDate ? new Date(endDate) : null;
+      onUpdateDates(startDateObj, endDateObj, newAllDay, wasMultiDay);
     }
 
-    // Update all-day state
-    setIsAllDay(allDay);
+    handleDatePickerClose();
   };
 
-  // Handle picker close
+  // Date picker close handler - just close it
   const handleDatePickerClose = () => {
-    setShowStartDatePicker(false);
-    setShowEndDatePicker(false);
+    setShowDatePicker(false);
   };
 
-  // Format date display
+  // Format date display - updated to handle both single dates and ranges in one section
   const formatDateDisplay = () => {
     if (!startDate) return null;
 
-    if (endDate) {
-      return (
-        <div className="task-click-tooltip-info-item">
-          <Calendar size={isMobile ? 18 : 16} className="task-click-tooltip-icon-small" />
-          <div className="task-click-tooltip-date-container">
-            <span
-              className="task-click-tooltip-info-text task-click-tooltip-date-text"
-              onClick={(e) => handleDateClick(e, true)}
-              title="Click to edit start date"
-            >
-              {formatDateString(startDate, isAllDay)}
-            </span>
-            <span className="task-click-tooltip-info-text">{isAllDay ? ' to ' : ' → '}</span>
-            <span
-              className="task-click-tooltip-info-text task-click-tooltip-date-text"
-              onClick={(e) => handleDateClick(e, false)}
-              title="Click to edit end date"
-            >
-              {formatDateString(endDate, isAllDay)}
-            </span>
-          </div>
-        </div>
-      );
-    }
+    // Adjust end date for all-day events before formatting
+    const displayEndDate = endDate ? adjustEndDateForDisplay(endDate, isAllDay) : undefined;
 
     return (
       <div className="task-click-tooltip-info-item">
         <Calendar size={isMobile ? 18 : 16} className="task-click-tooltip-icon-small" />
-        <span
-          className="task-click-tooltip-info-text task-click-tooltip-date-text"
-          onClick={(e) => handleDateClick(e, true)}
+        <div
+          className="task-click-tooltip-date-container"
+          onClick={handleDateClick}
           title="Click to edit date"
         >
-          {formatDateString(startDate, isAllDay)}
-        </span>
+          <span className="task-click-tooltip-info-text task-click-tooltip-date-text">
+            {formatDateString(startDate, isAllDay)}
+            {displayEndDate && (
+              <>
+                <span className="task-click-tooltip-info-text">{isAllDay ? ' to ' : ' → '}</span>
+                {formatDateString(displayEndDate, isAllDay)}
+              </>
+            )}
+          </span>
+        </div>
       </div>
     );
   };
@@ -522,33 +506,22 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           </div>
         </div>
 
-        {/* DatePicker modals */}
-        {showStartDatePicker && startDate && (
+        {/* Unified DatePicker modal */}
+        {showDatePicker && (
           <DateTimePickerModal
-            initialDate={new Date(startDate)}
+            initialStartDate={startDate ? new Date(startDate) : new Date()}
+            initialEndDate={endDate ? new Date(endDate) : null}
             isAllDay={isAllDay}
             onClose={handleDatePickerClose}
-            onSave={(date, allDay) => handleDateSave(date, allDay, true)}
+            onDone={handleDateDone}
             position={datePickerPosition}
-            isStartDate={true}
-          />
-        )}
-
-        {showEndDatePicker && endDate && (
-          <DateTimePickerModal
-            initialDate={new Date(endDate)}
-            isAllDay={isAllDay}
-            onClose={handleDatePickerClose}
-            onSave={(date, allDay) => handleDateSave(date, allDay, false)}
-            position={datePickerPosition}
-            isStartDate={false}
           />
         )}
 
         {/* StatusPicker modal */}
         {showStatusPicker && (
           <StatusPickerDropdown
-            currentStatus={status}
+            currentStatus={isCreateMode ? currentStatus : status}
             onClose={() => setShowStatusPicker(false)}
             onSave={handleStatusSave}
             position={statusPickerPosition}
@@ -644,33 +617,22 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
         </div>
       </div>
 
-      {/* DatePicker modals */}
-      {showStartDatePicker && startDate && (
+      {/* Unified DatePicker modal */}
+      {showDatePicker && (
         <DateTimePickerModal
-          initialDate={new Date(startDate)}
+          initialStartDate={startDate ? new Date(startDate) : new Date()}
+          initialEndDate={endDate ? new Date(endDate) : null}
           isAllDay={isAllDay}
           onClose={handleDatePickerClose}
-          onSave={(date, allDay) => handleDateSave(date, allDay, true)}
+          onDone={handleDateDone}
           position={datePickerPosition}
-          isStartDate={true}
-        />
-      )}
-
-      {showEndDatePicker && endDate && (
-        <DateTimePickerModal
-          initialDate={new Date(endDate)}
-          isAllDay={isAllDay}
-          onClose={handleDatePickerClose}
-          onSave={(date, allDay) => handleDateSave(date, allDay, false)}
-          position={datePickerPosition}
-          isStartDate={false}
         />
       )}
 
       {/* StatusPicker modal */}
       {showStatusPicker && (
         <StatusPickerDropdown
-          currentStatus={status}
+          currentStatus={isCreateMode ? currentStatus : status}
           onClose={() => setShowStatusPicker(false)}
           onSave={handleStatusSave}
           position={statusPickerPosition}
