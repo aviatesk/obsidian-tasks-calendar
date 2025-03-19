@@ -279,7 +279,7 @@ export class TasksCalendarItemView extends ItemView {
 
     this.plugin._onChangeCallback = debounce(() =>{
       calendar.refetchEvents();
-    }, 1000, true)
+    }, 3000, true)
 
     this.calendar.render();
 
