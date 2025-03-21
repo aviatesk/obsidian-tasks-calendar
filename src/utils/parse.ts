@@ -48,8 +48,8 @@ export function parseTask(taskLine: string): ParsedTask {
   }
 
   // Define regex patterns for different components
-  // Updated to support leading whitespace before list markers
-  const checkboxPattern = /^(\s*)([-*+]|\d+\.)\s+\[(.)\]\s*/;
+  // Updated to explicitly handle tab characters in leading whitespace
+  const checkboxPattern = /^([ \t]*)([-*+]|\d+\.)\s+\[(.)\]\s*/;
   const propertyPattern = /\[([^:]+)::\s*([^\]]*)\]/g;
   const tagPattern = /#[\w\p{L}/\-_]+/gu;
   const blockRefPattern = /\s*(\^\w+)\s*$/;
@@ -75,7 +75,8 @@ export function parseTask(taskLine: string): ParsedTask {
     throw new TaskValidationError("Invalid task format: Line must start with a list marker followed by '[ ]'");
   }
 
-  result.leadingWhitespace = checkboxMatch[1]; // Store leading whitespace
+  // Explicitly preserve tab characters in the leading whitespace
+  result.leadingWhitespace = checkboxMatch[1]; // Store leading whitespace with tabs preserved
   result.listMarker = checkboxMatch[2]; // Extract the list marker type
   result.status = checkboxMatch[3]; // Extract the status character
   result.checkboxPrefix = checkboxMatch[0].substring(checkboxMatch[1].length); // Prefix without leading whitespace
@@ -393,8 +394,15 @@ export function reconstructTask(task: ParsedTask): string {
     result += task.blockReference;
   }
 
-  // Clean up any excessive spacing
-  return result.replace(/\s+/g, " ").trim();
+  // Clean up excessive spacing while preserving the leading whitespace and tabs
+  // Preserve the leading whitespace (including tabs)
+  const leadingPart = result.slice(0, task.leadingWhitespace.length);
+  // Clean up only the non-leading part
+  const nonLeadingPart = result.slice(task.leadingWhitespace.length);
+  // Replace multiple spaces with a single space in the non-leading part
+  const cleanedNonLeadingPart = nonLeadingPart.replace(/ +/g, " ").trim();
+
+  return leadingPart + cleanedNonLeadingPart;
 }
 
 /**
