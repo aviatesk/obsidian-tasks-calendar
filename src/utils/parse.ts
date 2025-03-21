@@ -4,6 +4,7 @@ import { TaskValidationError } from './error-handling';
  * Represents different parts of a parsed task
  */
 export interface ParsedTask {
+  leadingWhitespace: string;       // Whitespace before the list marker
   checkboxPrefix: string;          // The full prefix including list marker and checkbox
   status: string;                  // The character in the checkbox
   tagsBeforeContent: string[];     // Tags before content (#TODO, etc.)
@@ -47,14 +48,15 @@ export function parseTask(taskLine: string): ParsedTask {
   }
 
   // Define regex patterns for different components
-  // Updated to support different list markers (-, *, +, and numbered lists)
-  const checkboxPattern = /^([-*+]|\d+\.)\s+\[(.)\]\s*/;
+  // Updated to support leading whitespace before list markers
+  const checkboxPattern = /^(\s*)([-*+]|\d+\.)\s+\[(.)\]\s*/;
   const propertyPattern = /\[([^:]+)::\s*([^\]]*)\]/g;
   const tagPattern = /#[\w\p{L}/\-_]+/gu;
   const blockRefPattern = /\s*(\^\w+)\s*$/;
 
   // Start with default structure
   const result: ParsedTask = {
+    leadingWhitespace: "",         // New property for whitespace
     checkboxPrefix: "",
     status: " ",  // Default to incomplete
     tagsBeforeContent: [],
@@ -73,9 +75,10 @@ export function parseTask(taskLine: string): ParsedTask {
     throw new TaskValidationError("Invalid task format: Line must start with a list marker followed by '[ ]'");
   }
 
-  result.checkboxPrefix = checkboxMatch[0];
-  result.listMarker = checkboxMatch[1]; // Extract the list marker type
-  result.status = checkboxMatch[2]; // Extract the status character
+  result.leadingWhitespace = checkboxMatch[1]; // Store leading whitespace
+  result.listMarker = checkboxMatch[2]; // Extract the list marker type
+  result.status = checkboxMatch[3]; // Extract the status character
+  result.checkboxPrefix = checkboxMatch[0].substring(checkboxMatch[1].length); // Prefix without leading whitespace
   let remainingText = taskLine.slice(checkboxMatch[0].length);
 
   // Extract block reference from the end if present
@@ -332,57 +335,66 @@ export function findContentFragments(parsedTask: ParsedTask, taskLine: string): 
  * @returns A full task string
  */
 export function reconstructTask(task: ParsedTask): string {
-  const parts: string[] = [];
+  let result = "";
+
+  // Add leading whitespace if present
+  if (task.leadingWhitespace) {
+    result += task.leadingWhitespace;
+  }
 
   // Add checkbox with status, preserving the original list marker
   if (task.listMarker) {
-    parts.push(`${task.listMarker} [${task.status}]`);
+    result += `${task.listMarker} [${task.status}] `;
   } else {
     // Fallback to the default marker if listMarker is somehow not set
-    parts.push(`- [${task.status}]`);
+    result += `- [${task.status}] `;
   }
 
   // Add tags before content (with proper spacing)
   if (task.tagsBeforeContent.length > 0) {
-    parts.push(task.tagsBeforeContent.join(" "));
+    result += task.tagsBeforeContent.join(" ") + " ";
   }
 
   // Add properties before content (with proper spacing)
   if (task.propertiesBeforeContent.size > 0) {
     const props = Array.from(task.propertiesBeforeContent.entries())
       .map(([name, value]) => `[${name}:: ${value}]`);
-    parts.push(props.join(" "));
+    result += props.join(" ") + " ";
   }
 
   // Add main content (ensure it doesn't end with a character that could merge with a tag)
   if (task.content && task.content.trim().length > 0) {
-    parts.push(sanitizeContentForTags(task.content.trim()));
+    result += sanitizeContentForTags(task.content.trim());
   }
 
   // Add tags after content (with proper spacing)
   if (task.tagsAfterContent.length > 0) {
-    parts.push(task.tagsAfterContent.join(" "));
+    if (task.content && !result.endsWith(" ")) {
+      result += " ";
+    }
+    result += task.tagsAfterContent.join(" ");
   }
 
   // Add properties after content (with proper spacing)
   if (task.propertiesAfterContent.size > 0) {
+    if (!result.endsWith(" ")) {
+      result += " ";
+    }
     const props = Array.from(task.propertiesAfterContent.entries())
       .map(([name, value]) => `[${name}:: ${value}]`);
-    parts.push(props.join(" "));
+    result += props.join(" ");
   }
 
   // Add block reference if present (with proper spacing)
   if (task.blockReference) {
-    parts.push(`^${task.blockReference}`);
+    if (!result.endsWith(" ")) {
+      result += " ";
+    }
+    result += task.blockReference;
   }
 
-  // Join all parts with spaces, ensuring proper spacing
-  let result = parts
-    .filter(part => part && part.length > 0)
-    .join(" ")
-    .replace(/\s+/g, " ");
-
-  return result.trim();
+  // Clean up any excessive spacing
+  return result.replace(/\s+/g, " ").trim();
 }
 
 /**
@@ -439,6 +451,7 @@ export function detectTaskIssues(parsedTask: ParsedTask, taskLine: string): {
 export function cloneTask(task: ParsedTask): ParsedTask {
   return {
     ...task,
+    leadingWhitespace: task.leadingWhitespace,
     tagsBeforeContent: [...task.tagsBeforeContent],
     propertiesBeforeContent: new Map(task.propertiesBeforeContent),
     tagsAfterContent: [...task.tagsAfterContent],
