@@ -54,7 +54,7 @@ export class TasksCalendarItemView extends ItemView {
 
     const calendarEl = container.createDiv('calendar-container');
 
-    this.footerEl = container.createDiv('calendar-footer');
+    this.footerEl = container.createDiv('calendar-footer-container');
     this.renderFooter();
 
     // Delay calendar initialization to ensure container is properly sized
