@@ -1,4 +1,5 @@
 import { TFile, Vault } from "obsidian";
+import { FileOperationError } from "./error-handling";
 
 /**
  * Ensures a directory exists, creating it and parent directories if needed
@@ -7,12 +8,16 @@ export async function ensureDirectory(vault: Vault, dirPath: string): Promise<vo
   const dirs = dirPath.split('/').filter(dir => dir.length > 0);
   let currentPath = '';
 
-  for (const dir of dirs) {
-    currentPath += (currentPath ? '/' : '') + dir;
-    const exists = vault.getAbstractFileByPath(currentPath);
-    if (!exists) {
-      await vault.createFolder(currentPath);
+  try {
+    for (const dir of dirs) {
+      currentPath += (currentPath ? '/' : '') + dir;
+      const exists = vault.getAbstractFileByPath(currentPath);
+      if (!exists) {
+        await vault.createFolder(currentPath);
+      }
     }
+  } catch (error) {
+    throw new FileOperationError(`Failed to create directory ${currentPath}: ${error.message}`);
   }
 }
 
@@ -24,6 +29,7 @@ export async function ensureDirectory(vault: Vault, dirPath: string): Promise<vo
  * @param line Line number to process
  * @param processor Function that processes the line content
  * @returns Object containing processing results
+ * @throws FileOperationError if file processing fails
  */
 export async function processFileLine(
   vault: Vault,
@@ -37,11 +43,14 @@ export async function processFileLine(
     const lines = content.split('\n');
 
     if (line < 0 || line >= lines.length) {
-      throw new Error(`Invalid line number: ${line}`);
+      throw new FileOperationError(`Invalid line number: ${line}`);
     }
 
     result.original = lines[line];
+
+    // The processor function may throw TaskValidationError
     result.updated = processor(lines[line]);
+
     result.changed = result.original !== result.updated;
 
     if (result.changed) {
@@ -62,48 +71,38 @@ export async function processFileLine(
  * @param targetFilePath Path to the target file
  * @param content Content to append
  * @returns Whether the operation was successful
+ * @throws FileOperationError if file operation fails
  */
 export async function appendToFile(
   vault: Vault,
   targetFilePath: string,
   content: string
 ): Promise<boolean> {
-  try {
-    // Check if file exists first
-    let file = vault.getAbstractFileByPath(targetFilePath);
+  // Check if file exists first
+  let file = vault.getAbstractFileByPath(targetFilePath);
 
-    // Create file if it doesn't exist
-    if (!file) {
-      try {
-        // Create necessary directories
-        const folders = targetFilePath.split('/');
-        if (folders.length > 1) {
-          const dirPath = folders.slice(0, -1).join('/');
-          await ensureDirectory(vault, dirPath);
-        }
-
-        // Create the file
-        file = await vault.create(targetFilePath, '');
-      } catch (error) {
-        console.error("Failed to create file:", error);
-        return false;
-      }
+  // Create file if it doesn't exist
+  if (!file) {
+    // Create necessary directories
+    const folders = targetFilePath.split('/');
+    if (folders.length > 1) {
+      const dirPath = folders.slice(0, -1).join('/');
+      await ensureDirectory(vault, dirPath);
     }
 
-    // Verify file is valid
-    if (!(file instanceof TFile)) {
-      console.error(`${targetFilePath} is not a valid file`);
-      return false;
-    }
-
-    // Using process for appending content
-    await vault.process(file, (fileContent) => {
-      return fileContent + content;
-    });
-
-    return true;
-  } catch (error) {
-    console.error("Error appending to file:", error);
-    return false;
+    // Create the file
+    file = await vault.create(targetFilePath, '');
   }
+
+  // Verify file is valid
+  if (!(file instanceof TFile)) {
+    throw new FileOperationError(`${targetFilePath} is not a valid file`);
+  }
+
+  // Using process for appending content
+  await vault.process(file, (fileContent) => {
+    return fileContent + content;
+  });
+
+  return true;
 }

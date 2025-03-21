@@ -1,3 +1,5 @@
+import { TaskValidationError } from './error-handling';
+
 /**
  * Represents different parts of a parsed task
  */
@@ -34,15 +36,13 @@ type TaskElement = TagElement | PropertyElement;
  * Parse a task line into its components
  *
  * @param taskLine Full task line from file
- * @returns A parsed task object or null if parsing failed
+ * @returns A parsed task object
+ * @throws TaskValidationError if parsing fails
  */
-export function parseTask(taskLine: string): ParsedTask | null {
-  // Try-catch can be removed since the parsing logic doesn't
-  // necessarily need to catch all errors silently
-
+export function parseTask(taskLine: string): ParsedTask {
   // If this is null, the function might not be called with a task line
   if (!taskLine) {
-    return null;
+    throw new TaskValidationError("Task line is empty or undefined");
   }
 
   // Define regex patterns for different components
@@ -67,7 +67,7 @@ export function parseTask(taskLine: string): ParsedTask | null {
   const checkboxMatch = taskLine.match(checkboxPattern);
   if (!checkboxMatch) {
     // Not a task, fail parsing
-    return null;
+    throw new TaskValidationError("Invalid task format: Line must start with '- [ ]'");
   }
 
   result.checkboxPrefix = checkboxMatch[0];

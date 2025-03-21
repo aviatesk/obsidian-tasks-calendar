@@ -15,6 +15,7 @@ import openTask from './utils/open';
 import updateTaskDates, { updateTaskStatus, updateTaskText } from './utils/update';
 import { calculateOptimalPosition } from './utils/position';
 import { createTask } from './utils/create';
+import handleError from './utils/error-handling';
 
 export class TasksCalendarItemView extends ItemView {
   calendar: Calendar | null = null;
@@ -371,7 +372,144 @@ export class TasksCalendarItemView extends ItemView {
     });
   }
 
-  // Add new method for updating task text
+  /**
+   * Centralized method to handle task date updates
+   */
+  private async handleTaskDateUpdate(
+    event: EventApi,
+    newStartDate: Date | null,
+    newEndDate: Date | null,
+    isAllDay: boolean,
+    wasMultiDay: boolean,
+    filePath: string,
+    line: number,
+  ): Promise<void> {
+    if (!filePath || !line || !newStartDate) {
+      new Notice("Unable to update task: missing required information");
+      return;
+    }
+
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!file || !(file instanceof TFile)) {
+      new Notice(`File not found: ${filePath}`);
+      return;
+    }
+
+    // Get date property names from settings
+    const dateProperty = this.settings.dateProperty;
+    const startDateProperty = this.settings.startDateProperty;
+
+    try {
+      // Update task dates using the helper function
+      await updateTaskDates(
+        this.app.vault,
+        file,
+        line,
+        newStartDate,
+        newEndDate || null,
+        isAllDay,
+        startDateProperty,
+        dateProperty,
+        event.allDay,
+        wasMultiDay
+      );
+
+      new Notice("Task date updated successfully");
+
+      // Re-render tooltip if active
+      if (this.tooltipRenderer && this.activeTooltipEl) {
+        // Re-render the tooltip with updated dates using the helper method
+        this.tooltipRenderer.render(
+          this.createTaskTooltipElement({
+            taskText: event.extendedProps.taskText || 'Task details not available',
+            cleanText: event.extendedProps.cleanText || event.title,
+            filePath: filePath,
+            position: {
+              left: parseInt(this.activeTooltipEl.style.left),
+              top: parseInt(this.activeTooltipEl.style.top)
+            },
+            startDate: newStartDate?.toISOString(),
+            endDate: newEndDate?.toISOString(),
+            tags: event.extendedProps.tags,
+            status: event.extendedProps.status,
+            line: line,
+            isAllDay: isAllDay,
+            event: event
+          })
+        );
+      }
+
+      // Refresh calendar events
+      this.calendar?.refetchEvents();
+    } catch (error) {
+      handleError(error, "Failed to update task date");
+    }
+  }
+
+  /**
+   * Centralized method to handle task status updates
+   */
+  private async handleTaskStatusUpdate(
+    event: EventApi,
+    newStatus: string,
+    filePath: string,
+    line: number
+  ): Promise<void> {
+    if (!filePath || line === undefined) {
+      new Notice("Unable to update task: missing file information");
+      return;
+    }
+
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!file || !(file instanceof TFile)) {
+      new Notice(`File not found: ${filePath}`);
+      return;
+    }
+
+    try {
+      // Update task status using the utility function
+      await updateTaskStatus(
+        this.app.vault,
+        file,
+        line,
+        newStatus
+      );
+
+      new Notice("Task status updated successfully");
+
+      // Re-render tooltip if active
+      if (this.tooltipRenderer && this.activeTooltipEl) {
+        // Re-render the tooltip with updated status
+        this.tooltipRenderer.render(
+          this.createTaskTooltipElement({
+            taskText: event.extendedProps.taskText || 'Task details not available',
+            cleanText: event.extendedProps.cleanText || event.title,
+            filePath: filePath,
+            position: {
+              left: parseInt(this.activeTooltipEl.style.left),
+              top: parseInt(this.activeTooltipEl.style.top)
+            },
+            startDate: event.startStr,
+            endDate: event.endStr,
+            tags: event.extendedProps.tags,
+            status: newStatus, // Use new status
+            line: line,
+            isAllDay: event.allDay,
+            event: event
+          })
+        );
+      }
+
+      // Refresh calendar events to reflect the status change
+      this.calendar?.refetchEvents();
+    } catch (error) {
+      handleError(error, "Failed to update task status");
+    }
+  }
+
+  /**
+   * Centralized method to handle task text updates
+   */
   private async handleTaskTextUpdate(
     event: EventApi,
     newText: string,
@@ -404,7 +542,7 @@ export class TasksCalendarItemView extends ItemView {
       if (success) {
         new Notice("Task text updated successfully");
 
-        // Update tooltip if needed
+        // Update tooltip if active
         if (this.tooltipRenderer && this.activeTooltipEl) {
           // Re-render the tooltip with updated text
           const updatedEvent = {...event};
@@ -446,9 +584,109 @@ export class TasksCalendarItemView extends ItemView {
 
       return false;
     } catch (error) {
-      console.error("Failed to update task text:", error);
-      new Notice("Failed to update task text");
+      handleError(error, "Failed to update task text");
       return false;
+    }
+  }
+
+  /**
+   * Centralized method to handle task creation
+   */
+  private async handleTaskCreation(
+    taskText: string,
+    startDate: Date | null,
+    endDate: Date | null,
+    isAllDay: boolean,
+    status: string
+  ): Promise<boolean> {
+    if (!taskText.trim()) {
+      new Notice("Task text cannot be empty");
+      return false;
+    }
+
+    // Get the target file path from settings
+    const targetFilePath = this.settings.newTaskFilePath || 'Tasks.md';
+
+    try {
+      // Create the task using the utility function
+      const success = await createTask(
+        this.app.vault,
+        targetFilePath,
+        taskText,
+        status,
+        startDate,
+        endDate,
+        isAllDay,
+        this.settings.startDateProperty,
+        this.settings.dateProperty
+      );
+
+      if (success) {
+        // Refresh calendar events
+        this.calendar?.refetchEvents();
+        new Notice("Task created successfully");
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      handleError(error, "Failed to create task");
+      return false;
+    }
+  }
+
+  /**
+   * Centralized method to handle task date changes (from drag & drop)
+   */
+  private async handleTaskDateChange(newEvent: EventApi, oldEvent: EventApi) {
+    // Get file information from event properties
+    const filePath = newEvent.extendedProps.filePath;
+    const line = newEvent.extendedProps.line;
+
+    if (!(filePath && line)) {
+      new Notice("Unable to update task: missing file information");
+      return;
+    }
+
+    // Get the file from the vault
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!file || !(file instanceof TFile)) {
+      new Notice(`File not found: ${filePath}`);
+      return;
+    }
+
+    // Get date property names from settings
+    const dateProperty = this.settings.dateProperty;
+    const startDateProperty = this.settings.startDateProperty;
+
+    // Get the new start and end dates from the event
+    const newStart = newEvent.start;
+    const newEnd = newEvent.end;
+    const isAllDay = newEvent.allDay;
+    const wasAllDay = oldEvent.allDay;
+
+    if (!newStart) {
+      new Notice("Event without start date cannot be updated");
+      return;
+    }
+
+    try {
+      // Update task dates using the helper function
+      await updateTaskDates(
+        this.app.vault,
+        file,
+        line,
+        newStart,
+        newEnd,
+        isAllDay,
+        startDateProperty,
+        dateProperty,
+        wasAllDay
+      );
+
+      new Notice("Task date updated successfully");
+    } catch (error) {
+      handleError(error, "Failed to update task date");
     }
   }
 
@@ -689,226 +927,5 @@ export class TasksCalendarItemView extends ItemView {
         onUpdateText: () => Promise.resolve(false),
       })
     );
-  }
-
-  // Add method to handle task creation
-  private async handleTaskCreation(
-    taskText: string,
-    startDate: Date | null,
-    endDate: Date | null,
-    isAllDay: boolean,
-    status: string
-  ): Promise<boolean> {
-    // Validate input
-    if (!taskText.trim()) {
-      new Notice("Task text cannot be empty");
-      return false;
-    }
-
-    // Get the target file path from settings
-    const targetFilePath = this.settings.newTaskFilePath || 'Tasks.md';
-
-    try {
-      // Create the task using the utility function
-      const success = await createTask(
-        this.app.vault,
-        targetFilePath,
-        taskText,
-        status,
-        startDate,
-        endDate,
-        isAllDay,
-        this.settings.startDateProperty,
-        this.settings.dateProperty
-      );
-
-      if (success) {
-        // Refresh calendar events
-        this.calendar?.refetchEvents();
-        new Notice("Task created successfully");
-        return true;
-      } else {
-        new Notice(`Failed to create task in: ${targetFilePath}`);
-        return false;
-      }
-    } catch (error) {
-      console.error("Failed to create task:", error);
-      new Notice("Failed to create task");
-      return false;
-    }
-  }
-
-  // Helper method to update task date in the original file
-  private async handleTaskDateChange(newEvent: EventApi, oldEvent: EventApi) {
-    // Get file information from event properties
-    const filePath = newEvent.extendedProps.filePath;
-    const line = newEvent.extendedProps.line;
-
-    if (!(filePath && line)) {
-      new Notice("Unable to update task: missing file information");
-      return;
-    }
-
-    // Get the file from the vault
-    const file = this.app.vault.getAbstractFileByPath(filePath);
-    if (!file || !(file instanceof TFile)) {
-      new Notice(`File not found: ${filePath}`);
-      return;
-    }
-
-    // Get date property names from settings getter
-    const dateProperty = this.settings.dateProperty;
-    const startDateProperty = this.settings.startDateProperty;
-
-    // Get the new start and end dates from the event
-    const newStart = newEvent.start;
-    const newEnd = newEvent.end;
-    const isAllDay = newEvent.allDay;
-    const wasAllDay = oldEvent.allDay;
-
-    if (!newStart)
-      return new Notice("Event without start date cannot be updated");
-
-    // Update task dates using the helper function
-    await updateTaskDates(
-      this.app.vault,
-      file,
-      line,
-      newStart,
-      newEnd,
-      isAllDay,
-      startDateProperty,
-      dateProperty,
-      wasAllDay
-    );
-  }
-
-  // Add new method for updating task dates directly from tooltip
-  private async handleTaskDateUpdate(
-    event: EventApi,
-    newStartDate: Date | null,
-    newEndDate: Date | null,
-    isAllDay: boolean,
-    wasMultiDay: boolean,
-    filePath: string,
-    line: number,
-  ) {
-    if (!filePath || !line || !newStartDate) {
-      new Notice("Unable to update task: missing required information");
-      return;
-    }
-
-    const file = this.app.vault.getAbstractFileByPath(filePath);
-    if (!file || !(file instanceof TFile)) {
-      new Notice(`File not found: ${filePath}`);
-      return;
-    }
-
-    // Get date property names from settings getter
-    const dateProperty = this.settings.dateProperty;
-    const startDateProperty = this.settings.startDateProperty;
-
-    try {
-      // Update task dates using the helper function
-      await updateTaskDates(
-        this.app.vault,
-        file,
-        line,
-        newStartDate,
-        newEndDate || null,
-        isAllDay,
-        startDateProperty,
-        dateProperty,
-        event.allDay, // Previous all-day state
-        wasMultiDay  // Pass the wasMultiDay flag to updateTaskDates
-      );
-
-      if (this.tooltipRenderer && this.activeTooltipEl) {
-        // Re-render the tooltip with updated dates using the helper method
-        this.tooltipRenderer.render(
-          this.createTaskTooltipElement({
-            taskText: event.extendedProps.taskText || 'Task details not available',
-            cleanText: event.extendedProps.cleanText || event.title,
-            filePath: filePath,
-            position: {
-              left: parseInt(this.activeTooltipEl.style.left),
-              top: parseInt(this.activeTooltipEl.style.top)
-            },
-            startDate: newStartDate?.toISOString(),
-            endDate: newEndDate?.toISOString(),
-            tags: event.extendedProps.tags,
-            status: event.extendedProps.status,
-            line: line,
-            isAllDay: isAllDay,
-            event: event
-          })
-        );
-      }
-
-      // Refresh calendar events
-      this.calendar?.refetchEvents();
-    } catch (error) {
-      console.error("Failed to update task date:", error);
-      new Notice("Failed to update task date");
-    }
-  }
-
-  // Add new method for updating task status from tooltip
-  private async handleTaskStatusUpdate(
-    event: EventApi,
-    newStatus: string,
-    filePath: string,
-    line: number
-  ) {
-    if (!filePath || line === undefined) {
-      new Notice("Unable to update task: missing file information");
-      return;
-    }
-
-    const file = this.app.vault.getAbstractFileByPath(filePath);
-    if (!file || !(file instanceof TFile)) {
-      new Notice(`File not found: ${filePath}`);
-      return;
-    }
-
-    try {
-      // Update task status using the utility function
-      await updateTaskStatus(
-        this.app.vault,
-        file,
-        line,
-        newStatus
-      );
-
-      new Notice("Task status updated successfully");
-
-      if (this.tooltipRenderer && this.activeTooltipEl) {
-        // Re-render the tooltip with updated status using the helper method
-        this.tooltipRenderer.render(
-          this.createTaskTooltipElement({
-            taskText: event.extendedProps.taskText || 'Task details not available',
-            cleanText: event.extendedProps.cleanText || event.title,
-            filePath: filePath,
-            position: {
-              left: parseInt(this.activeTooltipEl.style.left),
-              top: parseInt(this.activeTooltipEl.style.top)
-            },
-            startDate: event.startStr,
-            endDate: event.endStr,
-            tags: event.extendedProps.tags,
-            status: newStatus, // Use new status
-            line: line,
-            isAllDay: event.allDay,
-            event: event
-          })
-        );
-      }
-
-      // Refresh calendar events to reflect the status change
-      this.calendar?.refetchEvents();
-    } catch (error) {
-      console.error("Failed to update task status:", error);
-      new Notice("Failed to update task status");
-    }
   }
 }

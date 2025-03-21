@@ -1,9 +1,13 @@
 import { Vault } from 'obsidian';
 import { formatDateForTask } from './date';
 import { appendToFile } from './file-operations';
+import { TaskValidationError } from './error-handling';
 
 /**
  * Creates a new task in the specified file
+ *
+ * @throws TaskValidationError if task validation fails
+ * @throws FileOperationError if file operation fails
  */
 export async function createTask(
   vault: Vault,
@@ -16,6 +20,15 @@ export async function createTask(
   startDateProperty: string,
   dateProperty: string
 ): Promise<boolean> {
+  // Validate inputs
+  if (!taskText.trim()) {
+    throw new TaskValidationError("Task text cannot be empty");
+  }
+
+  if (!targetFilePath) {
+    throw new TaskValidationError("Target file path must be specified");
+  }
+
   // Format the task with proper markdown syntax
   let formattedTask = `- [${status}] ${taskText}`;
 
