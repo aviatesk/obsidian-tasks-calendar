@@ -37,159 +37,161 @@ type TaskElement = TagElement | PropertyElement;
  * @returns A parsed task object or null if parsing failed
  */
 export function parseTask(taskLine: string): ParsedTask | null {
-  try {
-    // Define regex patterns for different components
-    const checkboxPattern = /^- \[(.)\]\s*/;
-    const propertyPattern = /\[([^:]+)::\s*([^\]]*)\]/g;
-    const tagPattern = /#[\w\p{L}/\-_]+/gu;
-    const blockRefPattern = /\s*(\^\w+)\s*$/;
+  // Try-catch can be removed since the parsing logic doesn't
+  // necessarily need to catch all errors silently
 
-    // Start with default structure
-    const result: ParsedTask = {
-      checkboxPrefix: "",
-      status: " ",  // Default to incomplete
-      tagsBeforeContent: [],
-      propertiesBeforeContent: new Map(),
-      content: "",
-      tagsAfterContent: [],
-      propertiesAfterContent: new Map(),
-      blockReference: ""
-    };
-
-    // Extract checkbox prefix
-    const checkboxMatch = taskLine.match(checkboxPattern);
-    let remainingText = taskLine;
-    if (checkboxMatch) {
-      result.checkboxPrefix = checkboxMatch[0];
-      result.status = checkboxMatch[1]; // Extract the status character
-      remainingText = remainingText.slice(checkboxMatch[0].length);
-    } else {
-      // Not a task, fail parsing
-      return null;
-    }
-
-    // Extract block reference from the end if present
-    const blockRefMatch = remainingText.match(blockRefPattern);
-    if (blockRefMatch) {
-      result.blockReference = blockRefMatch[1];
-      remainingText = remainingText.slice(0, remainingText.length - blockRefMatch[0].length);
-    }
-
-    // Collect all property matches and their positions
-    const propertyMatches: {start: number, end: number, name: string, value: string}[] = [];
-    let match;
-    while ((match = propertyPattern.exec(remainingText)) !== null) {
-      propertyMatches.push({
-        start: match.index,
-        end: match.index + match[0].length,
-        name: match[1].trim(),
-        value: match[2].trim()
-      });
-    }
-
-    // Collect all tag matches and their positions
-    const tagMatches: {start: number, end: number, tag: string}[] = [];
-    while ((match = tagPattern.exec(remainingText)) !== null) {
-      // Skip tags inside property values
-      let insideProperty = false;
-      for (const prop of propertyMatches) {
-        if (match.index >= prop.start && match.index < prop.end) {
-          insideProperty = true;
-          break;
-        }
-      }
-
-      if (!insideProperty) {
-        tagMatches.push({
-          start: match.index,
-          end: match.index + match[0].length,
-          tag: match[0]
-        });
-      }
-    }
-
-    // Sort all properties and tags by position
-    const allElements: TaskElement[] = [
-      ...propertyMatches.map(p => ({ type: 'property' as const, ...p })),
-      ...tagMatches.map(t => ({ type: 'tag' as const, ...t }))
-    ].sort((a, b) => a.start - b.start);
-
-    // Find the first non-property, non-tag text segment that can be considered content
-    let contentStartIndex = 0;
-    let contentEndIndex = remainingText.length;
-    let foundContentStart = false;
-
-    // If there are no elements, the entire text is content
-    if (allElements.length === 0) {
-      result.content = remainingText.trim();
-      return result;
-    }
-
-    // Find text segments and determine content boundaries
-    let lastEndIndex = 0;
-    let beforeContentPhase = true;
-
-    for (let i = 0; i < allElements.length; i++) {
-      const element = allElements[i];
-
-      // Check if there's text before this element
-      if (element.start > lastEndIndex) {
-        const textSegment = remainingText.substring(lastEndIndex, element.start).trim();
-        if (textSegment && !foundContentStart) {
-          // This is the first significant text segment - it's our content start
-          contentStartIndex = lastEndIndex;
-          foundContentStart = true;
-          beforeContentPhase = false;
-        }
-      }
-
-      // Process the element based on current phase
-      if (beforeContentPhase) {
-        if (element.type === 'tag') {
-          result.tagsBeforeContent.push(element.tag);
-        } else if (element.type === 'property') {
-          result.propertiesBeforeContent.set(element.name, element.value);
-        }
-      } else {
-        if (element.type === 'tag') {
-          result.tagsAfterContent.push(element.tag);
-        } else if (element.type === 'property') {
-          result.propertiesAfterContent.set(element.name, element.value);
-        }
-
-        // If we find an element after content started, update the content end boundary
-        if (foundContentStart && element.start > contentStartIndex) {
-          contentEndIndex = Math.min(contentEndIndex, element.start);
-        }
-      }
-
-      lastEndIndex = element.end;
-    }
-
-    // If no content was identified yet, but there's text after the last element
-    if (!foundContentStart && lastEndIndex < remainingText.length) {
-      const textSegment = remainingText.substring(lastEndIndex).trim();
-      if (textSegment) {
-        contentStartIndex = lastEndIndex;
-        contentEndIndex = remainingText.length;
-        foundContentStart = true;
-      }
-    }
-
-    // Extract the content using the identified boundaries
-    if (foundContentStart) {
-      result.content = remainingText.substring(contentStartIndex, contentEndIndex).trim();
-    } else {
-      // Handle case where there's no clear content (just tags and properties)
-      // In this case, we'll use an empty content string
-      result.content = "";
-    }
-
-    return result;
-  } catch (error) {
-    console.error("Error parsing task:", error);
+  // If this is null, the function might not be called with a task line
+  if (!taskLine) {
     return null;
   }
+
+  // Define regex patterns for different components
+  const checkboxPattern = /^- \[(.)\]\s*/;
+  const propertyPattern = /\[([^:]+)::\s*([^\]]*)\]/g;
+  const tagPattern = /#[\w\p{L}/\-_]+/gu;
+  const blockRefPattern = /\s*(\^\w+)\s*$/;
+
+  // Start with default structure
+  const result: ParsedTask = {
+    checkboxPrefix: "",
+    status: " ",  // Default to incomplete
+    tagsBeforeContent: [],
+    propertiesBeforeContent: new Map(),
+    content: "",
+    tagsAfterContent: [],
+    propertiesAfterContent: new Map(),
+    blockReference: ""
+  };
+
+  // Extract checkbox prefix
+  const checkboxMatch = taskLine.match(checkboxPattern);
+  if (!checkboxMatch) {
+    // Not a task, fail parsing
+    return null;
+  }
+
+  result.checkboxPrefix = checkboxMatch[0];
+  result.status = checkboxMatch[1]; // Extract the status character
+  let remainingText = taskLine.slice(checkboxMatch[0].length);
+
+  // Extract block reference from the end if present
+  const blockRefMatch = remainingText.match(blockRefPattern);
+  if (blockRefMatch) {
+    result.blockReference = blockRefMatch[1];
+    remainingText = remainingText.slice(0, remainingText.length - blockRefMatch[0].length);
+  }
+
+  // Collect all property matches and their positions
+  const propertyMatches: {start: number, end: number, name: string, value: string}[] = [];
+  let match;
+  while ((match = propertyPattern.exec(remainingText)) !== null) {
+    propertyMatches.push({
+      start: match.index,
+      end: match.index + match[0].length,
+      name: match[1].trim(),
+      value: match[2].trim()
+    });
+  }
+
+  // Collect all tag matches and their positions
+  const tagMatches: {start: number, end: number, tag: string}[] = [];
+  while ((match = tagPattern.exec(remainingText)) !== null) {
+    // Skip tags inside property values
+    let insideProperty = false;
+    for (const prop of propertyMatches) {
+      if (match.index >= prop.start && match.index < prop.end) {
+        insideProperty = true;
+        break;
+      }
+    }
+
+    if (!insideProperty) {
+      tagMatches.push({
+        start: match.index,
+        end: match.index + match[0].length,
+        tag: match[0]
+      });
+    }
+  }
+
+  // Sort all properties and tags by position
+  const allElements: TaskElement[] = [
+    ...propertyMatches.map(p => ({ type: 'property' as const, ...p })),
+    ...tagMatches.map(t => ({ type: 'tag' as const, ...t }))
+  ].sort((a, b) => a.start - b.start);
+
+  // Find the first non-property, non-tag text segment that can be considered content
+  let contentStartIndex = 0;
+  let contentEndIndex = remainingText.length;
+  let foundContentStart = false;
+
+  // If there are no elements, the entire text is content
+  if (allElements.length === 0) {
+    result.content = remainingText.trim();
+    return result;
+  }
+
+  // Find text segments and determine content boundaries
+  let lastEndIndex = 0;
+  let beforeContentPhase = true;
+
+  for (let i = 0; i < allElements.length; i++) {
+    const element = allElements[i];
+
+    // Check if there's text before this element
+    if (element.start > lastEndIndex) {
+      const textSegment = remainingText.substring(lastEndIndex, element.start).trim();
+      if (textSegment && !foundContentStart) {
+        // This is the first significant text segment - it's our content start
+        contentStartIndex = lastEndIndex;
+        foundContentStart = true;
+        beforeContentPhase = false;
+      }
+    }
+
+    // Process the element based on current phase
+    if (beforeContentPhase) {
+      if (element.type === 'tag') {
+        result.tagsBeforeContent.push(element.tag);
+      } else if (element.type === 'property') {
+        result.propertiesBeforeContent.set(element.name, element.value);
+      }
+    } else {
+      if (element.type === 'tag') {
+        result.tagsAfterContent.push(element.tag);
+      } else if (element.type === 'property') {
+        result.propertiesAfterContent.set(element.name, element.value);
+      }
+
+      // If we find an element after content started, update the content end boundary
+      if (foundContentStart && element.start > contentStartIndex) {
+        contentEndIndex = Math.min(contentEndIndex, element.start);
+      }
+    }
+
+    lastEndIndex = element.end;
+  }
+
+  // If no content was identified yet, but there's text after the last element
+  if (!foundContentStart && lastEndIndex < remainingText.length) {
+    const textSegment = remainingText.substring(lastEndIndex).trim();
+    if (textSegment) {
+      contentStartIndex = lastEndIndex;
+      contentEndIndex = remainingText.length;
+      foundContentStart = true;
+    }
+  }
+
+  // Extract the content using the identified boundaries
+  if (foundContentStart) {
+    result.content = remainingText.substring(contentStartIndex, contentEndIndex).trim();
+  } else {
+    // Handle case where there's no clear content (just tags and properties)
+    // In this case, we'll use an empty content string
+    result.content = "";
+  }
+
+  return result;
 }
 
 /**

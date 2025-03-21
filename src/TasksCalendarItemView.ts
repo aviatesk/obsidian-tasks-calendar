@@ -11,10 +11,8 @@ import React from 'react';
 import { CalendarFooter } from './components/CalendarFooter';
 import { TaskClickTooltip } from './components/TaskClickTooltip';
 import getTasksAsEvents from './utils/query';
-import updateTaskDates from './utils/update';
 import openTask from './utils/open';
-import updateTaskStatus from './utils/status';
-import { updateTaskText } from './utils/update';
+import updateTaskDates, { updateTaskStatus, updateTaskText } from './utils/update';
 import { calculateOptimalPosition } from './utils/position';
 import { createTask } from './utils/create';
 
