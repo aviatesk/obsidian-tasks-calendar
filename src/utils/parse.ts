@@ -4,7 +4,7 @@ import { TaskValidationError } from './error-handling';
  * Represents different parts of a parsed task
  */
 export interface ParsedTask {
-  checkboxPrefix: string;          // The '- [ ] ' part
+  checkboxPrefix: string;          // The full prefix including list marker and checkbox
   status: string;                  // The character in the checkbox
   tagsBeforeContent: string[];     // Tags before content (#TODO, etc.)
   propertiesBeforeContent: Map<string, string>; // Properties before content
@@ -12,6 +12,7 @@ export interface ParsedTask {
   tagsAfterContent: string[];      // Tags after content
   propertiesAfterContent: Map<string, string>; // Properties after content
   blockReference: string;          // Block reference (^abc123)
+  listMarker: string;              // The type of list marker (-, *, +, 1., etc.)
 }
 
 // Define interfaces for element types
@@ -46,7 +47,8 @@ export function parseTask(taskLine: string): ParsedTask {
   }
 
   // Define regex patterns for different components
-  const checkboxPattern = /^- \[(.)\]\s*/;
+  // Updated to support different list markers (-, *, +, and numbered lists)
+  const checkboxPattern = /^([-*+]|\d+\.)\s+\[(.)\]\s*/;
   const propertyPattern = /\[([^:]+)::\s*([^\]]*)\]/g;
   const tagPattern = /#[\w\p{L}/\-_]+/gu;
   const blockRefPattern = /\s*(\^\w+)\s*$/;
@@ -60,18 +62,20 @@ export function parseTask(taskLine: string): ParsedTask {
     content: "",
     tagsAfterContent: [],
     propertiesAfterContent: new Map(),
-    blockReference: ""
+    blockReference: "",
+    listMarker: "-"  // Default list marker
   };
 
   // Extract checkbox prefix
   const checkboxMatch = taskLine.match(checkboxPattern);
   if (!checkboxMatch) {
     // Not a task, fail parsing
-    throw new TaskValidationError("Invalid task format: Line must start with '- [ ]'");
+    throw new TaskValidationError("Invalid task format: Line must start with a list marker followed by '[ ]'");
   }
 
   result.checkboxPrefix = checkboxMatch[0];
-  result.status = checkboxMatch[1]; // Extract the status character
+  result.listMarker = checkboxMatch[1]; // Extract the list marker type
+  result.status = checkboxMatch[2]; // Extract the status character
   let remainingText = taskLine.slice(checkboxMatch[0].length);
 
   // Extract block reference from the end if present
@@ -330,8 +334,13 @@ export function findContentFragments(parsedTask: ParsedTask, taskLine: string): 
 export function reconstructTask(task: ParsedTask): string {
   const parts: string[] = [];
 
-  // Add checkbox with status
-  parts.push(`- [${task.status}]`);
+  // Add checkbox with status, preserving the original list marker
+  if (task.listMarker) {
+    parts.push(`${task.listMarker} [${task.status}]`);
+  } else {
+    // Fallback to the default marker if listMarker is somehow not set
+    parts.push(`- [${task.status}]`);
+  }
 
   // Add tags before content (with proper spacing)
   if (task.tagsBeforeContent.length > 0) {
@@ -433,7 +442,8 @@ export function cloneTask(task: ParsedTask): ParsedTask {
     tagsBeforeContent: [...task.tagsBeforeContent],
     propertiesBeforeContent: new Map(task.propertiesBeforeContent),
     tagsAfterContent: [...task.tagsAfterContent],
-    propertiesAfterContent: new Map(task.propertiesAfterContent)
+    propertiesAfterContent: new Map(task.propertiesAfterContent),
+    listMarker: task.listMarker  // Preserve the list marker
   };
 }
 
