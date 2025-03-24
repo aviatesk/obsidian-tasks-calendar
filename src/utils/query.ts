@@ -1,3 +1,4 @@
+import { Duration } from "luxon";
 import { DataviewApi, SMarkdownPage, DateTime } from "obsidian-dataview";
 import { EventInput } from "@fullcalendar/core";
 import { CalendarSettings, DEFAULT_EVENT_PROPS } from "../TasksCalendarSettings";
@@ -14,6 +15,8 @@ export interface ExtendedProps {
 
 // Helper function to check if a value is a DateTime object
 const isDateTime = (value: any): boolean => value && value.isLuxonDateTime;
+
+const ONE_DAY_DIFF = Duration.fromObject({ days: 1 });
 
 export default function getTasksAsEvents(
   dataviewApi: DataviewApi, settings: CalendarSettings): EventInput[] {
@@ -57,23 +60,19 @@ export default function getTasksAsEvents(
           const startDateProperty = settings.startDateProperty || DEFAULT_CALENDAR_SETTINGS.startDateProperty;
 
           const taskDate = task[dateProperty] as DateTime;
-          const date = taskDate.toString();
+          let startDate = taskDate;
           let allDay = taskDate.hour == 0 && taskDate.minute == 0 && taskDate.second == 0;
-          const cleanText = task.text
-            .replace(/#\w+/g, '') // Remove all tags
-            .replace(/\[[\w\s-]+::\s*[^\]]*\]/g, '') // Remove metadata properties [key::value]
-            .trim();
 
           // Check if task has an end date
-          let startDate = date;
           let endDate = undefined;
           if (task[startDateProperty]) {
             const taskStartDate = task[startDateProperty] as DateTime;
-            startDate = taskStartDate.toString();
+            startDate = taskStartDate;
+            endDate = taskDate;
             if (allDay) {
               allDay = taskStartDate.hour == 0 && taskStartDate.minute == 0 && taskStartDate.second == 0;
+              endDate = taskDate.plus(ONE_DAY_DIFF);
             }
-            endDate = task[dateProperty].plus(dataviewApi.func.dur("1 day")).toString();
           }
 
           // apply event info
@@ -94,6 +93,10 @@ export default function getTasksAsEvents(
           let priority = eventProps.priority;
           if (!allDay) // give a priority to non-all-day events
             priority += 1;
+          const cleanText = task.text
+            .replace(/#\w+/g, '') // Remove all tags
+            .replace(/\[[\w\s-]+::\s*[^\]]*\]/g, '') // Remove metadata properties [key::value]
+            .trim();
           const extendedProps: ExtendedProps = {
             filePath: page.file.path,
             line: task.line,
@@ -107,8 +110,8 @@ export default function getTasksAsEvents(
             backgroundColor: eventProps.backgroundColor,
             display: eventProps.display,
             title: cleanText,
-            start: startDate,
-            end: endDate,
+            start: startDate.toJSDate(),
+            end: endDate?.toJSDate(),
             allDay,
             extendedProps,
           });
