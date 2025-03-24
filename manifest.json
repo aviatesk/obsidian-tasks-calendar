@@ -4,8 +4,8 @@
 	"version": "0.1.0",
 	"minAppVersion": "1.8.0",
 	"description": "Display tasks with date using FullCalendar.",
-	"author": "",
-	"authorUrl": "",
+	"author": "Shuhei Kadowaki",
+	"authorUrl": "https://github.com/aviatesk",
 	"isDesktopOnly": false,
 	"fundingUrl": {
 		"Buy Me a Coffee": "https://buymeacoffee.com/aviatesk",
