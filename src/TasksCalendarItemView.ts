@@ -15,6 +15,7 @@ import openTask from './utils/open';
 import updateTaskDates, { updateTaskStatus, updateTaskText } from './utils/update';
 import { calculateOptimalPosition } from './utils/position';
 import { createTask } from './utils/create';
+import { deleteTask } from './utils/delete';
 import handleError from './utils/error-handling';
 
 export class TasksCalendarItemView extends ItemView {
@@ -368,6 +369,9 @@ export class TasksCalendarItemView extends ItemView {
           props.line
         );
       },
+      onDeleteTask: (filePath, line) => {
+        return this.handleTaskDeletion(filePath, line);
+      },
       onHoverLink: this.onHoverLink,
     });
   }
@@ -687,6 +691,48 @@ export class TasksCalendarItemView extends ItemView {
       new Notice("Task date updated successfully");
     } catch (error) {
       handleError(error, "Failed to update task date");
+    }
+  }
+
+  /**
+   * Centralized method to handle task deletion
+   */
+  private async handleTaskDeletion(
+    filePath: string,
+    line?: number
+  ): Promise<boolean> {
+    if (!filePath || line === undefined) {
+      new Notice("Unable to delete task: missing file information");
+      return false;
+    }
+
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!file || !(file instanceof TFile)) {
+      new Notice(`File not found: ${filePath}`);
+      return false;
+    }
+
+    try {
+      // Delete the task using the utility function
+      const success = await deleteTask(
+        this.app.vault,
+        file,
+        line
+      );
+
+      if (success) {
+        new Notice("Task deleted successfully");
+
+        // Refresh calendar events
+        this.calendar?.refetchEvents();
+        return true;
+      }
+
+      new Notice("Failed to delete task");
+      return false;
+    } catch (error) {
+      handleError(error, "Failed to delete task");
+      return false;
     }
   }
 

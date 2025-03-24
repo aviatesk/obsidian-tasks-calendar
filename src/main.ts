@@ -31,6 +31,7 @@ export default class TasksCalendarPlugin extends Plugin {
         oldOnChange();
         this._onChangeCallback();
       }
+      (console as any).dataview = this.dataviewApi;
     }
 
     // Register view with plugin instance

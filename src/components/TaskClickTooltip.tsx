@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { FileText, Pencil, X, Calendar, Tag, Info, Check, XCircle, Edit, Plus } from 'lucide-react';
+import { FileText, Pencil, X, Calendar, Tag, Info, Check, XCircle, Edit, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { DateTimePickerModal } from './DateTimePickerModal';
 import { StatusPickerDropdown } from './StatusPickerDropdown';
 import { formatStatus, getStatusIcon } from '../utils/status';
@@ -24,6 +24,8 @@ interface TaskClickTooltipProps {
   onUpdateText?: (newText: string, originalText: string, taskText: string) => Promise<boolean>;
   // Add hover link handler
   onHoverLink?: (event: React.MouseEvent, filePath: string, line?: number) => void;
+  // Delete task callback
+  onDeleteTask?: (filePath: string, line?: number) => Promise<boolean>;
   // New props for task creation mode
   isCreateMode?: boolean;
   selectedDate?: Date;
@@ -47,6 +49,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   onUpdateStatus,
   onUpdateText,
   onHoverLink,
+  onDeleteTask,
   // New props with defaults
   isCreateMode = false,
   selectedDate,
@@ -81,6 +84,9 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
 
   // Add state for managing status in create mode
   const [currentStatus, setCurrentStatus] = useState<string>(status);
+
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
 
   // Auto-focus and resize the textarea when entering edit mode
   useEffect(() => {
@@ -347,8 +353,70 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     );
   };
 
-  // Render task text display or edit form
+  // Delete task handlers
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!onDeleteTask || !filePath) return;
+
+    setIsDeleting(true);
+    try {
+      const success = await onDeleteTask(filePath, line);
+      if (success) {
+        onClose();
+      } else {
+        setShowDeleteConfirm(false);
+        setIsDeleting(false);
+      }
+    } catch (error) {
+      console.error("Failed to delete task:", error);
+      setShowDeleteConfirm(false);
+      setIsDeleting(false);
+    }
+  };
+
+  // Render delete confirmation UI
+  const renderDeleteConfirmation = () => {
+    if (!showDeleteConfirm) return null;
+
+    return (
+      <div className="task-click-tooltip-delete-confirm">
+        <div className="task-click-tooltip-delete-message">
+          <AlertCircle size={isMobile ? 20 : 18} className="task-click-tooltip-delete-icon" />
+          <span>Are you sure you want to delete this task?</span>
+        </div>
+        <div className="task-click-tooltip-delete-actions">
+          <button
+            className="task-click-tooltip-cancel-button"
+            onClick={handleDeleteCancel}
+            disabled={isDeleting}
+          >
+            Cancel
+          </button>
+          <button
+            className="task-click-tooltip-delete-button"
+            onClick={handleDeleteConfirm}
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Render task text display or edit form or delete confirmation
   const renderTaskContent = () => {
+    if (showDeleteConfirm) {
+      return renderDeleteConfirmation();
+    }
+
     if (isEditing) {
       return (
         <div className="task-click-tooltip-edit-container">
@@ -442,16 +510,28 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
             )}
           </div>
           <div className="task-click-tooltip-actions">
-            {!isCreateMode && (
-              <button
-                className="task-click-tooltip-open-button"
-                onClick={onOpenFile}
-                onMouseEnter={handleHover}
-                title="Open file"
-                disabled={isEditing}
-              >
-                <Pencil size={18} />
-              </button>
+            {!isCreateMode && !showDeleteConfirm && (
+              <>
+                <button
+                  className="task-click-tooltip-open-button"
+                  onClick={onOpenFile}
+                  onMouseEnter={handleHover}
+                  title="Open file"
+                  disabled={isEditing}
+                >
+                  <Pencil size={18} />
+                </button>
+                {onDeleteTask && (
+                  <button
+                    className="task-click-tooltip-delete-icon-button"
+                    onClick={handleDeleteClick}
+                    title="Delete task"
+                    disabled={isEditing}
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
+              </>
             )}
             <button
               className="task-click-tooltip-close-button"
@@ -553,16 +633,28 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           )}
         </div>
         <div className="task-click-tooltip-actions">
-          {!isCreateMode && (
-            <button
-              className="task-click-tooltip-open-button"
-              onClick={onOpenFile}
-              onMouseEnter={handleHover}
-              title="Open file"
-              disabled={isEditing}
-            >
-              <Pencil size={16} />
-            </button>
+          {!isCreateMode && !showDeleteConfirm && (
+            <>
+              <button
+                className="task-click-tooltip-open-button"
+                onClick={onOpenFile}
+                onMouseEnter={handleHover}
+                title="Open file"
+                disabled={isEditing}
+              >
+                <Pencil size={16} />
+              </button>
+              {onDeleteTask && (
+                <button
+                  className="task-click-tooltip-delete-icon-button"
+                  onClick={handleDeleteClick}
+                  title="Delete task"
+                  disabled={isEditing}
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </>
           )}
           <button
             className="task-click-tooltip-close-button"
