@@ -90,7 +90,8 @@ export default function getTasksAsEvents(
             endDate = taskDate;
             if (allDay) {
               allDay = taskStartDate.hour == 0 && taskStartDate.minute == 0 && taskStartDate.second == 0;
-              endDate = taskDate.plus(ONE_DAY_DIFF);
+              if (allDay)
+                endDate = taskDate.plus(ONE_DAY_DIFF);
             }
           }
 
