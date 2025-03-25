@@ -18,6 +18,25 @@ const isDateTime = (value: any): boolean => value && value.isLuxonDateTime;
 
 const ONE_DAY_DIFF = Duration.fromObject({ days: 1 });
 
+/**
+ * Calculates event priority based on start time for non-all-day events.
+ * Earlier events in the day get higher priority.
+ * Priority is normalized to a maximum value of 1.
+ */
+function calculateEventPriority(startDate: DateTime) {
+  // Extract hours and minutes from start time
+  const hours = startDate.hour;
+  const minutes = startDate.minute;
+
+  // Convert to decimal hours (e.g., 9:30 becomes 9.5)
+  const timeAsDecimal = hours + (minutes / 60);
+
+  // Calculate priority based on time of day
+  // Earlier events get higher priority (closer to 1)
+  // Normalize to keep maximum priority at 1
+  return Math.max(0, Math.min(1, 1 - (timeAsDecimal / 24)));
+}
+
 export default function getTasksAsEvents(
   dataviewApi: DataviewApi, settings: CalendarSettings): EventInput[] {
   const events: EventInput[] = [];
@@ -92,7 +111,7 @@ export default function getTasksAsEvents(
           }
           let priority = eventProps.priority;
           if (!allDay) // give a priority to non-all-day events
-            priority += 1;
+            priority += calculateEventPriority(startDate);
           const cleanText = task.text
             .replace(/#\w+/g, '') // Remove all tags
             .replace(/\[[\w\s-]+::\s*[^\]]*\]/g, '') // Remove metadata properties [key::value]
