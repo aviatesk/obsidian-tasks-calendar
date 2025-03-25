@@ -31,7 +31,6 @@ export default class TasksCalendarPlugin extends Plugin {
         oldOnChange();
         this._onChangeCallback();
       }
-      (console as any).dataview = this.dataviewApi;
     }
 
     // Register view with plugin instance
@@ -47,7 +46,7 @@ export default class TasksCalendarPlugin extends Plugin {
 
     // Add command to open calendar
     this.addCommand({
-      id: 'open-tasks-calendar',
+      id: 'open',
       name: 'Open Tasks Calendar',
       callback: () => this.activateView()
     });
@@ -74,13 +73,11 @@ export default class TasksCalendarPlugin extends Plugin {
       display: "Tasks Calendar",
     })
 
-    // プラグイン起動時に自動的にビューを開く
     setTimeout(() => this.activateView(), 300);
   }
 
   onunload() {
     this._onChangeCallback = () => {};
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE);
   }
 
   private async loadSettings() {

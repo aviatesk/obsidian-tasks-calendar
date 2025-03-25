@@ -743,10 +743,10 @@
 }
 
 .task-click-tooltip-open-button,
-.task-click-tooltip-close-button {
+.task-click-tooltip-close-button,
+.task-click-tooltip-delete-button {
   background: none;
   border: none;
-  color: var(--text-muted);
   cursor: pointer;
   font-size: 1.2em;
   padding: 6px;
@@ -760,6 +760,10 @@
 .task-click-tooltip-open-button:hover,
 .task-click-tooltip-close-button:hover {
   color: var(--text-accent);
+  background-color: var(--background-modifier-hover);
+}
+.task-click-tooltip-delete-button:hover {
+  color: var(--text-error);
   background-color: var(--background-modifier-hover);
 }
 
@@ -1269,6 +1273,7 @@
 
 .is-mobile .task-click-tooltip-open-button,
 .is-mobile .task-click-tooltip-close-button,
+.is-mobile .task-click-tooltip-delete-button,
 .is-mobile .date-time-picker-close-button,
 .is-mobile .status-picker-close-button {
   padding: 10px;
@@ -2004,26 +2009,6 @@
   color: var(--text-accent);
 }
 
-/* Delete task button styles */
-.task-click-tooltip-delete-icon-button {
-  background: none;
-  border: none;
-  color: var(--text-error);
-  cursor: pointer;
-  font-size: 1.2em;
-  padding: 6px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-.task-click-tooltip-delete-icon-button:hover {
-  color: var(--text-error);
-  background-color: var(--background-modifier-hover);
-}
-
 /* Delete confirmation styles */
 .task-click-tooltip-delete-confirm {
   padding: 12px 0;
@@ -2051,7 +2036,7 @@
   gap: 10px;
 }
 
-.task-click-tooltip-delete-button {
+.task-click-tooltip-delete-confirm-button {
   background-color: var(--text-error);
   color: white;
   border: none;
@@ -2067,18 +2052,18 @@
   align-items: center;
 }
 
-.task-click-tooltip-delete-button:hover {
+.task-click-tooltip-delete-confirm-button:hover {
   background-color: var(--text-error-hover, #f44336);
   transform: translateY(-1px);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.task-click-tooltip-delete-button:active {
+.task-click-tooltip-delete-confirm-button:active {
   transform: translateY(0);
   box-shadow: none;
 }
 
-.task-click-tooltip-delete-button:disabled {
+.task-click-tooltip-delete-confirm-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;

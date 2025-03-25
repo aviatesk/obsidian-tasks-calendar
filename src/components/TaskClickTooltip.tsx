@@ -400,7 +400,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
             Cancel
           </button>
           <button
-            className="task-click-tooltip-delete-button"
+            className="task-click-tooltip-delete-confirm-button"
             onClick={handleDeleteConfirm}
             disabled={isDeleting}
           >
@@ -523,7 +523,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
                 </button>
                 {onDeleteTask && (
                   <button
-                    className="task-click-tooltip-delete-icon-button"
+                    className="task-click-tooltip-delete-button"
                     onClick={handleDeleteClick}
                     title="Delete task"
                     disabled={isEditing}
@@ -646,7 +646,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
               </button>
               {onDeleteTask && (
                 <button
-                  className="task-click-tooltip-delete-icon-button"
+                  className="task-click-tooltip-delete-button"
                   onClick={handleDeleteClick}
                   title="Delete task"
                   disabled={isEditing}
