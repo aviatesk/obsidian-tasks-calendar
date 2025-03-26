@@ -469,20 +469,6 @@ export function cloneTask(task: ParsedTask): ParsedTask {
 }
 
 /**
- * Updates a task's status character
- *
- * @param task The parsed task
- * @param newStatus The new status character
- * @returns Updated task object
- */
-export function updateTaskStatus(task: ParsedTask, newStatus: string): ParsedTask {
-  return {
-    ...task,
-    status: newStatus,
-  };
-}
-
-/**
  * Safely resolves conflicts between content and tags by adding spaces
  *
  * @param task The parsed task

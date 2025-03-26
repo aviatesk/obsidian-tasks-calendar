@@ -1,4 +1,4 @@
-import { Vault } from 'obsidian';
+import { App } from 'obsidian';
 import { formatDateForTask } from './date';
 import { appendToFile } from './file-operations';
 import { TaskValidationError } from './error-handling';
@@ -10,7 +10,7 @@ import { TaskValidationError } from './error-handling';
  * @throws FileOperationError if file operation fails
  */
 export async function createTask(
-  vault: Vault,
+  app: App,
   targetFilePath: string,
   taskText: string,
   status: string,
@@ -55,5 +55,5 @@ export async function createTask(
   formattedTask += '\n';
 
   // Append the task to the file
-  return await appendToFile(vault, targetFilePath, formattedTask);
+  return await appendToFile(app.vault, targetFilePath, formattedTask);
 }
