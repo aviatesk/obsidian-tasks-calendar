@@ -816,6 +816,12 @@
   color: var(--text-accent);
   margin-top: 2px;
 }
+.task-click-tooltip-icon-small.task-click-tooltip-icon-info {
+  margin-top: 8px;
+}
+.is-mobile .task-click-tooltip-icon-small.task-click-tooltip-icon-info {
+  margin-top: 10px;
+}
 
 .task-click-tooltip-info-text {
   line-height: 1.5;
@@ -2084,4 +2090,41 @@
   padding: 8px 12px;
   font-size: 0.95em;
   flex: 1;
+}
+
+/* Add styles for the destination dropdown */
+.task-click-tooltip-destination-select {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0px 4px;
+}
+
+.task-click-tooltip-destination-label {
+  color: var(--text-muted);
+  margin-right: 4px;
+  font-size: 0.9em;
+}
+
+.task-click-tooltip-inline-dropdown {
+  background-color: var(--background-secondary);
+  color: var (--text-accent);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.9em;
+  cursor: pointer;
+  flex-grow: 1;
+  width: 50%;
+}
+
+.task-click-tooltip-inline-dropdown:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+/* Add a bit more spacing when destination selector is shown in edit mode */
+.task-click-tooltip-edit-container .task-click-tooltip-info-item {
+  margin-bottom: 12px;
 }

@@ -1,4 +1,4 @@
-import { TFile, Vault } from "obsidian";
+import { App, TFile } from "obsidian";
 import {
   parseTask,
   reconstructTask,
@@ -9,60 +9,90 @@ import {
   cloneTask
 } from "./parse";
 import { getCurrentDateFormatted, formatDateForTask } from "./date";
-import { processFileLine } from "./file-operations";
+import { processFileLine, renameFile } from "./file-operations";
 import { STATUS_OPTIONS } from "./status";
 import { TaskValidationError } from "./error-handling";
 
 /**
  * Update task status in Obsidian document
  *
- * @param vault Obsidian vault instance
+ * @param app Obsidian app instance
  * @param file Target file
- * @param line Line number of the task
+ * @param line Line number of the task (undefined for frontmatter)
  * @param newStatus New status value
  * @throws TaskValidationError if task validation fails
  * @throws FileOperationError if file operation fails
  */
 export async function updateTaskStatus(
-  vault: Vault,
+  app: App,
   file: TFile,
-  line: number,
+  line: number | undefined,
   newStatus: string
 ): Promise<void> {
-  await processFileLine(vault, file, line, (taskLine) => {
-    // Parse the task using our parser - may throw TaskValidationError
-    const parsedTask = parseTask(taskLine);
+  // Handle frontmatter task property
+  if (line === undefined) {
+    await app.fileManager.processFrontMatter(file, (frontmatter) => {
+      // Get current status
+      const currentStatus = frontmatter.status || '';
 
-    // Get the current status and find options
-    const currentStatus = parsedTask.status;
-    const oldStatusOption = STATUS_OPTIONS.find(option => option.value === currentStatus);
-    const newStatusOption = STATUS_OPTIONS.find(option => option.value === newStatus);
+      // Find status options
+      const oldStatusOption = STATUS_OPTIONS.find(option => option.value === currentStatus);
+      const newStatusOption = STATUS_OPTIONS.find(option => option.value === newStatus);
 
-    const oldProp = oldStatusOption?.prop;
-    const newProp = newStatusOption?.prop;
+      const oldProp = oldStatusOption?.prop;
+      const newProp = newStatusOption?.prop;
 
-    // Update the task status
-    let updatedTask = cloneTask(parsedTask);
-    updatedTask.status = newStatus;
+      // Update status
+      frontmatter.status = newStatus;
 
-    // Only remove old property if:
-    // 1. It exists
-    // 2. It's different from the new property
-    // 3. The new status does NOT have preserveOldProp set to true
-    if (oldProp && oldProp !== newProp && newStatusOption?.preserveOldProp !== true) {
-      // Remove old property using our helper function
-      updatedTask = removeTaskProperty(updatedTask, oldProp);
-    }
+      // Handle old property
+      if (oldProp && oldProp !== newProp && newStatusOption?.preserveOldProp !== true) {
+        delete frontmatter[oldProp];
+      }
 
-    // Add new property if needed
-    if (newProp) {
-      const currentDate = getCurrentDateFormatted();
-      updatedTask = setTaskProperty(updatedTask, newProp, currentDate);
-    }
+      // Add new property if needed
+      if (newProp) {
+        const currentDate = getCurrentDateFormatted();
+        frontmatter[newProp] = currentDate;
+      }
+    });
+  } else {
+    // Handle regular inline task
+    await processFileLine(app.vault, file, line, (taskLine) => {
+      // Parse the task using our parser - may throw TaskValidationError
+      const parsedTask = parseTask(taskLine);
 
-    // Reconstruct and return the updated task line
-    return reconstructTask(updatedTask);
-  });
+      // Get the current status and find options
+      const currentStatus = parsedTask.status;
+      const oldStatusOption = STATUS_OPTIONS.find(option => option.value === currentStatus);
+      const newStatusOption = STATUS_OPTIONS.find(option => option.value === newStatus);
+
+      const oldProp = oldStatusOption?.prop;
+      const newProp = newStatusOption?.prop;
+
+      // Update the task status
+      let updatedTask = cloneTask(parsedTask);
+      updatedTask.status = newStatus;
+
+      // Only remove old property if:
+      // 1. It exists
+      // 2. It's different from the new property
+      // 3. The new status does NOT have preserveOldProp set to true
+      if (oldProp && oldProp !== newProp && newStatusOption?.preserveOldProp !== true) {
+        // Remove old property using our helper function
+        updatedTask = removeTaskProperty(updatedTask, oldProp);
+      }
+
+      // Add new property if needed
+      if (newProp) {
+        const currentDate = getCurrentDateFormatted();
+        updatedTask = setTaskProperty(updatedTask, newProp, currentDate);
+      }
+
+      // Reconstruct and return the updated task line
+      return reconstructTask(updatedTask);
+    });
+  }
 }
 
 /**
@@ -72,9 +102,9 @@ export async function updateTaskStatus(
  * @throws FileOperationError if file operation fails
  */
 export default async function updateTaskDates(
-  vault: Vault,
+  app: App,
   file: TFile,
-  line: number,
+  line: number | undefined,
   newStart: Date,
   newEnd: Date | null,
   isAllDay: boolean,
@@ -83,7 +113,49 @@ export default async function updateTaskDates(
   wasAllDay: boolean,
   wasMultiDay: boolean = false,
 ): Promise<void> {
-  await processFileLine(vault, file, line, (taskLine) => {
+  // Handle frontmatter task property
+  if (line === undefined) {
+    await app.fileManager.processFrontMatter(file, (frontmatter) => {
+      // Handle conversion from non-all-day to all-day without end date
+      if (isAllDay && !wasAllDay && !newEnd) {
+        // Remove start date property
+        delete frontmatter[startDateProperty];
+
+        // Update end date property
+        const formattedDate = formatDateForTask(newStart, isAllDay, false);
+        frontmatter[endDateProperty] = formattedDate;
+      }
+      // Handle conversion from multi-day to single-day
+      else if (wasMultiDay && !newEnd) {
+        // Remove start date property
+        delete frontmatter[startDateProperty];
+
+        // Update end date property
+        const formattedDate = formatDateForTask(newStart, isAllDay, false);
+        frontmatter[endDateProperty] = formattedDate;
+      }
+      // Handle events with both start and end dates
+      else if (newEnd) {
+        // Update start date property
+        const formattedStartDate = formatDateForTask(newStart, isAllDay, false);
+        frontmatter[startDateProperty] = formattedStartDate;
+
+        // Update end date property
+        const formattedEndDate = formatDateForTask(newEnd, isAllDay, true);
+        frontmatter[endDateProperty] = formattedEndDate;
+      }
+      // Handle single-date events
+      else {
+        // Update only end date property
+        const formattedDate = formatDateForTask(newStart, isAllDay, false);
+        frontmatter[endDateProperty] = formattedDate;
+      }
+    });
+    return;
+  }
+
+  // Handle regular inline task
+  await processFileLine(app.vault, file, line, (taskLine) => {
     // Parse the task using our parser - may throw TaskValidationError
     const parsedTask = parseTask(taskLine);
 
@@ -136,13 +208,19 @@ export default async function updateTaskDates(
  * @throws FileOperationError if file operation fails
  */
 export async function updateTaskText(
-  vault: Vault,
+  app: App,
   file: TFile,
-  line: number,
+  line: number | undefined,
   originalText: string,
   newText: string,
-): Promise<boolean> {
-  const result = await processFileLine(vault, file, line, (taskLine) => {
+): Promise<string|undefined> {
+  // Handle frontmatter task property
+  if (line === undefined) {
+    return await renameFile(app, file, newText.trim());
+  }
+
+  // Handle regular inline task
+  const result = await processFileLine(app.vault, file, line, (taskLine) => {
     // Parse the task to extract components - may throw TaskValidationError
     const parsedTask = parseTask(taskLine);
 
@@ -187,5 +265,5 @@ export async function updateTaskText(
     return reconstructTask(updatedTask);
   });
 
-  return result.changed;
+  return result.changed ? file.path : undefined;
 }

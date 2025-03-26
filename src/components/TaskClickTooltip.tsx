@@ -4,6 +4,7 @@ import { DateTimePickerModal } from './DateTimePickerModal';
 import { StatusPickerDropdown } from './StatusPickerDropdown';
 import { formatStatus, getStatusIcon } from '../utils/status';
 import { Platform } from 'obsidian';
+import { DEFAULT_CALENDAR_SETTINGS } from 'src/TasksCalendarSettings';
 
 interface TaskClickTooltipProps {
   taskText: string;
@@ -29,7 +30,8 @@ interface TaskClickTooltipProps {
   // New props for task creation mode
   isCreateMode?: boolean;
   selectedDate?: Date;
-  onCreateTask?: (text: string, startDate: Date | null, endDate: Date | null, isAllDay: boolean, status: string) => Promise<boolean>;
+  onCreateTask?: (text: string, startDate: Date | null, endDate: Date | null, isAllDay: boolean, status: string, targetPath: string) => Promise<boolean>;
+  availableDestinations?: string[]; // Added prop for available destinations
 }
 
 export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
@@ -53,7 +55,8 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   // New props with defaults
   isCreateMode = false,
   selectedDate,
-  onCreateTask
+  onCreateTask,
+  availableDestinations = DEFAULT_CALENDAR_SETTINGS.newTaskFilePaths,
 }) => {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -87,6 +90,9 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
 
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
+
+  // Add state for destination selection
+  const [selectedDestination, setSelectedDestination] = useState<string>(filePath || availableDestinations[0]);
 
   // Auto-focus and resize the textarea when entering edit mode
   useEffect(() => {
@@ -156,7 +162,8 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
         startDateObj,
         endDateObj,
         isAllDay,
-        currentStatus // Use the state variable instead of the prop
+        currentStatus,
+        selectedDestination // Pass the selected destination
       );
 
       setIsSaving(false);
@@ -579,8 +586,28 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
 
             {isCreateMode && (
               <div className="task-click-tooltip-info-item">
-                <Info size={18} className="task-click-tooltip-icon-small" />
-                <span className="task-click-tooltip-info-text">Will be created in {filePath}</span>
+                <Info size={18} className="task-click-tooltip-icon-small task-click-tooltip-icon-info" />
+                {availableDestinations.length <= 1 ? (
+                  <span className="task-click-tooltip-info-text">
+                    Will be created in {selectedDestination} {selectedDestination.endsWith('/') ? '(new task note)' : '(new task list)'}
+                  </span>
+                ) : (
+                  <div className="task-click-tooltip-destination-select">
+                    <div className="task-click-tooltip-destination-label">Will be created in</div>
+                    <select
+                      value={selectedDestination}
+                      onChange={(e) => setSelectedDestination(e.target.value)}
+                      className="task-click-tooltip-inline-dropdown"
+                      disabled={isSaving}
+                    >
+                      {availableDestinations.map((destination, index) => (
+                        <option key={index} value={destination}>
+                          {destination} {destination.endsWith('/') ? '(new task note)' : '(new task list)'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -702,8 +729,28 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
 
           {isCreateMode && (
             <div className="task-click-tooltip-info-item">
-              <Info size={16} className="task-click-tooltip-icon-small" />
-              <span className="task-click-tooltip-info-text">Will be created in {filePath}</span>
+              <Info size={16} className="task-click-tooltip-icon-small task-click-tooltip-icon-info" />
+              {availableDestinations.length <= 1 ? (
+                <span className="task-click-tooltip-info-text">
+                  Will be created in {selectedDestination} {selectedDestination.endsWith('/') ? '(new task note)' : '(new task list)'}
+                </span>
+              ) : (
+                <div className="task-click-tooltip-destination-select">
+                  <div className="task-click-tooltip-destination-label">Will be created in</div>
+                  <select
+                    value={selectedDestination}
+                    onChange={(e) => setSelectedDestination(e.target.value)}
+                    className="task-click-tooltip-inline-dropdown"
+                    disabled={isSaving}
+                  >
+                    {availableDestinations.map((destination, index) => (
+                      <option key={index} value={destination}>
+                        {destination} {destination.endsWith('/') ? '(new task note)' : '(new task list)'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           )}
         </div>

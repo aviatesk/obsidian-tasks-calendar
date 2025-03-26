@@ -62,7 +62,7 @@ export function calculateOptimalPosition(
     modalEl.style.left = `${left}px`;
     modalEl.style.top = `${top}px`;
     modalEl.style.visibility = 'visible';
-  }, 0);
+  }, 50);
 
   // Return initial position which will be updated by setTimeout
   // This is needed for React components that require an initial position value

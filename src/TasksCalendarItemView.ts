@@ -320,7 +320,7 @@ export class TasksCalendarItemView extends ItemView {
     endDate: string | undefined;
     tags: string[];
     status: string;
-    line: number;
+    line?: number;
     isAllDay: boolean;
     event?: EventApi;
   }) {
@@ -386,9 +386,9 @@ export class TasksCalendarItemView extends ItemView {
     isAllDay: boolean,
     wasMultiDay: boolean,
     filePath: string,
-    line: number,
+    line?: number,
   ): Promise<void> {
-    if (!filePath || !line || !newStartDate) {
+    if (!filePath || !newStartDate) {
       new Notice("Unable to update task: missing required information");
       return;
     }
@@ -406,7 +406,7 @@ export class TasksCalendarItemView extends ItemView {
     try {
       // Update task dates using the helper function
       await updateTaskDates(
-        this.app.vault,
+        this.app,
         file,
         line,
         newStartDate,
@@ -457,9 +457,9 @@ export class TasksCalendarItemView extends ItemView {
     event: EventApi,
     newStatus: string,
     filePath: string,
-    line: number
+    line?: number
   ): Promise<void> {
-    if (!filePath || line === undefined) {
+    if (!filePath) {
       new Notice("Unable to update task: missing file information");
       return;
     }
@@ -473,7 +473,7 @@ export class TasksCalendarItemView extends ItemView {
     try {
       // Update task status using the utility function
       await updateTaskStatus(
-        this.app.vault,
+        this.app,
         file,
         line,
         newStatus
@@ -520,9 +520,9 @@ export class TasksCalendarItemView extends ItemView {
     originalText: string,
     taskText: string,
     filePath: string,
-    line: number
+    line?: number
   ): Promise<boolean> {
-    if (!filePath || line === undefined) {
+    if (!filePath) {
       new Notice("Unable to update task: missing file information");
       return false;
     }
@@ -535,15 +535,15 @@ export class TasksCalendarItemView extends ItemView {
 
     try {
       // Update task text using the utility function
-      const success = await updateTaskText(
-        this.app.vault,
+      const newFilePath = await updateTaskText(
+        this.app,
         file,
         line,
         originalText,
         newText,
       );
 
-      if (success) {
+      if (newFilePath) {
         new Notice("Task text updated successfully");
 
         // Update tooltip if active
@@ -564,7 +564,7 @@ export class TasksCalendarItemView extends ItemView {
             this.createTaskTooltipElement({
               taskText: taskText.replace(originalText, newText),
               cleanText: newText,
-              filePath: filePath,
+              filePath: newFilePath,
               position: {
                 left: parseInt(this.activeTooltipEl.style.left),
                 top: parseInt(this.activeTooltipEl.style.top)
@@ -601,21 +601,19 @@ export class TasksCalendarItemView extends ItemView {
     startDate: Date | null,
     endDate: Date | null,
     isAllDay: boolean,
-    status: string
+    status: string,
+    targetPath: string,
   ): Promise<boolean> {
     if (!taskText.trim()) {
       new Notice("Task text cannot be empty");
       return false;
     }
 
-    // Get the target file path from settings
-    const targetFilePath = this.settings.newTaskFilePath || 'Tasks.md';
-
     try {
-      // Create the task using the utility function
+      // Create the task using the utility function with the selected target path
       const success = await createTask(
-        this.app.vault,
-        targetFilePath,
+        this.app,
+        targetPath,
         taskText,
         status,
         startDate,
@@ -647,7 +645,7 @@ export class TasksCalendarItemView extends ItemView {
     const filePath = newEvent.extendedProps.filePath;
     const line = newEvent.extendedProps.line;
 
-    if (!(filePath && line)) {
+    if (!(filePath)) {
       new Notice("Unable to update task: missing file information");
       return;
     }
@@ -677,7 +675,7 @@ export class TasksCalendarItemView extends ItemView {
     try {
       // Update task dates using the helper function
       await updateTaskDates(
-        this.app.vault,
+        this.app,  // Pass app instance
         file,
         line,
         newStart,
@@ -701,7 +699,7 @@ export class TasksCalendarItemView extends ItemView {
     filePath: string,
     line?: number
   ): Promise<boolean> {
-    if (!filePath || line === undefined) {
+    if (!filePath) {
       new Notice("Unable to delete task: missing file information");
       return false;
     }
@@ -712,12 +710,17 @@ export class TasksCalendarItemView extends ItemView {
       return false;
     }
 
+    const dateProperty = this.settings.dateProperty;
+    const startDateProperty = this.settings.startDateProperty;
+
     try {
       // Delete the task using the utility function
       const success = await deleteTask(
-        this.app.vault,
+        this.app,
         file,
-        line
+        line,
+        dateProperty,
+        startDateProperty,
       );
 
       if (success) {
@@ -908,8 +911,14 @@ export class TasksCalendarItemView extends ItemView {
     // Close any existing tooltip first
     this.closeActiveTooltip();
 
-    // Get the target file path from settings
-    const targetFilePath = this.settings.newTaskFilePath || 'Tasks.md';
+    // Get all available destination paths from settings
+    const availableDestinations = this.settings.newTaskFilePaths &&
+                                  this.settings.newTaskFilePaths.length > 0 ?
+                                  this.settings.newTaskFilePaths :
+                                  ['Tasks.md']; // Default if not set
+
+    // Default target path is the first one in the list
+    const defaultPath = availableDestinations[0];
 
     // Create tooltip container element
     const tooltipEl = document.createElement('div');
@@ -944,7 +953,7 @@ export class TasksCalendarItemView extends ItemView {
       React.createElement(TaskClickTooltip, {
         taskText: "",
         cleanText: "",
-        filePath: targetFilePath,
+        filePath: defaultPath,
         position: tooltipPosition,
         onClose: () => this.closeActiveTooltip(),
         onOpenFile: () => {}, // No-op for creation mode
@@ -956,8 +965,9 @@ export class TasksCalendarItemView extends ItemView {
         status: " ", // Default empty status
         isCreateMode: true,
         selectedDate: date,
-        onCreateTask: (text, startDate, endDate, isAllDay, status) =>
-          this.handleTaskCreation(text, startDate, endDate, isAllDay, status),
+        availableDestinations: availableDestinations, // Pass available destinations
+        onCreateTask: (text, startDate, endDate, isAllDay, status, targetPath) =>
+          this.handleTaskCreation(text, startDate, endDate, isAllDay, status, targetPath),
         // Add functional callbacks that actually update the internal state of TaskClickTooltip
         onUpdateDates: (..._) => {
           // These state changes will be managed by the TaskClickTooltip component itself

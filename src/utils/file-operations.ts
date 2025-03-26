@@ -1,4 +1,4 @@
-import { TFile, Vault } from "obsidian";
+import { App, Vault, TFile } from "obsidian";
 import { FileOperationError } from "./error-handling";
 
 /**
@@ -105,4 +105,29 @@ export async function appendToFile(
   });
 
   return true;
+}
+
+/**
+ * Renames a file with proper error handling
+ *
+ * @param app Obsidian app instance
+ * @param file File to rename
+ * @param newName New file name (without extension)
+ * @throws FileOperationError if file operation fails
+ */
+export async function renameFile(
+  app: App,
+  file: TFile,
+  newName: string
+) {
+  // Get the file extension
+  const extension = file.extension;
+  // Get the parent path
+  const parentPath = file.parent ? file.parent.path + '/' : '';
+  // Create the new path
+  const newPath = `${parentPath}${newName}.${extension}`;
+  if (file.path == newPath)
+    return undefined;
+  await app.fileManager.renameFile(file, newPath);
+  return file.path;
 }

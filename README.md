@@ -16,6 +16,17 @@ Tasks Calendar is an [Obsidian.md](https://obsidian.md/) plugin that leverages [
   ```
   - [ ] Task description [due:: YYYY-MM-DDTHH:mm]
   ```
+- Supports file property tasks (using frontmatter):
+  ```yaml
+  ---
+  ...
+  due: YYYY-MM-DD
+  start: YYYY-MM-DD  # Optional for multi-day tasks
+  status: " " # optional, empty string means this task is "Incomplete"
+  ...
+  ---
+  ```
+  The file name becomes the task title, and the entire note becomes a task.
 
 That's it. You are free to write your tasks wherever you want.
 
@@ -106,6 +117,9 @@ That's it. You are free to write your tasks wherever you want.
 - **Interacting with Tasks**
   Click a task to update its details, or drag & drop to adjust dates. The view refreshes automatically when tasks are updated in your vault.
 
+- **File Property Tasks**
+  Add status and date properties to your frontmatter to treat entire notes as tasks. The file name will display as the task title on the calendar.
+
 ## Related Plugins
 
 ### Comparison with obsidian-full-calendar
@@ -114,7 +128,7 @@ That's it. You are free to write your tasks wherever you want.
 
 |  | Tasks Calendar | obsidian-full-calendar |
 |--|---------------|---------------|
-| **Task Storage** | Tasks can be written anywhere in your vault | One note per task approach |
+| **Task Storage** | Tasks can be written anywhere in your vault or use file frontmatter | One note per task approach |
 | **Task Discovery** | Uses Dataview to scan and aggregate tasks | Relies on dedicated note properties |
 | **Philosophy** | Freedom to organize tasks in any note structure | Structured approach with dedicated notes |
 
