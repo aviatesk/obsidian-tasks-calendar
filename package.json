@@ -1,6 +1,6 @@
 {
   "name": "obsidian-tasks-calendar",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Display tasks with date using FullCalendar.",
   "main": "main.js",
   "scripts": {
