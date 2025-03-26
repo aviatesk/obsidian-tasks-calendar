@@ -602,20 +602,18 @@ export class TasksCalendarItemView extends ItemView {
     endDate: Date | null,
     isAllDay: boolean,
     status: string,
+    targetPath: string,
   ): Promise<boolean> {
     if (!taskText.trim()) {
       new Notice("Task text cannot be empty");
       return false;
     }
 
-    // Get the target file path from settings
-    const targetFilePath = this.settings.newTaskFilePath || 'Tasks.md';
-
     try {
-      // Create the task using the utility function
+      // Create the task using the utility function with the selected target path
       const success = await createTask(
         this.app,
-        targetFilePath,
+        targetPath,
         taskText,
         status,
         startDate,
@@ -913,8 +911,14 @@ export class TasksCalendarItemView extends ItemView {
     // Close any existing tooltip first
     this.closeActiveTooltip();
 
-    // Get the target file path from settings
-    const targetFilePath = this.settings.newTaskFilePath || 'Tasks.md';
+    // Get all available destination paths from settings
+    const availableDestinations = this.settings.newTaskFilePaths &&
+                                  this.settings.newTaskFilePaths.length > 0 ?
+                                  this.settings.newTaskFilePaths :
+                                  ['Tasks.md']; // Default if not set
+
+    // Default target path is the first one in the list
+    const defaultPath = availableDestinations[0];
 
     // Create tooltip container element
     const tooltipEl = document.createElement('div');
@@ -949,7 +953,7 @@ export class TasksCalendarItemView extends ItemView {
       React.createElement(TaskClickTooltip, {
         taskText: "",
         cleanText: "",
-        filePath: targetFilePath,
+        filePath: defaultPath,
         position: tooltipPosition,
         onClose: () => this.closeActiveTooltip(),
         onOpenFile: () => {}, // No-op for creation mode
@@ -961,8 +965,9 @@ export class TasksCalendarItemView extends ItemView {
         status: " ", // Default empty status
         isCreateMode: true,
         selectedDate: date,
-        onCreateTask: (text, startDate, endDate, isAllDay, status) =>
-          this.handleTaskCreation(text, startDate, endDate, isAllDay, status),
+        availableDestinations: availableDestinations, // Pass available destinations
+        onCreateTask: (text, startDate, endDate, isAllDay, status, targetPath) =>
+          this.handleTaskCreation(text, startDate, endDate, isAllDay, status, targetPath),
         // Add functional callbacks that actually update the internal state of TaskClickTooltip
         onUpdateDates: (..._) => {
           // These state changes will be managed by the TaskClickTooltip component itself

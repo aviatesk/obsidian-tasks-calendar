@@ -36,7 +36,7 @@ export interface UserCalendarSettings {
   excludedTags?: string[];       // excluded tags, tasks with these tags will be filtered out
   includedTags?: string[];       // included tags, empty array means including every task
   eventPropsMap?: EventPropsMap  // event info map
-  newTaskFilePath?: string;      // New setting for task creation file path
+  newTaskFilePaths?: string[];   // New setting for multiple task creation file paths
 }
 
 /**
@@ -55,7 +55,7 @@ export interface CalendarSettings {
   excludedTags: string[];       // excluded tags, tasks with these tags will be filtered out
   includedTags: string[];       // included tags, empty array means including every task
   eventPropsMap: EventPropsMap  // event info map
-  newTaskFilePath: string;      // New setting for task creation file path
+  newTaskFilePaths: string[];   // New setting for multiple task creation file paths
 }
 
 export interface PluginSettings {
@@ -93,7 +93,7 @@ export const DEFAULT_CALENDAR_SETTINGS: CalendarSettings = {
     // E.g., include completed status with a different style
     // 'x': { textColor: 'var(--text-faint)', backgroundColor: 'var(--background-secondary)', display: 'block', priority: -1 },
   },
-  newTaskFilePath: 'Tasks.md' // Default file path for new tasks
+  newTaskFilePaths: ['Tasks.md'] // Default file path for new tasks
 }
 
 export const DEFAULT_PLUGIN_SETTINGS: PluginSettings = {
@@ -128,8 +128,8 @@ export function toUserCalendarSettings(settings: CalendarSettings): UserCalendar
     userSettings.dateProperty = settings.dateProperty;
   if (settings.startDateProperty !== DEFAULT_CALENDAR_SETTINGS.startDateProperty)
     userSettings.startDateProperty = settings.startDateProperty;
-  if (settings.newTaskFilePath !== DEFAULT_CALENDAR_SETTINGS.newTaskFilePath)
-    userSettings.newTaskFilePath = settings.newTaskFilePath;
+  if (settings.newTaskFilePaths !== DEFAULT_CALENDAR_SETTINGS.newTaskFilePaths)
+    userSettings.newTaskFilePaths = settings.newTaskFilePaths;
 
   // For arrays and objects, we need to check if they're different
   if (JSON.stringify(settings.includedStatuses) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.includedStatuses))

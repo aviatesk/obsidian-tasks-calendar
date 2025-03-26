@@ -49,6 +49,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const [newTag, setNewTag] = useState<string>('');
   const [newExcludedStatus, setNewExcludedStatus] = useState<string>('');
   const [newExcludedTag, setNewExcludedTag] = useState<string>('');
+  const [newPath, setNewPath] = useState<string>(''); // Add state for new path input
   const modalRef = useRef<HTMLDivElement>(null);
   const statusInputRef = useRef<HTMLInputElement>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
@@ -251,24 +252,75 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   </div>
                 </div>
 
-                {/* Add new field for task file path */}
+                {/* Task Creation Destinations - Multiple File Paths */}
                 <div className="field-container">
-                  <label className="label">New Task File Path</label>
+                  <label className="label">Task Creation Destinations</label>
                   <div className="description">
-                    Path where new tasks will be created when clicking on dates
+                    Destinations where new tasks will be created when clicking on dates.
+                    When a file path (ending with <code>.md</code>) is specified, Markdown list format tasks will be appended to that file.
+                    When a folder (ending with <code>/</code>) is specified, new notes with task properties will be created with task text as the name.
                   </div>
+
+                  {/* List of current paths */}
+                  <div className="chips-container">
+                    {(localSettings.newTaskFilePaths || []).length > 0 ? (
+                      (localSettings.newTaskFilePaths || []).map((path: string, index: number) => (
+                        <div key={index} className="chip">
+                          <span className="text">{path}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updatedPaths = [...(localSettings.newTaskFilePaths || [])];
+                              updatedPaths.splice(index, 1);
+                              handleChange('newTaskFilePaths', updatedPaths);
+                            }}
+                            className="remove-button"
+                            aria-label={`Remove ${path}`}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="empty-message">No destinations added. Default "Tasks.md" will be used.</div>
+                    )}
+                  </div>
+
+                  {/* Add new path input */}
                   <div className="input-wrapper">
-                    <input
-                      type="text"
-                      value={localSettings.newTaskFilePath || ''}
-                      onChange={(e) => handleChange('newTaskFilePath', e.target.value)}
-                      placeholder="Tasks.md"
-                    />
+                    <div className="input-container">
+                      <input
+                        type="text"
+                        placeholder="Add new destination path..."
+                        value={newPath}
+                        onChange={(e) => setNewPath(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && newPath.trim()) {
+                            const updatedPaths = [...(localSettings.newTaskFilePaths || []), newPath.trim()];
+                            handleChange('newTaskFilePaths', updatedPaths);
+                            setNewPath('');
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (newPath.trim()) {
+                            const updatedPaths = [...(localSettings.newTaskFilePaths || []), newPath.trim()];
+                            handleChange('newTaskFilePaths', updatedPaths);
+                            setNewPath('');
+                          }
+                        }}
+                        className="add-button"
+                      >
+                        Add
+                      </button>
+                    </div>
                     <button
                       type="button"
                       className="reset-button"
-                      onClick={() => resetField('newTaskFilePath', DEFAULT_CALENDAR_SETTINGS.newTaskFilePath)}
-                      aria-label="Reset task file path"
+                      onClick={() => resetField('newTaskFilePaths', [...DEFAULT_CALENDAR_SETTINGS.newTaskFilePaths])}
+                      aria-label="Reset task file paths"
                       title="Reset to default"
                     >
                       <RefreshCw size={16} />
