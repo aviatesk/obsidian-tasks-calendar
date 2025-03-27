@@ -37,7 +37,7 @@ function calculateEventPriority(startDate: DateTime) {
   return Math.max(0, Math.min(1, 1 - (timeAsDecimal / 24)));
 }
 
-function sourceFilter(source: STask | SMarkdownPage, settings: CalendarSettings) {
+function sourceFilter(source: STask | SMarkdownPage, settings: CalendarSettings, isPage: boolean) {
   const excludedStatuses = settings.excludedStatuses
   if (excludedStatuses.length && excludedStatuses.includes(source.status))
     return false;
@@ -59,9 +59,13 @@ function sourceFilter(source: STask | SMarkdownPage, settings: CalendarSettings)
   const date = source[dateProperty]
   if (!date || !isDateTime(date))
     return false;
+  if (isPage && source.file.frontmatter && !source.file.frontmatter[dateProperty])
+    return false; // XXX this is unnecessary if we switch to the new datecore package
   const startDate = source[startDateProperty]
   if (startDate && !isDateTime(startDate))
     return false;
+  if (startDate && isPage && source.file.frontmatter && !source.file.frontmatter[startDateProperty])
+    return false; // XXX this is unnecessary if we switch to the new datecore package
 
   return true;
 }
@@ -138,11 +142,11 @@ export default function getTasksAsEvents(
   const query = settings.query || DEFAULT_CALENDAR_SETTINGS.query;
 
   dataviewApi.pages(query).forEach((page: SMarkdownPage) => {
-    if (page && sourceFilter(page, settings))
+    if (page && sourceFilter(page, settings, true))
       events.push(createEvent(page, settings));
     if (page && page.file.tasks) {
       page.file.tasks
-        .filter(task=>sourceFilter(task, settings))
+        .filter(task=>sourceFilter(task, settings, false))
         .forEach(task => events.push(createEvent(task, settings)));
     }
   });
