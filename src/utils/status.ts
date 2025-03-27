@@ -24,8 +24,8 @@ export interface TaskStatusOption {
 export const STATUS_OPTIONS: TaskStatusOption[] = [
   { value: ' ', label: 'Incomplete' },
   { value: '/', label: 'In Progress' },
-  { value: 'x', label: 'Completed', prop: "completion" },
-  { value: 'X', label: 'Completed', prop: "completion" },  // Capital X also treated as "Complete"
+  { value: 'x', label: 'Completed', prop: "completed" },
+  { value: 'X', label: 'Completed', prop: "completed" },  // Capital X also treated as "Complete"
   { value: '-', label: 'Cancelled', prop: "cancelled" },
   { value: '>', label: 'Deferred', prop: "deferred", preserveOldProp: true },
   { value: '!', label: 'Important' },
