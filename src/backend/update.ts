@@ -12,6 +12,486 @@ import { getCurrentDateFormatted, formatDateForTask } from "./date";
 import { processFileLine, renameFile } from "./file-operations";
 import { STATUS_OPTIONS } from "./status";
 import { TaskValidationError } from "./error-handling";
+import { DateTime } from "luxon";
+import {
+  getRecurrenceId,
+  isRecurrenceChild,
+  isRecurrenceParent,
+  RecurrenceRule,
+  formatRecurrenceRule,
+  generateRecurrenceDates
+} from "./recurrence";
+
+/**
+ * Updates all tasks in a recurrence group with new status
+ */
+export async function updateRecurrenceGroupStatus(
+  app: App,
+  file: TFile,
+  recurrenceId: string,
+  newStatus: string
+): Promise<boolean> {
+  const content = await app.vault.read(file);
+  const lines = content.split('\n');
+  let newContent = '';
+  let changed = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    let updatedLine = line;
+
+    try {
+      const task = parseTask(line);
+      const taskRecurrenceId = getRecurrenceId(task);
+
+      if (taskRecurrenceId === recurrenceId) {
+        let updatedTask = cloneTask(task);
+        updatedTask.status = newStatus;
+
+        // Handle status-related properties
+        const oldStatusOption = STATUS_OPTIONS.find(option => option.value === task.status);
+        const newStatusOption = STATUS_OPTIONS.find(option => option.value === newStatus);
+
+        const oldProp = oldStatusOption?.prop;
+        const newProp = newStatusOption?.prop;
+
+        if (oldProp && oldProp !== newProp && newStatusOption?.preserveOldProp !== true) {
+          updatedTask = removeTaskProperty(updatedTask, oldProp);
+        }
+
+        if (newProp) {
+          const currentDate = getCurrentDateFormatted();
+          updatedTask = setTaskProperty(updatedTask, newProp, currentDate);
+        }
+
+        updatedLine = reconstructTask(updatedTask);
+        changed = true;
+      }
+    } catch (error) {
+      // Not a task line, keep original
+    }
+
+    newContent += updatedLine + '\n';
+  }
+
+  if (changed) {
+    await app.vault.modify(file, newContent.trimEnd() + '\n');
+
+    // Update frontmatter if this is a file property task
+    await app.fileManager.processFrontMatter(file, (frontmatter) => {
+      if (frontmatter['recurrence_id'] === recurrenceId) {
+        const oldStatusOption = STATUS_OPTIONS.find(option => option.value === frontmatter.status);
+        const newStatusOption = STATUS_OPTIONS.find(option => option.value === newStatus);
+
+        const oldProp = oldStatusOption?.prop;
+        const newProp = newStatusOption?.prop;
+
+        frontmatter.status = newStatus;
+
+        if (oldProp && oldProp !== newProp && newStatusOption?.preserveOldProp !== true) {
+          delete frontmatter[oldProp];
+        }
+
+        if (newProp) {
+          frontmatter[newProp] = getCurrentDateFormatted();
+        }
+      }
+    });
+  }
+
+  return changed;
+}
+
+/**
+ * Updates tasks in a recurrence group after a specific date with new status
+ */
+export async function updateRecurrenceStatusAfter(
+  app: App,
+  file: TFile,
+  recurrenceId: string,
+  afterDate: DateTime,
+  newStatus: string,
+  dateProperty: string
+): Promise<boolean> {
+  const content = await app.vault.read(file);
+  const lines = content.split('\n');
+  let newContent = '';
+  let changed = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    let updatedLine = line;
+
+    try {
+      const task = parseTask(line);
+      const taskRecurrenceId = getRecurrenceId(task);
+
+      if (taskRecurrenceId === recurrenceId) {
+        const taskDate = task.propertiesAfterContent.get(dateProperty) ||
+                        task.propertiesBeforeContent.get(dateProperty);
+
+        if (taskDate) {
+          const date = DateTime.fromISO(taskDate);
+          if (date > afterDate) {
+            let updatedTask = cloneTask(task);
+            updatedTask.status = newStatus;
+
+            const oldStatusOption = STATUS_OPTIONS.find(option => option.value === task.status);
+            const newStatusOption = STATUS_OPTIONS.find(option => option.value === newStatus);
+
+            const oldProp = oldStatusOption?.prop;
+            const newProp = newStatusOption?.prop;
+
+            if (oldProp && oldProp !== newProp && newStatusOption?.preserveOldProp !== true) {
+              updatedTask = removeTaskProperty(updatedTask, oldProp);
+            }
+
+            if (newProp) {
+              updatedTask = setTaskProperty(updatedTask, newProp, getCurrentDateFormatted());
+            }
+
+            updatedLine = reconstructTask(updatedTask);
+            changed = true;
+          }
+        }
+      }
+    } catch (error) {
+      // Not a task line or invalid date, keep original
+    }
+
+    newContent += updatedLine + '\n';
+  }
+
+  if (changed) {
+    await app.vault.modify(file, newContent.trimEnd() + '\n');
+
+    // Update frontmatter if this is a file property task
+    await app.fileManager.processFrontMatter(file, (frontmatter) => {
+      if (frontmatter['recurrence_id'] === recurrenceId) {
+        const taskDate = frontmatter[dateProperty];
+        if (taskDate) {
+          const date = DateTime.fromISO(taskDate);
+          if (date > afterDate) {
+            const oldStatusOption = STATUS_OPTIONS.find(option => option.value === frontmatter.status);
+            const newStatusOption = STATUS_OPTIONS.find(option => option.value === newStatus);
+
+            const oldProp = oldStatusOption?.prop;
+            const newProp = newStatusOption?.prop;
+
+            frontmatter.status = newStatus;
+
+            if (oldProp && oldProp !== newProp && newStatusOption?.preserveOldProp !== true) {
+              delete frontmatter[oldProp];
+            }
+
+            if (newProp) {
+              frontmatter[newProp] = getCurrentDateFormatted();
+            }
+          }
+        }
+      }
+    });
+  }
+
+  return changed;
+}
+
+/**
+ * Updates all tasks in a recurrence group with new dates and rule
+ */
+export async function updateRecurrenceGroupDates(
+  app: App,
+  file: TFile,
+  recurrenceId: string,
+  newStart: Date,
+  newEnd: Date | null,
+  isAllDay: boolean,
+  startDateProperty: string,
+  dateProperty: string,
+  newRule: RecurrenceRule
+): Promise<boolean> {
+  const content = await app.vault.read(file);
+  const lines = content.split('\n');
+  let newContent = '';
+  let changed = false;
+  let foundParent = false;
+
+  // Generate new dates
+  const startDateTime = DateTime.fromJSDate(newStart);
+  const dates = generateRecurrenceDates(startDateTime, newRule);
+  let dateIndex = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    let updatedLine = line;
+
+    try {
+      const task = parseTask(line);
+      const taskRecurrenceId = getRecurrenceId(task);
+
+      if (taskRecurrenceId === recurrenceId) {
+        if (isRecurrenceParent(task)) {
+          foundParent = true;
+          let updatedTask = cloneTask(task);
+          updatedTask = setTaskProperty(updatedTask, 'recurrence', formatRecurrenceRule(newRule));
+
+          if (newEnd) {
+            const formattedStartDate = formatDateForTask(newStart, isAllDay, false);
+            updatedTask = setTaskProperty(updatedTask, startDateProperty, formattedStartDate);
+            const formattedEndDate = formatDateForTask(newEnd, isAllDay, true);
+            updatedTask = setTaskProperty(updatedTask, dateProperty, formattedEndDate);
+          } else {
+            const formattedDate = formatDateForTask(newStart, isAllDay, false);
+            updatedTask = removeTaskProperty(updatedTask, startDateProperty);
+            updatedTask = setTaskProperty(updatedTask, dateProperty, formattedDate);
+          }
+
+          updatedLine = reconstructTask(updatedTask);
+          changed = true;
+        } else if (isRecurrenceChild(task) && dateIndex < dates.length) {
+          let updatedTask = cloneTask(task);
+          const date = dates[dateIndex];
+
+          if (newEnd) {
+            const duration = DateTime.fromJSDate(newEnd).diff(startDateTime);
+            const childEndDate = date.plus(duration);
+
+            const formattedStartDate = formatDateForTask(date.toJSDate(), isAllDay, false);
+            updatedTask = setTaskProperty(updatedTask, startDateProperty, formattedStartDate);
+
+            const formattedEndDate = formatDateForTask(childEndDate.toJSDate(), isAllDay, true);
+            updatedTask = setTaskProperty(updatedTask, dateProperty, formattedEndDate);
+          } else {
+            const formattedDate = formatDateForTask(date.toJSDate(), isAllDay, false);
+            updatedTask = removeTaskProperty(updatedTask, startDateProperty);
+            updatedTask = setTaskProperty(updatedTask, dateProperty, formattedDate);
+          }
+
+          updatedLine = reconstructTask(updatedTask);
+          changed = true;
+          dateIndex++;
+        }
+      }
+    } catch (error) {
+      // Not a task line, keep original
+    }
+
+    newContent += updatedLine + '\n';
+  }
+
+  if (changed) {
+    await app.vault.modify(file, newContent.trimEnd() + '\n');
+
+    // Update frontmatter if this is a file property task
+    if (foundParent) {
+      await app.fileManager.processFrontMatter(file, (frontmatter) => {
+        if (frontmatter['recurrence_id'] === recurrenceId) {
+          frontmatter['recurrence'] = formatRecurrenceRule(newRule);
+          if (newEnd) {
+            frontmatter[startDateProperty] = formatDateForTask(newStart, isAllDay, false);
+            frontmatter[dateProperty] = formatDateForTask(newEnd, isAllDay, true);
+          } else {
+            delete frontmatter[startDateProperty];
+            frontmatter[dateProperty] = formatDateForTask(newStart, isAllDay, false);
+          }
+        }
+      });
+    }
+  }
+
+  return changed;
+}
+
+/**
+ * Updates tasks in a recurrence group after a specific date with new dates and rule
+ */
+export async function updateRecurrenceDatesAfter(
+  app: App,
+  file: TFile,
+  recurrenceId: string,
+  afterDate: DateTime,
+  newStart: Date,
+  newEnd: Date | null,
+  isAllDay: boolean,
+  startDateProperty: string,
+  dateProperty: string,
+  newRule: RecurrenceRule
+): Promise<boolean> {
+  const content = await app.vault.read(file);
+  const lines = content.split('\n');
+  let newContent = '';
+  let changed = false;
+  let foundParent = false;
+
+  // Generate new dates starting from afterDate
+  const startDateTime = afterDate;
+  const dates = generateRecurrenceDates(startDateTime, newRule);
+  let dateIndex = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    let updatedLine = line;
+
+    try {
+      const task = parseTask(line);
+      const taskRecurrenceId = getRecurrenceId(task);
+
+      if (taskRecurrenceId === recurrenceId) {
+        if (isRecurrenceParent(task)) {
+          foundParent = true;
+          let updatedTask = cloneTask(task);
+          updatedTask = setTaskProperty(updatedTask, 'recurrence', formatRecurrenceRule(newRule));
+          updatedLine = reconstructTask(updatedTask);
+          changed = true;
+        } else if (isRecurrenceChild(task)) {
+          const taskDate = task.propertiesAfterContent.get(dateProperty) ||
+                          task.propertiesBeforeContent.get(dateProperty);
+
+          if (taskDate) {
+            const date = DateTime.fromISO(taskDate);
+            if (date > afterDate && dateIndex < dates.length) {
+              let updatedTask = cloneTask(task);
+              const newDate = dates[dateIndex];
+
+              if (newEnd) {
+                const duration = DateTime.fromJSDate(newEnd).diff(DateTime.fromJSDate(newStart));
+                const childEndDate = newDate.plus(duration);
+
+                const formattedStartDate = formatDateForTask(newDate.toJSDate(), isAllDay, false);
+                updatedTask = setTaskProperty(updatedTask, startDateProperty, formattedStartDate);
+
+                const formattedEndDate = formatDateForTask(childEndDate.toJSDate(), isAllDay, true);
+                updatedTask = setTaskProperty(updatedTask, dateProperty, formattedEndDate);
+              } else {
+                const formattedDate = formatDateForTask(newDate.toJSDate(), isAllDay, false);
+                updatedTask = removeTaskProperty(updatedTask, startDateProperty);
+                updatedTask = setTaskProperty(updatedTask, dateProperty, formattedDate);
+              }
+
+              updatedLine = reconstructTask(updatedTask);
+              changed = true;
+              dateIndex++;
+            }
+          }
+        }
+      }
+    } catch (error) {
+      // Not a task line or invalid date, keep original
+    }
+
+    newContent += updatedLine + '\n';
+  }
+
+  if (changed) {
+    await app.vault.modify(file, newContent.trimEnd() + '\n');
+
+    // Update frontmatter if this is a file property task
+    if (foundParent) {
+      await app.fileManager.processFrontMatter(file, (frontmatter) => {
+        if (frontmatter['recurrence_id'] === recurrenceId) {
+          frontmatter['recurrence'] = formatRecurrenceRule(newRule);
+          const taskDate = frontmatter[dateProperty];
+          if (taskDate) {
+            const date = DateTime.fromISO(taskDate);
+            if (date > afterDate) {
+              if (newEnd) {
+                frontmatter[startDateProperty] = formatDateForTask(newStart, isAllDay, false);
+                frontmatter[dateProperty] = formatDateForTask(newEnd, isAllDay, true);
+              } else {
+                delete frontmatter[startDateProperty];
+                frontmatter[dateProperty] = formatDateForTask(newStart, isAllDay, false);
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  return changed;
+}
+
+/**
+ * Updates all tasks in a recurrence group with new text
+ */
+export async function updateRecurrenceGroupText(
+  app: App,
+  file: TFile,
+  recurrenceId: string,
+  originalText: string,
+  newText: string
+): Promise<boolean> {
+  const content = await app.vault.read(file);
+  const lines = content.split('\n');
+  let newContent = '';
+  let changed = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    let updatedLine = line;
+
+    try {
+      const task = parseTask(line);
+      const taskRecurrenceId = getRecurrenceId(task);
+
+      if (taskRecurrenceId === recurrenceId) {
+        // Check for potential issues
+        const issues = detectTaskIssues(task, line);
+        if (issues.hasSplitContent) {
+          const fragmentsText = issues.contentFragments.map(f => `"${f.text}"`).join(", ");
+          throw new TaskValidationError(`Task has content in multiple places (${fragmentsText}). Please edit the task directly in the file.`);
+        }
+
+        if (hasEmbeddedTags(newText)) {
+          throw new TaskValidationError("The new text contains text attached to tags (e.g., 'text#tag'). Please add spaces between text and tags.");
+        }
+
+        const contentMatch = task.content.trim() === originalText.trim();
+        const contentIncludes = task.content.includes(originalText.trim());
+
+        let updatedTask = cloneTask(task);
+
+        if (!contentMatch && !contentIncludes) {
+          if (task.content.length === 0 && originalText.trim().length === 0) {
+            updatedTask.content = newText.trim();
+          } else {
+            throw new TaskValidationError(`Cannot safely update: The original text "${originalText.trim()}" doesn't match the task's content "${task.content.trim()}".`);
+          }
+        } else if (contentMatch) {
+          updatedTask.content = newText.trim();
+        } else {
+          updatedTask.content = task.content.replace(originalText.trim(), newText.trim());
+        }
+
+        updatedLine = reconstructTask(updatedTask);
+        changed = true;
+      }
+    } catch (error) {
+      if (error instanceof TaskValidationError) {
+        throw error;
+      }
+      // Not a task line, keep original
+    }
+
+    newContent += updatedLine + '\n';
+  }
+
+  if (changed) {
+    await app.vault.modify(file, newContent.trimEnd() + '\n');
+
+    // Update frontmatter if this is a file property task
+    await app.fileManager.processFrontMatter(file, (frontmatter) => {
+      if (frontmatter['recurrence_id'] === recurrenceId) {
+        const title = frontmatter['title'];
+        if (title && title.trim() === originalText.trim()) {
+          frontmatter['title'] = newText.trim();
+        }
+      }
+    });
+  }
+
+  return changed;
+}
 
 /**
  * Update task status in Obsidian document

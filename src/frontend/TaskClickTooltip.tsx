@@ -1,10 +1,70 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { FileText, Pencil, X, Calendar, Tag, Info, Check, XCircle, Edit, Plus, Trash2, AlertCircle } from 'lucide-react';
+import { FileText, Pencil, X, Calendar, Tag, Info, Check, XCircle, Edit, Plus, Trash2, AlertCircle, Repeat, MoreVertical } from 'lucide-react';
 import { DateTimePickerModal } from './DateTimePickerModal';
 import { StatusPickerDropdown } from './StatusPickerDropdown';
 import { formatStatus, getStatusIcon } from '../backend/status';
 import { Platform } from 'obsidian';
 import { DEFAULT_CALENDAR_SETTINGS } from 'src/TasksCalendarSettings';
+import { RecurrenceRule, formatRecurrenceRule } from '../backend/recurrence';
+import { RecurrenceRuleTooltip } from './RecurrenceRuleTooltip';
+
+interface BatchOperationMenuProps {
+  onDeleteGroup: () => void;
+  onDeleteAfter: () => void;
+  onUpdateGroup: () => void;
+  onUpdateAfter: () => void;
+  position: { top: number; left: number };
+  onClose: () => void;
+}
+
+const BatchOperationMenu: React.FC<BatchOperationMenuProps> = ({
+  onDeleteGroup,
+  onDeleteAfter,
+  onUpdateGroup,
+  onUpdateAfter,
+  position,
+  onClose,
+}) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="batch-operation-menu"
+      style={{
+        top: `${position.top}px`,
+        left: `${position.left}px`,
+      }}
+      ref={menuRef}
+    >
+      <button className="batch-operation-menu-item" onClick={onUpdateGroup}>
+        Update all tasks in group
+      </button>
+      <button className="batch-operation-menu-item" onClick={onUpdateAfter}>
+        Update this and future tasks
+      </button>
+      <div className="batch-operation-menu-separator" />
+      <button className="batch-operation-menu-item delete" onClick={onDeleteGroup}>
+        Delete all tasks in group
+      </button>
+      <button className="batch-operation-menu-item delete" onClick={onDeleteAfter}>
+        Delete this and future tasks
+      </button>
+    </div>
+  );
+};
 
 interface TaskClickTooltipProps {
   taskText: string;
@@ -32,6 +92,16 @@ interface TaskClickTooltipProps {
   selectedDate?: Date;
   onCreateTask?: (text: string, startDate: Date | null, endDate: Date | null, isAllDay: boolean, status: string, targetPath: string) => Promise<boolean>;
   availableDestinations?: string[]; // Added prop for available destinations
+  // Recurrence-related props
+  recurrenceRule?: RecurrenceRule;
+  recurrenceId?: string;
+  isRecurrenceParent?: boolean;
+  isRecurrenceChild?: boolean;
+  onUpdateRecurrence?: (rule: RecurrenceRule) => void;
+  onDeleteRecurrenceGroup?: () => Promise<boolean>;
+  onDeleteRecurrenceAfter?: () => Promise<boolean>;
+  onUpdateRecurrenceGroup?: () => void;
+  onUpdateRecurrenceAfter?: () => void;
 }
 
 export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
@@ -57,6 +127,15 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   selectedDate,
   onCreateTask,
   availableDestinations = DEFAULT_CALENDAR_SETTINGS.newTaskFilePaths,
+  // Recurrence props
+  recurrenceRule,
+  isRecurrenceParent,
+  isRecurrenceChild,
+  onUpdateRecurrence,
+  onDeleteRecurrenceGroup,
+  onDeleteRecurrenceAfter,
+  onUpdateRecurrenceGroup,
+  onUpdateRecurrenceAfter,
 }) => {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -82,8 +161,12 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   // Date picker state - simplified to a single date picker
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showStatusPicker, setShowStatusPicker] = useState(false);
+  const [showRecurrencePicker, setShowRecurrencePicker] = useState(false);
+  const [showBatchMenu, setShowBatchMenu] = useState(false);
   const [datePickerPosition, setDatePickerPosition] = useState({ top: 0, left: 0 });
   const [statusPickerPosition, setStatusPickerPosition] = useState({ top: 0, left: 0 });
+  const [recurrencePickerPosition, setRecurrencePickerPosition] = useState({ top: 0, left: 0 });
+  const [batchMenuPosition, setBatchMenuPosition] = useState({ top: 0, left: 0 });
 
   // Add state for managing status in create mode
   const [currentStatus, setCurrentStatus] = useState<string>(status);
@@ -311,6 +394,67 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   // Date picker close handler - just close it
   const handleDatePickerClose = () => {
     setShowDatePicker(false);
+  };
+
+  // Recurrence click handler
+  const handleRecurrenceClick = (e: React.MouseEvent) => {
+    if (!onUpdateRecurrence && !isCreateMode) return;
+
+    if (isMobile) {
+      setRecurrencePickerPosition({ top: 0, left: 0 });
+    } else {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      setRecurrencePickerPosition({ top: rect.bottom + 5, left: rect.left });
+    }
+
+    setShowRecurrencePicker(true);
+
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  // Batch menu click handler
+  const handleBatchMenuClick = (e: React.MouseEvent) => {
+    if (isMobile) {
+      setBatchMenuPosition({ top: 0, left: 0 });
+    } else {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      setBatchMenuPosition({ top: rect.bottom + 5, left: rect.right - 150 });
+    }
+
+    setShowBatchMenu(true);
+
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  // Format recurrence display
+  const formatRecurrenceDisplay = () => {
+    if (!recurrenceRule && !isCreateMode) return null;
+
+    return (
+      <div className="task-click-tooltip-info-item">
+        <Repeat size={isMobile ? 18 : 16} className="task-click-tooltip-icon-small" />
+        <div
+          className="task-click-tooltip-recurrence-container"
+          onClick={handleRecurrenceClick}
+          title="Click to edit recurrence"
+        >
+          <span className="task-click-tooltip-info-text task-click-tooltip-recurrence-text">
+            {recurrenceRule ? formatRecurrenceRule(recurrenceRule) : 'No repeat'}
+          </span>
+        </div>
+        {(isRecurrenceParent || isRecurrenceChild) && (
+          <button
+            className="task-click-tooltip-batch-button"
+            onClick={handleBatchMenuClick}
+            title="Batch operations"
+          >
+            <MoreVertical size={isMobile ? 18 : 16} />
+          </button>
+        )}
+      </div>
+    );
   };
 
   // Format date display - updated to handle both single dates and ranges in one section
@@ -568,6 +712,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
               </div>
             )}
 
+            {formatRecurrenceDisplay()}
             {formatDateDisplay()}
 
             {formatTagsDisplay()}
@@ -625,7 +770,34 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           />
         )}
 
-        {/* StatusPicker modal */}
+        {/* RecurrencePicker modal */}
+      {showRecurrencePicker && (
+        <RecurrenceRuleTooltip
+          initialRule={recurrenceRule}
+          position={recurrencePickerPosition}
+          onClose={() => setShowRecurrencePicker(false)}
+          onDone={(rule) => {
+            if (onUpdateRecurrence) {
+              onUpdateRecurrence(rule);
+            }
+            setShowRecurrencePicker(false);
+          }}
+        />
+      )}
+
+      {/* Batch operation menu */}
+      {showBatchMenu && (
+        <BatchOperationMenu
+          onDeleteGroup={onDeleteRecurrenceGroup || (() => {})}
+          onDeleteAfter={onDeleteRecurrenceAfter || (() => {})}
+          onUpdateGroup={onUpdateRecurrenceGroup || (() => {})}
+          onUpdateAfter={onUpdateRecurrenceAfter || (() => {})}
+          position={batchMenuPosition}
+          onClose={() => setShowBatchMenu(false)}
+        />
+      )}
+
+      {/* StatusPicker modal */}
         {showStatusPicker && (
           <StatusPickerDropdown
             currentStatus={isCreateMode ? currentStatus : status}
@@ -711,6 +883,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
             </div>
           )}
 
+          {formatRecurrenceDisplay()}
           {formatDateDisplay()}
 
           {formatTagsDisplay()}
@@ -765,6 +938,33 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           onClose={handleDatePickerClose}
           onDone={handleDateDone}
           position={datePickerPosition}
+        />
+      )}
+
+      {/* RecurrencePicker modal */}
+      {showRecurrencePicker && (
+        <RecurrenceRuleTooltip
+          initialRule={recurrenceRule}
+          position={recurrencePickerPosition}
+          onClose={() => setShowRecurrencePicker(false)}
+          onDone={(rule) => {
+            if (onUpdateRecurrence) {
+              onUpdateRecurrence(rule);
+            }
+            setShowRecurrencePicker(false);
+          }}
+        />
+      )}
+
+      {/* Batch operation menu */}
+      {showBatchMenu && (
+        <BatchOperationMenu
+          onDeleteGroup={onDeleteRecurrenceGroup || (() => {})}
+          onDeleteAfter={onDeleteRecurrenceAfter || (() => {})}
+          onUpdateGroup={onUpdateRecurrenceGroup || (() => {})}
+          onUpdateAfter={onUpdateRecurrenceAfter || (() => {})}
+          position={batchMenuPosition}
+          onClose={() => setShowBatchMenu(false)}
         />
       )}
 
