@@ -1,5 +1,5 @@
-import { Duration } from "luxon";
-import { DataviewApi, SMarkdownPage, DateTime, STask } from "obsidian-dataview";
+import { Duration, DateTime } from "luxon";
+import { DataviewApi, SMarkdownPage, STask } from "obsidian-dataview";
 import { EventInput } from "@fullcalendar/core";
 import { CalendarSettings, DEFAULT_EVENT_PROPS } from "../TasksCalendarSettings";
 import { DEFAULT_CALENDAR_SETTINGS } from "../TasksCalendarSettings";
@@ -14,7 +14,7 @@ export interface ExtendedProps {
 }
 
 // Helper function to check if a value is a DateTime object
-const isDateTime = (value: any): boolean => value && value.isLuxonDateTime;
+const isDateTime = (value: any): boolean => value && value.isLuxonDateTime && value.isValid;
 
 const ONE_DAY_DIFF = Duration.fromObject({ days: 1 });
 
@@ -37,6 +37,15 @@ function calculateEventPriority(startDate: DateTime) {
   return Math.max(0, Math.min(1, 1 - (timeAsDecimal / 24)));
 }
 
+// XXX this is unnecessary if we switch to the new datecore package
+function getPageDate(frontMatter: any, dateProperty: string) {
+  if (!frontMatter)
+    return undefined;
+  if (!frontMatter[dateProperty])
+    return undefined;
+  return DateTime.fromISO(frontMatter[dateProperty]);
+}
+
 function sourceFilter(source: STask | SMarkdownPage, settings: CalendarSettings, isPage: boolean) {
   const excludedStatuses = settings.excludedStatuses
   if (excludedStatuses.length && excludedStatuses.includes(source.status))
@@ -56,32 +65,27 @@ function sourceFilter(source: STask | SMarkdownPage, settings: CalendarSettings,
 
   const dateProperty = settings.dateProperty || DEFAULT_CALENDAR_SETTINGS.dateProperty;
   const startDateProperty = settings.startDateProperty || DEFAULT_CALENDAR_SETTINGS.startDateProperty;
-  const date = source[dateProperty]
+  const date = isPage ? getPageDate(source.file.frontmatter, dateProperty) : source[dateProperty];
   if (!date || !isDateTime(date))
     return false;
-  if (isPage && source.file.frontmatter && !source.file.frontmatter[dateProperty])
-    return false; // XXX this is unnecessary if we switch to the new datecore package
-  const startDate = source[startDateProperty]
+  const startDate = isPage ? getPageDate(source.file.frontmatter, startDateProperty) : source[startDateProperty];
   if (startDate && !isDateTime(startDate))
     return false;
-  if (startDate && isPage && source.file.frontmatter && !source.file.frontmatter[startDateProperty])
-    return false; // XXX this is unnecessary if we switch to the new datecore package
-
   return true;
 }
 
-function createEvent(source: STask | SMarkdownPage, settings: CalendarSettings) {
+function createEvent(source: STask | SMarkdownPage, settings: CalendarSettings, isPage: boolean) {
   const dateProperty = settings.dateProperty || DEFAULT_CALENDAR_SETTINGS.dateProperty;
   const startDateProperty = settings.startDateProperty || DEFAULT_CALENDAR_SETTINGS.startDateProperty;
 
-  const taskDate = source[dateProperty] as DateTime;
+  const taskDate = (isPage ? getPageDate(source.file.frontmatter, dateProperty) : source[dateProperty]) as DateTime;
   let startDate = taskDate;
   let allDay = taskDate.hour == 0 && taskDate.minute == 0 && taskDate.second == 0;
 
   // Check if task has an end date
   let endDate = undefined;
   if (source[startDateProperty]) {
-    const taskStartDate = source[startDateProperty] as DateTime;
+    const taskStartDate = (isPage ? getPageDate(source.file.frontmatter, startDateProperty) : source[startDateProperty]) as DateTime;
     startDate = taskStartDate;
     endDate = taskDate;
     if (allDay) {
@@ -143,11 +147,11 @@ export default function getTasksAsEvents(
 
   dataviewApi.pages(query).forEach((page: SMarkdownPage) => {
     if (page && sourceFilter(page, settings, true))
-      events.push(createEvent(page, settings));
+      events.push(createEvent(page, settings, true));
     if (page && page.file.tasks) {
       page.file.tasks
         .filter(task=>sourceFilter(task, settings, false))
-        .forEach(task => events.push(createEvent(task, settings)));
+        .forEach(task => events.push(createEvent(task, settings, false)));
     }
   });
 
