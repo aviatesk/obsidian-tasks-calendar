@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { CalendarSettings, DEFAULT_CALENDAR_SETTINGS } from '../TasksCalendarSettings';
 import { RefreshCw, X } from 'lucide-react';
+import { normalizeTag } from 'src/backend/tag';
 
 interface SettingsPanelProps {
   settings: CalendarSettings;
@@ -113,9 +114,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     inputRef: React.RefObject<HTMLInputElement>
   ) => {
     if (value.trim()) {
+      // Normalize tags by ensuring they have a '#' prefix
+      const processedValue = field.includes('Tags') ? normalizeTag(value) : value.trim();
+
       const currentItems = localSettings[field] || [];
-      if (!currentItems.includes(value.trim())) {
-        const updatedItems = [...currentItems, value.trim()];
+      if (!currentItems.includes(processedValue)) {
+        const updatedItems = [...currentItems, processedValue];
         handleChange(field, updatedItems);
       }
       setValue('');
@@ -162,6 +166,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       <label className="label">{label}</label>
       <div className="description">
         {description}
+        {field.includes('Tags') && (
+          <span> Tags should start with <code>#</code> (will be added automatically if omitted).</span>
+        )}
       </div>
       <div className="input-wrapper">
         <div className="input-container">

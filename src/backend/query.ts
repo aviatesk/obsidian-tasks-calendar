@@ -3,6 +3,7 @@ import { DataviewApi, SMarkdownPage, STask } from "obsidian-dataview";
 import { EventInput } from "@fullcalendar/core";
 import { CalendarSettings, DEFAULT_EVENT_PROPS } from "../TasksCalendarSettings";
 import { DEFAULT_CALENDAR_SETTINGS } from "../TasksCalendarSettings";
+import { normalizeTag } from "./tag";
 
 export interface ExtendedProps {
   filePath: string;
@@ -51,17 +52,17 @@ function sourceFilter(source: STask | SMarkdownPage, settings: CalendarSettings,
   if (excludedStatuses.length && excludedStatuses.includes(source.status))
     return false;
 
-  const excludedTags = settings.excludedTags
-  if (excludedTags.length && source.tags && source.tags.some((tag: string) => excludedTags.includes(tag)))
-    return false;
-
   const includedStatuses = settings.includedStatuses
   if (includedStatuses.length && !includedStatuses.includes(source.status))
     return false;
 
-  const includedTags = settings.includedTags
-  if (includedTags.length && source.tags && !source.tags.some((tag: string) => includedTags.includes(tag)))
-    return false;
+  if (settings.excludedTags.length && source.tags)
+    if (!source.tags.some || source.tags.some((tag: string) => settings.excludedTags.includes(normalizeTag(tag))))
+      return false;
+
+  if (settings.includedTags.length && source.tags)
+    if (!source.tags.some || !settings.includedTags.some((tag: string) => settings.includedTags.includes(normalizeTag(tag))))
+      return false;
 
   const dateProperty = settings.dateProperty || DEFAULT_CALENDAR_SETTINGS.dateProperty;
   const startDateProperty = settings.startDateProperty || DEFAULT_CALENDAR_SETTINGS.startDateProperty;
@@ -101,11 +102,17 @@ function createEvent(source: STask | SMarkdownPage, settings: CalendarSettings, 
   if (settings.eventPropsMap[source.status]) {
     eventProps = Object.assign({}, DEFAULT_EVENT_PROPS, settings.eventPropsMap[source.status]);
   }
-  // Then check for tag matches
+  // Then check for tag matches with normalized tags
   else if (source.tags && source.tags.length > 0) {
-    for (const tag of source.tags) {
-      if (settings.eventPropsMap[tag]) {
-        eventProps = Object.assign({}, DEFAULT_EVENT_PROPS, settings.eventPropsMap[tag]);
+    for (let tag of source.tags) {
+      tag = normalizeTag(tag);
+      const tagSettings = settings.eventPropsMap[tag]
+      if (tagSettings) {
+        eventProps = Object.assign(
+          {},
+          DEFAULT_EVENT_PROPS,
+          tagSettings
+        );
         break;
       }
     }
