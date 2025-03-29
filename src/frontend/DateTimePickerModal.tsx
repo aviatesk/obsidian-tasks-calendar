@@ -5,7 +5,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { Clock, X } from 'lucide-react';
 import { FIRST_DAY } from 'src/TasksCalendarSettings';
-import { calculateOptimalPosition } from '../utils/position';
+import { calculateOptimalPosition } from '../backend/position';
 
 interface DateTimePickerModalProps {
   initialStartDate: Date;

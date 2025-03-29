@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { FileText, Pencil, X, Calendar, Tag, Info, Check, XCircle, Edit, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { DateTimePickerModal } from './DateTimePickerModal';
 import { StatusPickerDropdown } from './StatusPickerDropdown';
-import { formatStatus, getStatusIcon } from '../utils/status';
+import { formatStatus, getStatusIcon } from '../backend/status';
 import { Platform } from 'obsidian';
 import { DEFAULT_CALENDAR_SETTINGS } from 'src/TasksCalendarSettings';
 

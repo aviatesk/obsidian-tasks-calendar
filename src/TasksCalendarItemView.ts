@@ -6,17 +6,17 @@ import listPlugin from '@fullcalendar/list';
 import interactionPlugin from '@fullcalendar/interaction';
 import { CalendarSettings, DEFAULT_CALENDAR_SETTINGS, VIEW_TYPE, HOVER_LINK_SOURCE, FIRST_DAY } from './TasksCalendarSettings';
 import TasksCalendarPlugin from './main';
-import { ReactRenderer } from './components/ReactRoot';
+import { ReactRenderer } from './frontend/ReactRoot';
 import React from 'react';
-import { CalendarFooter } from './components/CalendarFooter';
-import { TaskClickTooltip } from './components/TaskClickTooltip';
-import getTasksAsEvents from './utils/query';
-import openTask from './utils/open';
-import updateTaskDates, { updateTaskStatus, updateTaskText } from './utils/update';
-import { calculateOptimalPosition } from './utils/position';
-import { createTask } from './utils/create';
-import { deleteTask } from './utils/delete';
-import handleError from './utils/error-handling';
+import { CalendarFooter } from './frontend/CalendarFooter';
+import { TaskClickTooltip } from './frontend/TaskClickTooltip';
+import getTasksAsEvents from './backend/query';
+import openTask from './backend/open';
+import updateTaskDates, { updateTaskStatus, updateTaskText } from './backend/update';
+import { calculateOptimalPosition } from './backend/position';
+import { createTask } from './backend/create';
+import { deleteTask } from './backend/delete';
+import handleError from './backend/error-handling';
 
 export class TasksCalendarItemView extends ItemView {
   calendar: Calendar | null = null;
