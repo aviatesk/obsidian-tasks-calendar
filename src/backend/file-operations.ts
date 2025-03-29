@@ -1,5 +1,6 @@
 import { App, Vault, TFile } from "obsidian";
 import { FileOperationError } from "./error-handling";
+import { ParsedTask } from "./parse";
 
 /**
  * Ensures a directory exists, creating it and parent directories if needed
@@ -62,6 +63,101 @@ export async function processFileLine(
   });
 
   return result;
+}
+
+/**
+ * Process all lines in a file with a line processor function
+ */
+export async function processFileLines<T>(
+  vault: Vault,
+  file: TFile,
+  lineProcessor: (line: string, index: number) => { updatedLine?: string, result?: T, process: boolean }
+): Promise<{ changed: boolean, results: T[] }> {
+  let results: T[] = [];
+  let changed = false;
+
+  await vault.process(file, (content) => {
+    const lines = content.split('\n');
+    let newContent = '';
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const processResult = lineProcessor(line, i);
+
+      if (processResult.process) {
+        if (processResult.updatedLine !== undefined) {
+          newContent += processResult.updatedLine + '\n';
+          if (processResult.updatedLine !== line) {
+            changed = true;
+          }
+        } else {
+          // If no updated line is provided but process is true, remove the line
+          changed = true;
+          continue;
+        }
+
+        if (processResult.result !== undefined) {
+          results.push(processResult.result);
+        }
+      } else {
+        newContent += line + '\n';
+      }
+    }
+
+    return changed ? newContent.trimEnd() + '\n' : content;
+  });
+
+  return { changed, results };
+}
+
+/**
+ * Process a file with a recurrence group filter
+ */
+export async function processRecurrenceGroup(
+  vault: Vault,
+  file: TFile,
+  recurrenceId: string,
+  taskProcessor: (task: ParsedTask, isParent: boolean) => { updatedTask?: ParsedTask, shouldProcess: boolean }
+): Promise<{changed: boolean, foundParent: boolean}> {
+  let changed = false;
+  let foundParent = false;
+
+  // Import here to avoid circular dependencies
+  const { tryParseTask, reconstructTask } = require("./parse");
+  const { getRecurrenceId, isRecurrenceParent } = require("./recurrence");
+
+  await vault.process(file, (content) => {
+    const lines = content.split('\n');
+    let newContent = '';
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      let updatedLine = line;
+
+      const task = tryParseTask(line);
+      if (task) {
+        const taskRecurrenceId = getRecurrenceId(task);
+
+        if (taskRecurrenceId === recurrenceId) {
+          const isParent = isRecurrenceParent(task);
+          if (isParent) foundParent = true;
+
+          const result = taskProcessor(task, isParent);
+
+          if (result.shouldProcess && result.updatedTask) {
+            updatedLine = reconstructTask(result.updatedTask);
+            changed = true;
+          }
+        }
+      }
+
+      newContent += updatedLine + '\n';
+    }
+
+    return changed ? newContent.trimEnd() + '\n' : content;
+  });
+
+  return { changed, foundParent };
 }
 
 /**

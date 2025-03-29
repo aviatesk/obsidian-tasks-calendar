@@ -75,7 +75,30 @@ function sourceFilter(source: STask | SMarkdownPage, settings: CalendarSettings,
   return true;
 }
 
-function createEvent(source: STask | SMarkdownPage, settings: CalendarSettings, isPage: boolean) {
+// Map to store parent task text by recurrence ID
+type RecurrenceParentMap = Map<string, string>;
+
+// Helper function to safely get recurrence ID from a dataview task
+const getTaskRecurrenceId = (task: any) => task['recurrence_id'];
+
+// Helper function to check if a task is a recurrence child
+function isTaskRecurrenceChild(task: any): boolean {
+  // A task is a recurrence child if it has a recurrence_id but no recurrence rule
+  return Boolean(task['recurrence_id'] && !task['recurrence']);
+}
+
+// Helper function to check if a task is a recurrence parent
+function isTaskRecurrenceParent(source: any) {
+  // A task is a recurrence parent if it has both recurrence_id and recurrence rule
+  return Boolean(source['recurrence'] && source['recurrence_id']);
+}
+
+function createEvent(
+  source: STask | SMarkdownPage,
+  settings: CalendarSettings,
+  isPage: boolean,
+  recurrenceParentMap: RecurrenceParentMap
+) {
   const dateProperty = settings.dateProperty || DEFAULT_CALENDAR_SETTINGS.dateProperty;
   const startDateProperty = settings.startDateProperty || DEFAULT_CALENDAR_SETTINGS.startDateProperty;
 
@@ -120,7 +143,21 @@ function createEvent(source: STask | SMarkdownPage, settings: CalendarSettings, 
   let priority = eventProps.priority;
   if (!allDay) // give a priority to non-all-day events
     priority += calculateEventPriority(startDate);
-  const taskText = source.text ? source.text : source.file.name;
+
+  let taskText = isPage ?
+    (source['taskText'] ? // override with taskText if available (for the markdown file property tasks)
+      source['taskText'] :
+      source.file.name) :
+    source.text;
+
+  // For child tasks with no text, inherit from parent
+  if (isTaskRecurrenceChild(source) && (!taskText || taskText.trim() === '')) {
+    // Get recurrence ID and look up parent text
+    const recurrenceId = getTaskRecurrenceId(source);
+    if (recurrenceParentMap.has(recurrenceId))
+      taskText = recurrenceParentMap.get(recurrenceId);
+  }
+
   const cleanText = taskText
     .replace(/#\w+/g, '') // Remove all tags
     .replace(/\[[\w\s-]+::\s*[^\]]*\]/g, '') // Remove metadata properties [key::value]
@@ -149,17 +186,31 @@ function createEvent(source: STask | SMarkdownPage, settings: CalendarSettings, 
 export default function getTasksAsEvents(
   dataviewApi: DataviewApi, settings: CalendarSettings): EventInput[] {
   const events: EventInput[] = [];
-
   const query = settings.query || DEFAULT_CALENDAR_SETTINGS.query;
 
+  // Create a map for all parent tasks by recurrence ID
+  const recurrenceParentMap = new Map<string, string>();
+
+  // Process pages and collect events in a single pass
   dataviewApi.pages(query).forEach((page: SMarkdownPage) => {
-    if (page && sourceFilter(page, settings, true))
-      events.push(createEvent(page, settings, true));
-    if (page && page.file.tasks) {
+    if (!page || !page.file) return;
+
+    // First, collect parent tasks from this page
+    if (sourceFilter(page, settings, true))
+      if (isTaskRecurrenceParent(page))
+        recurrenceParentMap.set(page['recurrence_id'], page.file.name);
+    if (page.file.tasks)
       page.file.tasks
-        .filter(task=>sourceFilter(task, settings, false))
-        .forEach(task => events.push(createEvent(task, settings, false)));
-    }
+        .filter(task => sourceFilter(task, settings, false) && isTaskRecurrenceParent(task))
+        .forEach(task => recurrenceParentMap.set(getTaskRecurrenceId(task), task.text))
+
+    // Then, create events for this page
+    if (sourceFilter(page, settings, true))
+      events.push(createEvent(page, settings, true, recurrenceParentMap));
+    if (page.file.tasks)
+      page.file.tasks
+        .filter(task => sourceFilter(task, settings, false))
+        .forEach(task => events.push(createEvent(task, settings, false, recurrenceParentMap)));
   });
 
   return events;

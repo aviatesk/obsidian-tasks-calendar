@@ -718,9 +718,9 @@ export class TasksCalendarItemView extends ItemView {
       const success = await deleteTask(
         this.app,
         file,
-        line,
         dateProperty,
         startDateProperty,
+        line,
       );
 
       if (success) {

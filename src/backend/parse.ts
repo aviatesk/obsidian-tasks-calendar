@@ -1,4 +1,6 @@
 import { TaskValidationError } from './error-handling';
+import { DateTime } from "luxon";
+import { RecurrenceRule } from "./recurrence";
 
 /**
  * Represents different parts of a parsed task
@@ -14,6 +16,12 @@ export interface ParsedTask {
   propertiesAfterContent: Map<string, string>; // Properties after content
   blockReference: string;          // Block reference (^abc123)
   listMarker: string;              // The type of list marker (-, *, +, 1., etc.)
+
+  // Recurrence-related fields
+  isRecurrenceParent?: boolean;    // Whether this task has a recurrence rule
+  isRecurrenceChild?: boolean;     // Whether this task is part of a recurrence group
+  recurrenceRule?: RecurrenceRule; // The recurrence rule (for parent tasks)
+  recurrenceId?: string;          // The recurrence group ID
 }
 
 // Define interfaces for element types
@@ -33,6 +41,17 @@ interface PropertyElement {
 }
 
 type TaskElement = TagElement | PropertyElement;
+
+export function tryParseTask(taskLine: string): ParsedTask | null {
+  try {
+    return parseTask(taskLine);
+  } catch (error) {
+    if (error instanceof TaskValidationError) {
+      return null; // Return null if parsing fails
+    }
+    throw error; // Rethrow other errors
+  }
+}
 
 /**
  * Parse a task line into its components
@@ -197,6 +216,29 @@ export function parseTask(taskLine: string): ParsedTask {
     // Handle case where there's no clear content (just tags and properties)
     // In this case, we'll use an empty content string
     result.content = "";
+  }
+
+  // Process recurrence properties
+  const recurrenceStr = result.propertiesBeforeContent.get("recurrence") ||
+                       result.propertiesAfterContent.get("recurrence");
+  const recurrenceId = result.propertiesBeforeContent.get("recurrence_id") ||
+                      result.propertiesAfterContent.get("recurrence_id");
+
+  if (recurrenceStr) {
+    try {
+      const { parseRecurrenceRule } = require("./recurrence");
+      result.isRecurrenceParent = true;
+      result.recurrenceRule = parseRecurrenceRule(recurrenceStr);
+      if (recurrenceId) {
+        result.recurrenceId = recurrenceId;
+      }
+    } catch (error) {
+      // Invalid recurrence rule - ignore but keep the property
+      result.isRecurrenceParent = true;
+    }
+  } else if (recurrenceId) {
+    result.isRecurrenceChild = true;
+    result.recurrenceId = recurrenceId;
   }
 
   return result;
@@ -457,15 +499,29 @@ export function detectTaskIssues(parsedTask: ParsedTask, taskLine: string): {
  * @returns A deep copy of the task
  */
 export function cloneTask(task: ParsedTask): ParsedTask {
-  return {
+  const cloned = {
     ...task,
     leadingWhitespace: task.leadingWhitespace,
     tagsBeforeContent: [...task.tagsBeforeContent],
     propertiesBeforeContent: new Map(task.propertiesBeforeContent),
     tagsAfterContent: [...task.tagsAfterContent],
     propertiesAfterContent: new Map(task.propertiesAfterContent),
-    listMarker: task.listMarker  // Preserve the list marker
+    listMarker: task.listMarker,  // Preserve the list marker
+    isRecurrenceParent: task.isRecurrenceParent,
+    isRecurrenceChild: task.isRecurrenceChild,
+    recurrenceId: task.recurrenceId
   };
+
+  // Deep clone the recurrence rule if present
+  if (task.recurrenceRule) {
+    cloned.recurrenceRule = {
+      ...task.recurrenceRule,
+      weekdays: task.recurrenceRule.weekdays ? [...task.recurrenceRule.weekdays] : undefined,
+      until: task.recurrenceRule.until ? DateTime.fromJSDate(task.recurrenceRule.until.toJSDate()) : undefined
+    };
+  }
+
+  return cloned;
 }
 
 /**
