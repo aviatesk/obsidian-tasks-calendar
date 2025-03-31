@@ -120,6 +120,10 @@
   overflow: hidden;
   max-width: calc(100% - 40px);
   width: auto !important;
+  position: sticky !important;
+}
+
+.is-mobile .tasks-calendar-container .fc-more-popover {
   position: absolute !important;
 }
 
