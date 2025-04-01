@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { FileText, Pencil, X, Calendar, Tag, Info, Check, XCircle, Edit, Plus, Trash2, AlertCircle } from 'lucide-react';
+import { FileText, Pencil, X, Calendar, Tag, Info, Check, XCircle, Edit, Plus, Trash2, AlertCircle, RepeatIcon } from 'lucide-react';
 import { DateTimePickerModal } from './DateTimePickerModal';
 import { StatusPickerDropdown } from './StatusPickerDropdown';
 import { formatStatus, getStatusIcon } from '../backend/status';
 import { Platform } from 'obsidian';
 import { DEFAULT_CALENDAR_SETTINGS } from 'src/TasksCalendarSettings';
+import { RecurrenceRule, describeRecurrenceRule } from '../backend/recurrence';
 
 interface TaskClickTooltipProps {
   taskText: string;
@@ -19,8 +20,9 @@ interface TaskClickTooltipProps {
   status?: string;
   line?: number;
   isAllDay?: boolean;
+  recurrence?: RecurrenceRule;
   // Add handlers for updates
-  onUpdateDates?: (startDate: Date | null, endDate: Date | null, isAllDay: boolean, wasMultiDay: boolean) => void;
+  onUpdateDates?: (startDate: Date | null, endDate: Date | null, isAllDay: boolean, wasMultiDay: boolean, recurrence?: RecurrenceRule) => void;
   onUpdateStatus?: (newStatus: string) => void;
   onUpdateText?: (newText: string, originalText: string, taskText: string) => Promise<boolean>;
   // Add hover link handler
@@ -30,7 +32,7 @@ interface TaskClickTooltipProps {
   // New props for task creation mode
   isCreateMode?: boolean;
   selectedDate?: Date;
-  onCreateTask?: (text: string, startDate: Date | null, endDate: Date | null, isAllDay: boolean, status: string, targetPath: string) => Promise<boolean>;
+  onCreateTask?: (text: string, startDate: Date | null, endDate: Date | null, isAllDay: boolean, status: string, targetPath: string, recurrence?: RecurrenceRule) => Promise<boolean>;
   availableDestinations?: string[]; // Added prop for available destinations
 }
 
@@ -47,6 +49,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   status = ' ',
   line,
   isAllDay: initialIsAllDay = false,
+  recurrence: initialRecurrence,
   onUpdateDates,
   onUpdateStatus,
   onUpdateText,
@@ -73,6 +76,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   );
   const [endDate, setEndDate] = useState<string | undefined>(initialEndDate);
   const [isAllDay, setIsAllDay] = useState<boolean>(!!initialIsAllDay);
+  const [recurrence, setRecurrence] = useState<RecurrenceRule | undefined>(initialRecurrence);
 
   // Text editing state
   const [isEditing, setIsEditing] = useState<boolean>(isCreateMode);
@@ -163,7 +167,8 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
         endDateObj,
         isAllDay,
         currentStatus,
-        selectedDestination // Pass the selected destination
+        selectedDestination,
+        recurrence // Pass the recurrence rule
       );
 
       setIsSaving(false);
@@ -288,7 +293,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   };
 
   // Updated date save handler - stores changes locally without updating parent
-  const handleDateDone = (newStartDate: Date, newEndDate: Date | null, newAllDay: boolean, wasMultiDay: boolean) => {
+  const handleDateDone = (newStartDate: Date, newEndDate: Date | null, newAllDay: boolean, wasMultiDay: boolean, newRecurrence?: RecurrenceRule) => {
     const startDate = newStartDate.toISOString();
     const endDate = newEndDate ? newEndDate.toISOString() : undefined;
 
@@ -296,13 +301,14 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     setStartDate(startDate);
     setEndDate(endDate);
     setIsAllDay(newAllDay);
+    setRecurrence(newRecurrence);
 
     // Only update if we're not in create mode - always update with current date values
     if (onUpdateDates && !isCreateMode) {
       // Use the current date values - whether they were explicitly changed or not
       const startDateObj = startDate ? new Date(startDate) : null;
       const endDateObj = endDate ? new Date(endDate) : null;
-      onUpdateDates(startDateObj, endDateObj, newAllDay, wasMultiDay);
+      onUpdateDates(startDateObj, endDateObj, newAllDay, wasMultiDay, newRecurrence);
     }
 
     handleDatePickerClose();
@@ -336,6 +342,28 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
                 {formatDateString(displayEndDate, isAllDay)}
               </>
             )}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  // Format recurrence display
+  const formatRecurrenceDisplay = () => {
+    if (!recurrence) return null;
+
+    const description = describeRecurrenceRule(recurrence);
+
+    return (
+      <div className="task-click-tooltip-info-item">
+        <RepeatIcon size={isMobile ? 18 : 16} className="task-click-tooltip-icon-small" />
+        <div
+          className="task-click-tooltip-date-container"
+          onClick={handleDateClick} // Use the same handler as date click to open DateTimePicker
+          title="Click to edit recurrence"
+        >
+          <span className="task-click-tooltip-info-text task-click-tooltip-date-text">
+            {description}
           </span>
         </div>
       </div>
@@ -570,6 +598,8 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
 
             {formatDateDisplay()}
 
+            {formatRecurrenceDisplay()}
+
             {formatTagsDisplay()}
 
             {!isCreateMode && (
@@ -619,6 +649,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
             initialStartDate={startDate ? new Date(startDate) : new Date()}
             initialEndDate={endDate ? new Date(endDate) : null}
             isAllDay={isAllDay}
+            initialRecurrence={recurrence}
             onClose={handleDatePickerClose}
             onDone={handleDateDone}
             position={datePickerPosition}
@@ -713,6 +744,8 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
 
           {formatDateDisplay()}
 
+          {formatRecurrenceDisplay()}
+
           {formatTagsDisplay()}
 
           {!isCreateMode && (
@@ -762,6 +795,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           initialStartDate={startDate ? new Date(startDate) : new Date()}
           initialEndDate={endDate ? new Date(endDate) : null}
           isAllDay={isAllDay}
+          initialRecurrence={recurrence}
           onClose={handleDatePickerClose}
           onDone={handleDateDone}
           position={datePickerPosition}

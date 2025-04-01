@@ -2132,3 +2132,326 @@
 .task-click-tooltip-edit-container .task-click-tooltip-info-item {
   margin-bottom: 12px;
 }
+
+/* Recurrence Editor styles */
+.recurrence-editor-modal {
+  position: fixed;
+  z-index: 10000;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  width: 320px;
+  animation: fadeIn 0.2s ease;
+  overflow: hidden;
+}
+
+.recurrence-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background-color: var(--background-secondary);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.recurrence-editor-title {
+  font-weight: 600;
+  font-size: 0.95em;
+  color: var(--text-accent);
+}
+
+.recurrence-editor-header-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.recurrence-editor-close-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.recurrence-editor-close-button:hover {
+  color: var(--text-accent-hover);
+  background-color: var(--background-modifier-hover);
+}
+
+.recurrence-editor-content {
+  padding: 14px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.recurrence-editor-group {
+  margin-bottom: 16px;
+}
+
+.recurrence-editor-label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--text-normal);
+  font-size: 0.9em;
+}
+
+.recurrence-editor-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.recurrence-editor-select {
+  background-color: var(--background-secondary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 0.9em;
+}
+
+.recurrence-editor-select:focus {
+  border-color: var(--text-accent);
+  outline: none;
+}
+
+.recurrence-editor-interval {
+  width: 70px;
+}
+
+.recurrence-editor-frequency {
+  flex: 1;
+}
+
+/* Weekly recurrence day selector */
+.recurrence-editor-weekdays {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.recurrence-editor-weekday-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--background-secondary);
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.recurrence-editor-weekday-button:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.recurrence-editor-weekday-button.active {
+  background-color: var(--text-accent);
+  color: var(--text-on-accent);
+  border-color: var(--text-accent);
+}
+
+/* Monthly options */
+.recurrence-editor-monthly-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.recurrence-editor-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.9em;
+  color: var(--text-normal);
+}
+
+.recurrence-editor-radio-label input[type="radio"] {
+  margin: 0;
+}
+
+/* Number input styling */
+.recurrence-editor-number-input {
+  width: 50px;
+  background-color: var(--background-secondary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin: 0 8px;
+  font-size: 0.9em;
+}
+
+.recurrence-editor-number-input:focus {
+  border-color: var(--text-accent);
+  outline: none;
+}
+
+.recurrence-editor-number-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Date input container */
+.recurrence-editor-date-container {
+  margin-left: 24px;
+  margin-top: 8px;
+}
+
+.recurrence-editor-date-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 6px 10px;
+}
+
+.recurrence-editor-date-icon {
+  color: var(--text-accent);
+}
+
+.recurrence-editor-date-input {
+  background: transparent;
+  border: none;
+  color: var(--text-normal);
+  font-size: 0.9em;
+  width: 100%;
+}
+
+.recurrence-editor-date-input:focus {
+  outline: none;
+}
+
+/* Preview section */
+.recurrence-editor-preview {
+  background-color: var(--background-secondary-alt);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+}
+
+.recurrence-editor-preview-label {
+  font-weight: 500;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.recurrence-editor-preview-text {
+  font-size: 0.9em;
+  color: var(--text-normal);
+  line-height: 1.4;
+}
+
+/* Action buttons */
+.recurrence-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.recurrence-editor-cancel-button,
+.recurrence-editor-save-button {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.recurrence-editor-cancel-button {
+  background-color: var(--background-secondary-alt);
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.recurrence-editor-cancel-button:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.recurrence-editor-save-button {
+  background-color: var(--text-accent);
+  color: var(--text-on-accent);
+  border: none;
+}
+
+.recurrence-editor-save-button:hover {
+  background-color: var(--text-accent-hover);
+}
+
+/* Mobile specific styling */
+.is-mobile .recurrence-editor-modal {
+  width: 90%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.is-mobile .recurrence-editor-header {
+  padding: 14px 16px;
+}
+
+.is-mobile .recurrence-editor-content {
+  padding: 16px;
+}
+
+.is-mobile .recurrence-editor-weekday-button {
+  width: 36px;
+  height: 36px;
+}
+
+.is-mobile .recurrence-editor-actions {
+  margin-top: 20px;
+}
+
+.is-mobile .recurrence-editor-actions button {
+  padding: 10px 16px;
+  flex: 1;
+  justify-content: center;
+}
+
+/* Add recurrence button to DateTimePicker */
+.date-time-picker-recurrence-button {
+  background-color: var(--background-secondary-alt);
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin-left: auto;
+  font-size: 0.85em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.date-time-picker-recurrence-button:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-accent);
+}
+
+.date-time-picker-recurrence-button.active {
+  background-color: var(--background-secondary);
+  color: var(--text-accent);
+  border-color: var(--text-accent);
+}

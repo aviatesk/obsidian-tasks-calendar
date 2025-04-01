@@ -3,16 +3,19 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Clock, X } from 'lucide-react';
+import { Clock, X, RepeatIcon } from 'lucide-react';
 import { FIRST_DAY } from 'src/TasksCalendarSettings';
 import { calculateOptimalPosition } from '../backend/position';
+import { RecurrenceRule } from '../backend/recurrence';
+import { RecurrenceEditor } from './RecurrenceEditor';
 
 interface DateTimePickerModalProps {
   initialStartDate: Date;
   initialEndDate?: Date | null;
   isAllDay: boolean;
+  initialRecurrence?: RecurrenceRule;
   onClose: () => void;
-  onDone: (startDate: Date, endDate: Date | null, isAllDay: boolean, wasMultiDay: boolean) => void;
+  onDone: (startDate: Date, endDate: Date | null, isAllDay: boolean, wasMultiDay: boolean, recurrence?: RecurrenceRule) => void;
   position: { top: number; left: number };
 }
 
@@ -20,6 +23,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   initialStartDate,
   initialEndDate,
   isAllDay: initialIsAllDay,
+  initialRecurrence,
   onClose,
   onDone,
   position
@@ -55,6 +59,10 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   const [endMinutes, setEndMinutes] = useState<string>(
     initialEndDate ? initialEndDate.getMinutes().toString().padStart(2, '0') : minutes
   );
+  
+  // Recurrence state
+  const [recurrence, setRecurrence] = useState<RecurrenceRule | undefined>(initialRecurrence);
+  const [showRecurrenceEditor, setShowRecurrenceEditor] = useState<boolean>(false);
 
   // Refs
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -602,6 +610,22 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     }, 0);
   };
 
+  // Handle recurrence button click
+  const handleRecurrenceClick = () => {
+    setShowRecurrenceEditor(true);
+  };
+
+  // Handle recurrence save
+  const handleRecurrenceSave = (rule: RecurrenceRule) => {
+    setRecurrence(rule);
+    setShowRecurrenceEditor(false);
+  };
+
+  // Handle recurrence editor close
+  const handleRecurrenceClose = () => {
+    setShowRecurrenceEditor(false);
+  };
+
   // Done button handler - save changes and close the picker
   const handleDone = () => {
     // Ensure any pending time input changes are saved
@@ -618,7 +642,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     const isNowMultiDay = !!resultEndDate;
     const needsMultiDayConversion = wasMultiDay.current && !isNowMultiDay;
 
-    onDone(resultStartDate, resultEndDate, isAllDay, needsMultiDayConversion);
+    onDone(resultStartDate, resultEndDate, isAllDay, needsMultiDayConversion, recurrence);
   };
 
   // Cancel button handler - close the picker without saving
@@ -637,6 +661,15 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   return isMobile ? (
     <div className="mobile-modal-overlay">
       <div className="date-time-picker-modal" ref={modalRef}>
+        {showRecurrenceEditor && (
+          <RecurrenceEditor
+            initialRule={recurrence}
+            onClose={handleRecurrenceClose}
+            onSave={handleRecurrenceSave}
+            position={finalPosition}
+            startDate={startDate}
+          />
+        )}
         <div className="date-time-picker-header">
           <div className="date-time-picker-title">
             {modalTitle}
@@ -679,6 +712,14 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
               />
               All day
             </label>
+            <button 
+              className={`date-time-picker-recurrence-button ${recurrence ? 'active' : ''}`}
+              onClick={handleRecurrenceClick}
+              title="Set recurrence rule"
+            >
+              <RepeatIcon size={18} />
+              {recurrence ? 'Edit repeat' : 'Repeat'}
+            </button>
           </div>
 
           {!isAllDay && (
@@ -756,6 +797,15 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
       }}
       ref={modalRef}
     >
+      {showRecurrenceEditor && (
+        <RecurrenceEditor
+          initialRule={recurrence}
+          onClose={handleRecurrenceClose}
+          onSave={handleRecurrenceSave}
+          position={finalPosition}
+          startDate={startDate}
+        />
+      )}
       <div className="date-time-picker-header">
         <div className="date-time-picker-title">
           {modalTitle}
@@ -798,6 +848,14 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
             />
             All day
           </label>
+          <button 
+            className={`date-time-picker-recurrence-button ${recurrence ? 'active' : ''}`}
+            onClick={handleRecurrenceClick}
+            title="Set recurrence rule"
+          >
+            <RepeatIcon size={16} />
+            {recurrence ? 'Edit repeat' : 'Repeat'}
+          </button>
         </div>
 
         {!isAllDay && (

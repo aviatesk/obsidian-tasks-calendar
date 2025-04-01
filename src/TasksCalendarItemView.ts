@@ -12,11 +12,12 @@ import { CalendarFooter } from './frontend/CalendarFooter';
 import { TaskClickTooltip } from './frontend/TaskClickTooltip';
 import getTasksAsEvents from './backend/query';
 import openTask from './backend/open';
-import updateTaskDates, { updateTaskStatus, updateTaskText } from './backend/update';
+import updateTaskDates, { updateTaskStatus, updateTaskText, updateRecurrenceGroupDates } from './backend/update';
 import { calculateOptimalPosition } from './backend/position';
-import { createTask } from './backend/create';
+import { createRecurrenceTask, createTask } from './backend/create';
 import { deleteTask } from './backend/delete';
 import handleError from './backend/error-handling';
+import { RecurrenceRule } from './backend/recurrence';
 
 export class TasksCalendarItemView extends ItemView {
   calendar: Calendar | null = null;
@@ -154,6 +155,7 @@ export class TasksCalendarItemView extends ItemView {
         const tags = info.event.extendedProps.tags;
         const status = info.event.extendedProps.status;
         const isAllDay = info.event.allDay;
+        const recurrence = info.event.extendedProps.recurrence; // Get recurrence from event
 
         if (filePath) {
           // Create tooltip container element
@@ -185,6 +187,7 @@ export class TasksCalendarItemView extends ItemView {
               status: status,
               line: line,
               isAllDay: isAllDay,
+              recurrence: recurrence, // Pass recurrence rule
               event: info.event
             })
           );
@@ -322,6 +325,7 @@ export class TasksCalendarItemView extends ItemView {
     status: string;
     line?: number;
     isAllDay: boolean;
+    recurrence?: RecurrenceRule; // Add recurrence rule
     event?: EventApi;
   }) {
     return React.createElement(TaskClickTooltip, {
@@ -340,7 +344,8 @@ export class TasksCalendarItemView extends ItemView {
       status: props.status,
       line: props.line,
       isAllDay: props.isAllDay,
-      onUpdateDates: (newStartDate, newEndDate, isAllDay, wasMultiDay) => {
+      recurrence: props.recurrence, // Pass the recurrence rule
+      onUpdateDates: (newStartDate, newEndDate, isAllDay, wasMultiDay, recurrence) => {
         this.handleTaskDateUpdate(
           props.event || {} as EventApi,
           newStartDate,
@@ -348,7 +353,8 @@ export class TasksCalendarItemView extends ItemView {
           isAllDay,
           wasMultiDay,
           props.filePath,
-          props.line
+          props.line,
+          recurrence // Pass the recurrence rule
         );
       },
       onUpdateStatus: (newStatus) => {
@@ -387,6 +393,7 @@ export class TasksCalendarItemView extends ItemView {
     wasMultiDay: boolean,
     filePath: string,
     line?: number,
+    recurrence?: RecurrenceRule
   ): Promise<void> {
     if (!filePath || !newStartDate) {
       new Notice("Unable to update task: missing required information");
@@ -404,21 +411,36 @@ export class TasksCalendarItemView extends ItemView {
     const startDateProperty = this.settings.startDateProperty;
 
     try {
-      // Update task dates using the helper function
-      await updateTaskDates(
-        this.app,
-        file,
-        line,
-        newStartDate,
-        newEndDate || null,
-        isAllDay,
-        startDateProperty,
-        dateProperty,
-        event.allDay,
-        wasMultiDay
-      );
-
-      new Notice("Task date updated successfully");
+      if (recurrence && event.extendedProps.recurrenceId) {
+        // If this is a recurring task, use the specialized update function
+        await updateRecurrenceGroupDates(
+          this.app,
+          file,
+          event.extendedProps.recurrenceId,
+          newStartDate,
+          newEndDate || null,
+          isAllDay,
+          startDateProperty,
+          dateProperty,
+          recurrence
+        );
+        new Notice("Recurring task dates updated successfully");
+      } else {
+        // For non-recurring tasks or one-time edits
+        await updateTaskDates(
+          this.app,
+          file,
+          line,
+          newStartDate,
+          newEndDate || null,
+          isAllDay,
+          startDateProperty,
+          dateProperty,
+          event.allDay,
+          wasMultiDay
+        );
+        new Notice("Task date updated successfully");
+      }
 
       // Re-render tooltip if active
       if (this.tooltipRenderer && this.activeTooltipEl) {
@@ -438,6 +460,7 @@ export class TasksCalendarItemView extends ItemView {
             status: event.extendedProps.status,
             line: line,
             isAllDay: isAllDay,
+            recurrence: recurrence, // Add the recurrence rule
             event: event
           })
         );
@@ -603,6 +626,7 @@ export class TasksCalendarItemView extends ItemView {
     isAllDay: boolean,
     status: string,
     targetPath: string,
+    recurrence?: RecurrenceRule
   ): Promise<boolean> {
     if (!taskText.trim()) {
       new Notice("Task text cannot be empty");
@@ -611,17 +635,30 @@ export class TasksCalendarItemView extends ItemView {
 
     try {
       // Create the task using the utility function with the selected target path
-      const success = await createTask(
-        this.app,
-        targetPath,
-        taskText,
-        status,
-        startDate,
-        endDate,
-        isAllDay,
-        this.settings.startDateProperty,
-        this.settings.dateProperty
-      );
+      const success = (recurrence && startDate) ?
+        await createRecurrenceTask(
+          this.app,
+          targetPath,
+          taskText,
+          status,
+          startDate,
+          endDate,
+          isAllDay,
+          this.settings.startDateProperty,
+          this.settings.dateProperty,
+          recurrence // Pass the recurrence rule
+        ) :
+        await createTask(
+          this.app,
+          targetPath,
+          taskText,
+          status,
+          startDate,
+          endDate,
+          isAllDay,
+          this.settings.startDateProperty,
+          this.settings.dateProperty,
+        );
 
       if (success) {
         // Refresh calendar events
@@ -966,8 +1003,8 @@ export class TasksCalendarItemView extends ItemView {
         isCreateMode: true,
         selectedDate: date,
         availableDestinations: availableDestinations, // Pass available destinations
-        onCreateTask: (text, startDate, endDate, isAllDay, status, targetPath) =>
-          this.handleTaskCreation(text, startDate, endDate, isAllDay, status, targetPath),
+        onCreateTask: (text, startDate, endDate, isAllDay, status, targetPath, recurrence) =>
+          this.handleTaskCreation(text, startDate, endDate, isAllDay, status, targetPath, recurrence),
         // Add functional callbacks that actually update the internal state of TaskClickTooltip
         onUpdateDates: (..._) => {
           // These state changes will be managed by the TaskClickTooltip component itself

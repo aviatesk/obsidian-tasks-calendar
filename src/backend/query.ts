@@ -93,6 +93,13 @@ function isTaskRecurrenceParent(source: any) {
   return Boolean(source['recurrence'] && source['recurrence_id']);
 }
 
+function getCleanText(taskText: string) {
+  return taskText
+    .replace(/#\w+/g, '') // Remove all tags
+    .replace(/\[[\w\s-]+::\s*[^\]]*\]/g, '') // Remove metadata properties [key::value]
+    .trim();
+}
+
 function createEvent(
   source: STask | SMarkdownPage,
   settings: CalendarSettings,
@@ -144,24 +151,22 @@ function createEvent(
   if (!allDay) // give a priority to non-all-day events
     priority += calculateEventPriority(startDate);
 
-  let taskText = isPage ?
+  const taskText = isPage ?
     (source['taskText'] ? // override with taskText if available (for the markdown file property tasks)
       source['taskText'] :
       source.file.name) :
     source.text;
 
+  let cleanText = getCleanText(taskText);
+
   // For child tasks with no text, inherit from parent
-  if (isTaskRecurrenceChild(source) && (!taskText || taskText.trim() === '')) {
+  if (isTaskRecurrenceChild(source) && (!cleanText || cleanText.trim() === '')) {
     // Get recurrence ID and look up parent text
     const recurrenceId = getTaskRecurrenceId(source);
     if (recurrenceParentMap.has(recurrenceId))
-      taskText = recurrenceParentMap.get(recurrenceId);
+      cleanText = recurrenceParentMap.get(recurrenceId) as string;
   }
 
-  const cleanText = taskText
-    .replace(/#\w+/g, '') // Remove all tags
-    .replace(/\[[\w\s-]+::\s*[^\]]*\]/g, '') // Remove metadata properties [key::value]
-    .trim();
   const filePath = source.path ? source.path : source.file.path;
   const extendedProps: ExtendedProps = {
     filePath,
@@ -202,7 +207,7 @@ export default function getTasksAsEvents(
     if (page.file.tasks)
       page.file.tasks
         .filter(task => sourceFilter(task, settings, false) && isTaskRecurrenceParent(task))
-        .forEach(task => recurrenceParentMap.set(getTaskRecurrenceId(task), task.text))
+        .forEach(task => recurrenceParentMap.set(getTaskRecurrenceId(task), getCleanText(task.text)))
 
     // Then, create events for this page
     if (sourceFilter(page, settings, true))
