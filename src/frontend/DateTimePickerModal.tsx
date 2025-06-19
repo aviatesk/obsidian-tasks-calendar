@@ -400,187 +400,132 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     }
   }, [startDate, endDate, updateSelectedDateHighlight]);
 
-  // Hours input change handler with validation
-  const handleHoursChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  // Generic time input change handler factory
+  const createTimeInputChangeHandler = (
+    setter: React.Dispatch<React.SetStateAction<string>>,
+    maxValue: number,
+    isFocused: boolean
+  ) => {
+    return (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
 
-    if (value === '') {
-      handleTimeInputChange('', setHours);
-      return;
-    }
-
-    const numericValue = value.replace(/[^0-9]/g, '');
-    const numValue = parseInt(numericValue, 10);
-
-    if (isNaN(numValue)) return;
-
-    if (hoursInputFocused) {
-      if (numValue <= 23) {
-        handleTimeInputChange(numericValue, setHours);
+      if (value === '') {
+        handleTimeInputChange('', setter);
+        return;
       }
-    } else {
-      if (numValue >= 0 && numValue <= 23) {
-        handleTimeInputChange(numValue.toString().padStart(2, '0'), setHours);
+
+      const numericValue = value.replace(/[^0-9]/g, '');
+      const numValue = parseInt(numericValue, 10);
+
+      if (isNaN(numValue)) return;
+
+      if (isFocused) {
+        if (numValue <= maxValue) {
+          handleTimeInputChange(numericValue, setter);
+        }
+      } else {
+        if (numValue >= 0 && numValue <= maxValue) {
+          handleTimeInputChange(numValue.toString().padStart(2, '0'), setter);
+        }
       }
-    }
+    };
   };
 
-  // Minutes input change handler with validation
-  const handleMinutesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  // Create specific handlers using the factory
+  const handleHoursChange = useCallback(
+    createTimeInputChangeHandler(setHours, 23, hoursInputFocused),
+    [hoursInputFocused]
+  );
 
-    if (value === '') {
-      handleTimeInputChange('', setMinutes);
-      return;
-    }
+  const handleMinutesChange = useCallback(
+    createTimeInputChangeHandler(setMinutes, 59, minutesInputFocused),
+    [minutesInputFocused]
+  );
 
-    const numericValue = value.replace(/[^0-9]/g, '');
-    const numValue = parseInt(numericValue, 10);
+  const handleEndHoursChange = useCallback(
+    createTimeInputChangeHandler(setEndHours, 23, endHoursInputFocused),
+    [endHoursInputFocused]
+  );
 
-    if (isNaN(numValue)) return;
+  const handleEndMinutesChange = useCallback(
+    createTimeInputChangeHandler(setEndMinutes, 59, endMinutesInputFocused),
+    [endMinutesInputFocused]
+  );
 
-    if (minutesInputFocused) {
-      if (numValue <= 59) {
-        handleTimeInputChange(numericValue, setMinutes);
+  // Generic focus handler factory
+  const createFocusHandler = (
+    setFocused: React.Dispatch<React.SetStateAction<boolean>>,
+    value: string,
+    setter: React.Dispatch<React.SetStateAction<string>>
+  ) => {
+    return () => {
+      setFocused(true);
+      if (value.startsWith('0') && value !== '0') {
+        setter(value.replace(/^0+/, ''));
       }
-    } else {
-      if (numValue >= 0 && numValue <= 59) {
-        handleTimeInputChange(numValue.toString().padStart(2, '0'), setMinutes);
+    };
+  };
+
+  // Generic blur handler factory
+  const createBlurHandler = (
+    setFocused: React.Dispatch<React.SetStateAction<boolean>>,
+    value: string,
+    setter: React.Dispatch<React.SetStateAction<string>>,
+    maxValue: number
+  ) => {
+    return () => {
+      setFocused(false);
+      if (value !== '') {
+        const numValue = parseInt(value, 10);
+        if (!isNaN(numValue) && numValue >= 0 && numValue <= maxValue) {
+          const paddedValue = numValue.toString().padStart(2, '0');
+          setter(paddedValue);
+          handleDataChange();
+        }
       }
-    }
+    };
   };
 
-  // End hours input change handler with validation
-  const handleEndHoursChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  // Create specific handlers using the factories
+  const handleHoursFocus = useCallback(
+    createFocusHandler(setHoursInputFocused, hours, setHours),
+    [hours]
+  );
 
-    if (value === '') {
-      handleTimeInputChange('', setEndHours);
-      return;
-    }
+  const handleHoursBlur = useCallback(
+    createBlurHandler(setHoursInputFocused, hours, setHours, 23),
+    [hours]
+  );
 
-    const numericValue = value.replace(/[^0-9]/g, '');
-    const numValue = parseInt(numericValue, 10);
+  const handleMinutesFocus = useCallback(
+    createFocusHandler(setMinutesInputFocused, minutes, setMinutes),
+    [minutes]
+  );
 
-    if (isNaN(numValue)) return;
+  const handleMinutesBlur = useCallback(
+    createBlurHandler(setMinutesInputFocused, minutes, setMinutes, 59),
+    [minutes]
+  );
 
-    if (endHoursInputFocused) {
-      if (numValue <= 23) {
-        handleTimeInputChange(numericValue, setEndHours);
-      }
-    } else {
-      if (numValue >= 0 && numValue <= 23) {
-        handleTimeInputChange(numValue.toString().padStart(2, '0'), setEndHours);
-      }
-    }
-  };
+  const handleEndHoursFocus = useCallback(
+    createFocusHandler(setEndHoursInputFocused, endHours, setEndHours),
+    [endHours]
+  );
 
-  // End minutes input change handler with validation
-  const handleEndMinutesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handleEndHoursBlur = useCallback(
+    createBlurHandler(setEndHoursInputFocused, endHours, setEndHours, 23),
+    [endHours]
+  );
 
-    if (value === '') {
-      handleTimeInputChange('', setEndMinutes);
-      return;
-    }
+  const handleEndMinutesFocus = useCallback(
+    createFocusHandler(setEndMinutesInputFocused, endMinutes, setEndMinutes),
+    [endMinutes]
+  );
 
-    const numericValue = value.replace(/[^0-9]/g, '');
-    const numValue = parseInt(numericValue, 10);
-
-    if (isNaN(numValue)) return;
-
-    if (endMinutesInputFocused) {
-      if (numValue <= 59) {
-        handleTimeInputChange(numericValue, setEndMinutes);
-      }
-    } else {
-      if (numValue >= 0 && numValue <= 59) {
-        handleTimeInputChange(numValue.toString().padStart(2, '0'), setEndMinutes);
-      }
-    }
-  };
-
-  // Focus handlers
-  const handleHoursFocus = () => {
-    setHoursInputFocused(true);
-    if (hours.startsWith('0') && hours !== '0') {
-      setHours(hours.replace(/^0+/, ''));
-    }
-  };
-
-  const handleHoursBlur = () => {
-    setHoursInputFocused(false);
-    if (hours !== '') {
-      const numValue = parseInt(hours, 10);
-      if (!isNaN(numValue) && numValue >= 0 && numValue <= 23) {
-        const paddedValue = numValue.toString().padStart(2, '0');
-        setHours(paddedValue);
-
-        // Ensure the change is saved
-        handleDataChange();
-      }
-    }
-  };
-
-  const handleMinutesFocus = () => {
-    setMinutesInputFocused(true);
-    if (minutes.startsWith('0') && minutes !== '0') {
-      setMinutes(minutes.replace(/^0+/, ''));
-    }
-  };
-
-  const handleMinutesBlur = () => {
-    setMinutesInputFocused(false);
-    if (minutes !== '') {
-      const numValue = parseInt(minutes, 10);
-      if (!isNaN(numValue) && numValue >= 0 && numValue <= 59) {
-        const paddedValue = numValue.toString().padStart(2, '0');
-        setMinutes(paddedValue);
-
-        // Ensure the change is saved
-        handleDataChange();
-      }
-    }
-  };
-
-  // End time focus handlers
-  const handleEndHoursFocus = () => {
-    setEndHoursInputFocused(true);
-    if (endHours.startsWith('0') && endHours !== '0') {
-      setEndHours(endHours.replace(/^0+/, ''));
-    }
-  };
-
-  const handleEndHoursBlur = () => {
-    setEndHoursInputFocused(false);
-    if (endHours !== '') {
-      const numValue = parseInt(endHours, 10);
-      if (!isNaN(numValue) && numValue >= 0 && numValue <= 23) {
-        const paddedValue = numValue.toString().padStart(2, '0');
-        setEndHours(paddedValue);
-        handleDataChange();
-      }
-    }
-  };
-
-  const handleEndMinutesFocus = () => {
-    setEndMinutesInputFocused(true);
-    if (endMinutes.startsWith('0') && endMinutes !== '0') {
-      setEndMinutes(endMinutes.replace(/^0+/, ''));
-    }
-  };
-
-  const handleEndMinutesBlur = () => {
-    setEndMinutesInputFocused(false);
-    if (endMinutes !== '') {
-      const numValue = parseInt(endMinutes, 10);
-      if (!isNaN(numValue) && numValue >= 0 && numValue <= 59) {
-        const paddedValue = numValue.toString().padStart(2, '0');
-        setEndMinutes(paddedValue);
-        handleDataChange();
-      }
-    }
-  };
+  const handleEndMinutesBlur = useCallback(
+    createBlurHandler(setEndMinutesInputFocused, endMinutes, setEndMinutes, 59),
+    [endMinutes]
+  );
 
   // Handle select changes for mobile (immediate update)
   const handleSelectChange = (value: string, setter: React.Dispatch<React.SetStateAction<string>>) => {
