@@ -60,7 +60,6 @@ export class TasksCalendarItemView extends ItemView {
   }
 
   getIcon(): string {
-    // カレンダータブのアイコンを設定
     return 'lucide-calendar-check';
   }
 
@@ -82,9 +81,8 @@ export class TasksCalendarItemView extends ItemView {
   }
 
   private onKeydown = (event: KeyboardEvent) => {
-    // キーダウンイベントハンドラを復元
     if (event.metaKey) {
-      // メタキーが押されたとき、何か特別な処理があればここに追加
+      // Reserved for future meta key handling
     }
   };
 
@@ -135,9 +133,8 @@ export class TasksCalendarItemView extends ItemView {
         const isTimeGridView = info.view.type.includes('timeGrid');
         this.showTaskCreationTooltip(info.date, info.jsEvent, !isTimeGridView);
       },
-      editable: true, // Enable dragging and resizing
+      editable: true,
       dayMaxEvents: true,
-      // カスタムイベントフェッチ関数を使用
       events: (fetchInfo, successCallback, failureCallback) => {
         this.fetchCalendarEvents(fetchInfo, successCallback, failureCallback);
       },
@@ -150,19 +147,15 @@ export class TasksCalendarItemView extends ItemView {
         minute: '2-digit',
         hour12: false,
       },
-      // Add event drag and drop handlers
       eventDrop: info => {
         if (info.event && info.oldEvent)
           this.handleTaskDateChange(info.event, info.oldEvent);
       },
-      // Add event resize handler
       eventResize: info => {
         if (info.event && info.oldEvent)
           this.handleTaskDateChange(info.event, info.oldEvent);
       },
-      // Modified event click handler to show tooltip instead of opening file directly
       eventClick: info => {
-        // Close any existing tooltip first
         this.closeActiveTooltip();
 
         const filePath = info.event.extendedProps.filePath;
@@ -177,7 +170,6 @@ export class TasksCalendarItemView extends ItemView {
         const isAllDay = info.event.allDay;
 
         if (filePath) {
-          // Create tooltip container element
           const tooltipEl = document.createElement('div');
           tooltipEl.className = 'task-click-tooltip-container';
           document.body.appendChild(tooltipEl);
@@ -185,15 +177,13 @@ export class TasksCalendarItemView extends ItemView {
 
           let tooltipPosition;
           if (Platform.isMobile) {
-            tooltipPosition = { top: 0, left: 0 }; // Mobile - center positioning handled by CSS
+            tooltipPosition = { top: 0, left: 0 };
           } else {
-            tooltipPosition = this.calculateTooltipPosition(info.el, tooltipEl); // Desktop - calculate position
+            tooltipPosition = this.calculateTooltipPosition(info.el, tooltipEl);
           }
 
-          // Create tooltip renderer
           this.tooltipRenderer = new ReactRenderer(tooltipEl);
 
-          // Render tooltip component using the helper method
           this.tooltipRenderer.render(
             this.createTaskTooltipElement({
               taskText: taskText || 'Task details not available',
@@ -270,7 +260,6 @@ export class TasksCalendarItemView extends ItemView {
           },
         },
       },
-      // Restore hover-link functionality
       eventMouseEnter: info => {
         const filePath = info.event.extendedProps.filePath;
         const line = info.event.extendedProps.line;
@@ -293,7 +282,6 @@ export class TasksCalendarItemView extends ItemView {
       },
     });
 
-    // register keydown event listener
     document.addEventListener('keydown', this.onKeydown);
 
     this.calendar = calendar;
@@ -308,17 +296,14 @@ export class TasksCalendarItemView extends ItemView {
 
     this.calendar.render();
 
-    // Force size recalculation after render
     setTimeout(() => {
       if (this.calendar) {
         this.calendar.updateSize();
       }
     }, 200);
 
-    // Setup resize observer to handle container size changes
     this.setupResizeObserver(calendarEl);
 
-    // Add listener for workspace layout changes
     this.registerEvent(
       this.app.workspace.on('layout-change', () => {
         setTimeout(() => {
@@ -330,7 +315,6 @@ export class TasksCalendarItemView extends ItemView {
     );
   }
 
-  // Calculate the best position for the tooltip
   private calculateTooltipPosition(
     eventEl: HTMLElement,
     tooltipEl: HTMLElement
@@ -338,7 +322,6 @@ export class TasksCalendarItemView extends ItemView {
     return calculateOptimalPosition(eventEl, tooltipEl, 10);
   }
 
-  // Helper method to create tooltip React element with consistent props
   private createTaskTooltipElement(props: {
     taskText: string;
     cleanText: string;
@@ -427,12 +410,10 @@ export class TasksCalendarItemView extends ItemView {
       return;
     }
 
-    // Get date property names from settings
     const dateProperty = this.settings.dateProperty;
     const startDateProperty = this.settings.startDateProperty;
 
     try {
-      // Update task dates using the helper function
       await updateTaskDates(
         this.app,
         file,
@@ -448,9 +429,7 @@ export class TasksCalendarItemView extends ItemView {
 
       new Notice('Task date updated successfully');
 
-      // Re-render tooltip if active
       if (this.tooltipRenderer && this.activeTooltipEl) {
-        // Re-render the tooltip with updated dates using the helper method
         this.tooltipRenderer.render(
           this.createTaskTooltipElement({
             taskText:
@@ -472,7 +451,6 @@ export class TasksCalendarItemView extends ItemView {
         );
       }
 
-      // Refresh calendar events
       this.calendar?.refetchEvents();
     } catch (error) {
       handleError(error, 'Failed to update task date');
@@ -500,14 +478,11 @@ export class TasksCalendarItemView extends ItemView {
     }
 
     try {
-      // Update task status using the utility function
       await updateTaskStatus(this.app, file, line, newStatus);
 
       new Notice('Task status updated successfully');
 
-      // Re-render tooltip if active
       if (this.tooltipRenderer && this.activeTooltipEl) {
-        // Re-render the tooltip with updated status
         this.tooltipRenderer.render(
           this.createTaskTooltipElement({
             taskText:
@@ -521,7 +496,7 @@ export class TasksCalendarItemView extends ItemView {
             startDate: event.startStr,
             endDate: event.endStr,
             tags: event.extendedProps.tags,
-            status: newStatus, // Use new status
+            status: newStatus,
             line: line,
             isAllDay: event.allDay,
             event: event,
@@ -529,7 +504,6 @@ export class TasksCalendarItemView extends ItemView {
         );
       }
 
-      // Refresh calendar events to reflect the status change
       this.calendar?.refetchEvents();
     } catch (error) {
       handleError(error, 'Failed to update task status');
@@ -559,7 +533,6 @@ export class TasksCalendarItemView extends ItemView {
     }
 
     try {
-      // Update task text using the utility function
       const newFilePath = await updateTaskText(
         this.app,
         file,
@@ -571,15 +544,9 @@ export class TasksCalendarItemView extends ItemView {
       if (newFilePath) {
         new Notice('Task text updated successfully');
 
-        // Update tooltip if active
         if (this.tooltipRenderer && this.activeTooltipEl) {
-          // Re-render the tooltip with updated text
           const updatedEvent = { ...event };
-
-          // Update title for display
           updatedEvent.title = newText;
-
-          // Update extendedProps
           updatedEvent.extendedProps = {
             ...updatedEvent.extendedProps,
             cleanText: newText,
@@ -605,7 +572,6 @@ export class TasksCalendarItemView extends ItemView {
           );
         }
 
-        // Refresh calendar events to reflect the text change
         this.calendar?.refetchEvents();
 
         return true;
@@ -635,7 +601,6 @@ export class TasksCalendarItemView extends ItemView {
     }
 
     try {
-      // Create the task using the utility function with the selected target path
       const success = await createTask(
         this.app,
         targetPath,
@@ -649,7 +614,6 @@ export class TasksCalendarItemView extends ItemView {
       );
 
       if (success) {
-        // Refresh calendar events
         this.calendar?.refetchEvents();
         new Notice('Task created successfully');
         return true;
@@ -666,7 +630,6 @@ export class TasksCalendarItemView extends ItemView {
    * Centralized method to handle task date changes (from drag & drop)
    */
   private async handleTaskDateChange(newEvent: EventApi, oldEvent: EventApi) {
-    // Get file information from event properties
     const filePath = newEvent.extendedProps.filePath;
     const line = newEvent.extendedProps.line;
 
@@ -675,18 +638,15 @@ export class TasksCalendarItemView extends ItemView {
       return;
     }
 
-    // Get the file from the vault
     const file = this.app.vault.getAbstractFileByPath(filePath);
     if (!file || !(file instanceof TFile)) {
       new Notice(`File not found: ${filePath}`);
       return;
     }
 
-    // Get date property names from settings
     const dateProperty = this.settings.dateProperty;
     const startDateProperty = this.settings.startDateProperty;
 
-    // Get the new start and end dates from the event
     const newStart = newEvent.start;
     const newEnd = newEvent.end;
     const isAllDay = newEvent.allDay;
@@ -698,9 +658,8 @@ export class TasksCalendarItemView extends ItemView {
     }
 
     try {
-      // Update task dates using the helper function
       await updateTaskDates(
-        this.app, // Pass app instance
+        this.app,
         file,
         line,
         newStart,
@@ -739,7 +698,6 @@ export class TasksCalendarItemView extends ItemView {
     const startDateProperty = this.settings.startDateProperty;
 
     try {
-      // Delete the task using the utility function
       const success = await deleteTask(
         this.app,
         file,
@@ -751,7 +709,6 @@ export class TasksCalendarItemView extends ItemView {
       if (success) {
         new Notice('Task deleted successfully');
 
-        // Refresh calendar events
         this.calendar?.refetchEvents();
         return true;
       }
@@ -764,7 +721,6 @@ export class TasksCalendarItemView extends ItemView {
     }
   }
 
-  // Close current active tooltip if exists
   private closeActiveTooltip() {
     if (this.tooltipRenderer) {
       this.tooltipRenderer.unmount();
@@ -777,7 +733,6 @@ export class TasksCalendarItemView extends ItemView {
     }
   }
 
-  // カレンダーイベントをフェッチするカスタム関数
   private async fetchCalendarEvents(
     _: any,
     successCallback: any,
@@ -791,7 +746,6 @@ export class TasksCalendarItemView extends ItemView {
       return failureCallback(new Error('Dataview plugin is not available'));
     }
     try {
-      // Use the settings getter instead of accessing currentSettings directly
       const events = getTasksAsEvents(dataviewApi, this.settings);
       successCallback(events);
     } catch (error) {
@@ -801,28 +755,23 @@ export class TasksCalendarItemView extends ItemView {
   }
 
   private setupResizeObserver(calendarEl: HTMLElement) {
-    // Clean up any existing observer
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
     }
 
-    // Create new resize observer
     this.resizeObserver = new ResizeObserver(() => {
       if (this.calendar) {
         this.calendar.updateSize();
       }
     });
 
-    // Observe both the container and its parent
     this.resizeObserver.observe(calendarEl);
     this.resizeObserver.observe(this.containerEl);
   }
 
   async onClose() {
-    // Clean up tooltip
     this.closeActiveTooltip();
 
-    // Clean up React renderers
     if (this.taskPreviewRenderer) {
       this.taskPreviewRenderer.unmount();
       this.taskPreviewRenderer = null;
@@ -833,7 +782,6 @@ export class TasksCalendarItemView extends ItemView {
       this.footerRenderer = null;
     }
 
-    // Clean up calendar
     if (this.calendar) {
       this.calendar.destroy();
       this.calendar = null;
@@ -843,7 +791,6 @@ export class TasksCalendarItemView extends ItemView {
       document.removeEventListener('click', this.closeDropdown);
     }
 
-    // キーダウンリスナーの削除をコメントアウトしない
     document.removeEventListener('keydown', this.onKeydown);
 
     if (this.resizeObserver) {
@@ -852,23 +799,19 @@ export class TasksCalendarItemView extends ItemView {
     }
   }
 
-  // Called when this view is activated (made visible)
   onResize() {
     if (this.calendar) {
       this.calendar.updateSize();
     }
   }
 
-  // フッターUIの作成
   private renderFooter() {
     if (!this.footerEl) return;
 
-    // Initialize React renderer if needed
     if (!this.footerRenderer) {
       this.footerRenderer = new ReactRenderer(this.footerEl);
     }
 
-    // Render React component
     this.footerRenderer.render(
       React.createElement(CalendarFooter, {
         getCalendarSettings: async (calendarId: string) => {
@@ -887,7 +830,6 @@ export class TasksCalendarItemView extends ItemView {
             this.calendar.refetchEvents();
           }
 
-          // UIを強制的に再レンダリング
           this.renderFooter();
         },
         onCalendarAdd: async () => {
@@ -921,8 +863,6 @@ export class TasksCalendarItemView extends ItemView {
           this.settings = settings;
           await this.plugin.saveCalendarSettings(settings);
 
-          // Refresh events but don't re-render the footer
-          // Let React handle the UI update internally
           if (this.calendar) {
             this.calendar.refetchEvents();
           }
@@ -939,26 +879,21 @@ export class TasksCalendarItemView extends ItemView {
     );
   }
 
-  // Add new method for handling date clicks and showing task creation tooltip
   private showTaskCreationTooltip(
     date: Date,
     jsEvent: MouseEvent,
     isAllDay: boolean = true
   ) {
-    // Close any existing tooltip first
     this.closeActiveTooltip();
 
-    // Get all available destination paths from settings
     const availableDestinations =
       this.settings.newTaskFilePaths &&
       this.settings.newTaskFilePaths.length > 0
         ? this.settings.newTaskFilePaths
-        : ['Tasks.md']; // Default if not set
+        : ['Tasks.md'];
 
-    // Default target path is the first one in the list
     const defaultPath = availableDestinations[0];
 
-    // Create tooltip container element
     const tooltipEl = document.createElement('div');
     tooltipEl.className = 'task-click-tooltip-container';
     document.body.appendChild(tooltipEl);
@@ -966,9 +901,8 @@ export class TasksCalendarItemView extends ItemView {
 
     let tooltipPosition;
     if (Platform.isMobile) {
-      tooltipPosition = { top: 0, left: 0 }; // Mobile - center positioning handled by CSS
+      tooltipPosition = { top: 0, left: 0 };
     } else {
-      // For desktop, position near the click
       const clickX = jsEvent.clientX;
       const clickY = jsEvent.clientY;
       tooltipPosition = {
@@ -976,17 +910,14 @@ export class TasksCalendarItemView extends ItemView {
         left: clickX + 10,
       };
 
-      // Adjust position to ensure it's fully visible
       const targetEl = jsEvent.target as HTMLElement;
       if (targetEl) {
         tooltipPosition = calculateOptimalPosition(targetEl, tooltipEl, 10);
       }
     }
 
-    // Create tooltip renderer
     this.tooltipRenderer = new ReactRenderer(tooltipEl);
 
-    // Render task creation tooltip with state variables for status and dates
     this.tooltipRenderer.render(
       React.createElement(TaskClickTooltip, {
         taskText: '',
@@ -994,16 +925,16 @@ export class TasksCalendarItemView extends ItemView {
         filePath: defaultPath,
         position: tooltipPosition,
         onClose: () => this.closeActiveTooltip(),
-        onOpenFile: () => {}, // No-op for creation mode
+        onOpenFile: () => {},
         startDate: date.toISOString(),
-        endDate: undefined, // Add endDate property
-        tags: [], // Add empty tags array
-        line: 0, // Add a default line value
-        isAllDay: isAllDay, // Use the passed isAllDay parameter
-        status: ' ', // Default empty status
+        endDate: undefined,
+        tags: [],
+        line: 0,
+        isAllDay: isAllDay,
+        status: ' ',
         isCreateMode: true,
         selectedDate: date,
-        availableDestinations: availableDestinations, // Pass available destinations
+        availableDestinations: availableDestinations,
         onCreateTask: (
           text,
           startDate,
@@ -1020,15 +951,10 @@ export class TasksCalendarItemView extends ItemView {
             status,
             targetPath
           ),
-        // Add functional callbacks that actually update the internal state of TaskClickTooltip
         onUpdateDates: (..._) => {
-          // These state changes will be managed by the TaskClickTooltip component itself
-          // No need to make backend updates until actual creation
           return Promise.resolve(true);
         },
         onUpdateStatus: _ => {
-          // Status changes will be preserved by the component's internal state
-          // and passed to onCreateTask when submitted
           return Promise.resolve();
         },
         onHoverLink: this.onHoverLink,
