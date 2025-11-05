@@ -12,7 +12,12 @@ interface DateTimePickerModalProps {
   initialEndDate?: Date | null;
   isAllDay: boolean;
   onClose: () => void;
-  onDone: (startDate: Date, endDate: Date | null, isAllDay: boolean, wasMultiDay: boolean) => void;
+  onDone: (
+    startDate: Date,
+    endDate: Date | null,
+    isAllDay: boolean,
+    wasMultiDay: boolean
+  ) => void;
   position: { top: number; left: number };
 }
 
@@ -22,7 +27,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   isAllDay: initialIsAllDay,
   onClose,
   onDone,
-  position
+  position,
 }) => {
   // Track whether this was initially a multi-day event
   const wasMultiDay = useRef<boolean>(!!initialEndDate);
@@ -35,8 +40,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   const [endDate, setEndDate] = useState<Date | null>(() => {
     if (initialEndDate) {
       const endDate = new Date(initialEndDate);
-      if (initialIsAllDay)
-        endDate.setDate(endDate.getDate() - 1)
+      if (initialIsAllDay) endDate.setDate(endDate.getDate() - 1);
       return endDate;
     }
     return null;
@@ -50,10 +54,14 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     initialStartDate.getMinutes().toString().padStart(2, '0')
   );
   const [endHours, setEndHours] = useState<string>(
-    initialEndDate ? initialEndDate.getHours().toString().padStart(2, '0') : hours
+    initialEndDate
+      ? initialEndDate.getHours().toString().padStart(2, '0')
+      : hours
   );
   const [endMinutes, setEndMinutes] = useState<string>(
-    initialEndDate ? initialEndDate.getMinutes().toString().padStart(2, '0') : minutes
+    initialEndDate
+      ? initialEndDate.getMinutes().toString().padStart(2, '0')
+      : minutes
   );
 
   // Refs
@@ -77,7 +85,8 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   const isMobile = Platform.isMobile;
 
   // Derived state for multi-day events
-  const isMultiDay = endDate && endDate.toDateString() !== startDate.toDateString();
+  const isMultiDay =
+    endDate && endDate.toDateString() !== startDate.toDateString();
 
   // Create result dates from current state
   const createResultDates = useCallback(() => {
@@ -129,7 +138,16 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     }
 
     return { startDate: resultStartDate, endDate: resultEndDate };
-  }, [startDate, endDate, isAllDay, hours, minutes, endHours, endMinutes, isMultiDay]);
+  }, [
+    startDate,
+    endDate,
+    isAllDay,
+    hours,
+    minutes,
+    endHours,
+    endMinutes,
+    isMultiDay,
+  ]);
 
   // Handlers for automatic updates while interacting
   const handleDataChange = useCallback(() => {
@@ -141,38 +159,59 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   }, []);
 
   // Handle date changes
-  const handleDateChange = useCallback((newStartDate: Date, newEndDate: Date | null) => {
-    setStartDate(newStartDate);
-    setEndDate(newEndDate);
-    handleDataChange();
-  }, [handleDataChange]);
+  const handleDateChange = useCallback(
+    (newStartDate: Date, newEndDate: Date | null) => {
+      setStartDate(newStartDate);
+      setEndDate(newEndDate);
+      handleDataChange();
+    },
+    [handleDataChange]
+  );
 
   // Handle all-day toggle
-  const handleAllDayChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newIsAllDay = e.target.checked;
-    setIsAllDay(newIsAllDay);
-    handleDataChange();
-  }, [handleDataChange]);
+  const handleAllDayChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newIsAllDay = e.target.checked;
+      setIsAllDay(newIsAllDay);
+      handleDataChange();
+    },
+    [handleDataChange]
+  );
 
   // Handle time input changes with a short debounce
-  const handleTimeInputChange = useCallback((newValue: string, setter: React.Dispatch<React.SetStateAction<string>>) => {
-    setter(newValue);
+  const handleTimeInputChange = useCallback(
+    (
+      newValue: string,
+      setter: React.Dispatch<React.SetStateAction<string>>
+    ) => {
+      setter(newValue);
 
-    // Use a short debounce for time inputs to avoid excessive updates while typing
-    if (timeInputDebounceTimerRef.current) {
-      clearTimeout(timeInputDebounceTimerRef.current);
-    }
+      // Use a short debounce for time inputs to avoid excessive updates while typing
+      if (timeInputDebounceTimerRef.current) {
+        clearTimeout(timeInputDebounceTimerRef.current);
+      }
 
-    timeInputDebounceTimerRef.current = setTimeout(() => {
-      timeInputDebounceTimerRef.current = null;
-    }, 300); // Short debounce time
-  }, []);
+      timeInputDebounceTimerRef.current = setTimeout(() => {
+        timeInputDebounceTimerRef.current = null;
+      }, 300); // Short debounce time
+    },
+    []
+  );
 
   // Handle clearing the end date (convert to single-day task)
   const handleClearEndDate = useCallback(() => {
     setEndDate(null);
     handleDataChange();
   }, [handleDataChange]);
+
+  // Cancel button handler - close the picker without saving
+  const handleCancel = useCallback(() => {
+    if (timeInputDebounceTimerRef.current) {
+      clearTimeout(timeInputDebounceTimerRef.current);
+      timeInputDebounceTimerRef.current = null;
+    }
+    onClose();
+  }, [onClose]);
 
   // Position calculation
   useEffect(() => {
@@ -185,7 +224,11 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
       sourceEl.style.height = '20px';
       document.body.appendChild(sourceEl);
 
-      const optimalPosition = calculateOptimalPosition(sourceEl, modalRef.current, 10);
+      const optimalPosition = calculateOptimalPosition(
+        sourceEl,
+        modalRef.current,
+        10
+      );
       setFinalPosition(optimalPosition);
 
       document.body.removeChild(sourceEl);
@@ -197,7 +240,10 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   // Close modal when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
         // Handle close without saving
         handleCancel();
       }
@@ -212,7 +258,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
         clearTimeout(timeInputDebounceTimerRef.current);
       }
     };
-  }, [onClose]);
+  }, [handleCancel]);
 
   // Initialize calendar
   useEffect(() => {
@@ -224,7 +270,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
         headerToolbar: {
           left: 'prev',
           center: 'title',
-          right: 'next'
+          right: 'next',
         },
         aspectRatio: 0.75,
         selectable: true,
@@ -233,7 +279,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
         events: [],
         navLinks: false,
         firstDay: FIRST_DAY,
-        dayCellDidMount: (info) => {
+        dayCellDidMount: info => {
           const cellDate = info.date;
 
           // Check if this date is the start date
@@ -243,7 +289,8 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
             cellDate.getDate() === startDate.getDate();
 
           // Check if this date is the end date (which is already the inclusive end date in this component)
-          const isEnd = endDate &&
+          const isEnd =
+            endDate &&
             cellDate.getFullYear() === endDate.getFullYear() &&
             cellDate.getMonth() === endDate.getMonth() &&
             cellDate.getDate() === endDate.getDate();
@@ -268,13 +315,16 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
             info.el.classList.add('fc-day-in-range');
           }
         },
-        dateClick: (info) => {
+        dateClick: info => {
           const clickedDate = new Date(info.dateStr);
           clickedDate.setHours(startDate.getHours());
           clickedDate.setMinutes(startDate.getMinutes());
 
           // If clicked date is the same as start date and we have an end date, clear end date
-          if (clickedDate.toDateString() === startDate.toDateString() && endDate) {
+          if (
+            clickedDate.toDateString() === startDate.toDateString() &&
+            endDate
+          ) {
             handleDateChange(startDate, null);
           } else {
             // Set as new start date
@@ -283,7 +333,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
           updateSelectedDateHighlight();
         },
-        select: (info) => {
+        select: info => {
           // Handle date range selection
           const newStartDate = new Date(info.start);
 
@@ -314,7 +364,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
           updateSelectedDateHighlight();
         },
         dayHeaderFormat: { weekday: 'narrow' },
-        fixedWeekCount: false
+        fixedWeekCount: false,
       });
 
       calendar.render();
@@ -329,6 +379,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
         calendar.destroy();
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
   // Function to highlight the selected date range
@@ -336,8 +387,10 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     if (!calendarRef.current) return;
 
     // Remove existing selections
-    const selectedCells = calendarRef.current.querySelectorAll('.fc-day-selected, .fc-day-selected-start, .fc-day-selected-end, .fc-day-in-range');
-    selectedCells.forEach((el) => {
+    const selectedCells = calendarRef.current.querySelectorAll(
+      '.fc-day-selected, .fc-day-selected-start, .fc-day-selected-end, .fc-day-in-range'
+    );
+    selectedCells.forEach(el => {
       el.classList.remove('fc-day-selected');
       el.classList.remove('fc-day-selected-start');
       el.classList.remove('fc-day-selected-end');
@@ -346,7 +399,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
     // Remove today highlighting to avoid confusion
     const todayCells = calendarRef.current.querySelectorAll('.fc-day-today');
-    todayCells.forEach((el) => el.classList.remove('fc-day-today'));
+    todayCells.forEach(el => el.classList.remove('fc-day-today'));
 
     // Function to format date for selection
     const formatDateForSelector = (date: Date) => {
@@ -356,7 +409,9 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
     // Highlight start date
     const startDateStr = formatDateForSelector(startDate);
-    const startCell = calendarRef.current.querySelector(`[data-date="${startDateStr}"]`);
+    const startCell = calendarRef.current.querySelector(
+      `[data-date="${startDateStr}"]`
+    );
     if (startCell) {
       startCell.classList.add('fc-day-selected-start');
       startCell.classList.add('fc-day-selected');
@@ -365,7 +420,9 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     // Highlight end date if exists
     if (endDate) {
       const endDateStr = formatDateForSelector(endDate);
-      const endCell = calendarRef.current.querySelector(`[data-date="${endDateStr}"]`);
+      const endCell = calendarRef.current.querySelector(
+        `[data-date="${endDateStr}"]`
+      );
       if (endCell) {
         endCell.classList.add('fc-day-selected-end');
         endCell.classList.add('fc-day-selected');
@@ -381,7 +438,9 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
         // Loop through dates between start and end
         for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
           const dateStr = formatDateForSelector(d);
-          const dayCell = calendarRef.current.querySelector(`[data-date="${dateStr}"]`);
+          const dayCell = calendarRef.current.querySelector(
+            `[data-date="${dateStr}"]`
+          );
           if (dayCell) {
             dayCell.classList.add('fc-day-in-range');
           }
@@ -400,17 +459,14 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     }
   }, [startDate, endDate, updateSelectedDateHighlight]);
 
-  // Generic time input change handler factory
-  const createTimeInputChangeHandler = (
-    setter: React.Dispatch<React.SetStateAction<string>>,
-    maxValue: number,
-    isFocused: boolean
-  ) => {
-    return (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Create specific handlers inline
+  const handleHoursChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
+      const maxValue = 23;
 
       if (value === '') {
-        handleTimeInputChange('', setter);
+        handleTimeInputChange('', setHours);
         return;
       }
 
@@ -419,116 +475,194 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
       if (isNaN(numValue)) return;
 
-      if (isFocused) {
+      if (hoursInputFocused) {
         if (numValue <= maxValue) {
-          handleTimeInputChange(numericValue, setter);
+          handleTimeInputChange(numericValue, setHours);
         }
       } else {
         if (numValue >= 0 && numValue <= maxValue) {
-          handleTimeInputChange(numValue.toString().padStart(2, '0'), setter);
+          handleTimeInputChange(numValue.toString().padStart(2, '0'), setHours);
         }
       }
-    };
-  };
-
-  // Create specific handlers using the factory
-  const handleHoursChange = useCallback(
-    createTimeInputChangeHandler(setHours, 23, hoursInputFocused),
-    [hoursInputFocused]
+    },
+    [hoursInputFocused, handleTimeInputChange]
   );
 
   const handleMinutesChange = useCallback(
-    createTimeInputChangeHandler(setMinutes, 59, minutesInputFocused),
-    [minutesInputFocused]
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      const maxValue = 59;
+
+      if (value === '') {
+        handleTimeInputChange('', setMinutes);
+        return;
+      }
+
+      const numericValue = value.replace(/[^0-9]/g, '');
+      const numValue = parseInt(numericValue, 10);
+
+      if (isNaN(numValue)) return;
+
+      if (minutesInputFocused) {
+        if (numValue <= maxValue) {
+          handleTimeInputChange(numericValue, setMinutes);
+        }
+      } else {
+        if (numValue >= 0 && numValue <= maxValue) {
+          handleTimeInputChange(
+            numValue.toString().padStart(2, '0'),
+            setMinutes
+          );
+        }
+      }
+    },
+    [minutesInputFocused, handleTimeInputChange]
   );
 
   const handleEndHoursChange = useCallback(
-    createTimeInputChangeHandler(setEndHours, 23, endHoursInputFocused),
-    [endHoursInputFocused]
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      const maxValue = 23;
+
+      if (value === '') {
+        handleTimeInputChange('', setEndHours);
+        return;
+      }
+
+      const numericValue = value.replace(/[^0-9]/g, '');
+      const numValue = parseInt(numericValue, 10);
+
+      if (isNaN(numValue)) return;
+
+      if (endHoursInputFocused) {
+        if (numValue <= maxValue) {
+          handleTimeInputChange(numericValue, setEndHours);
+        }
+      } else {
+        if (numValue >= 0 && numValue <= maxValue) {
+          handleTimeInputChange(
+            numValue.toString().padStart(2, '0'),
+            setEndHours
+          );
+        }
+      }
+    },
+    [endHoursInputFocused, handleTimeInputChange]
   );
 
   const handleEndMinutesChange = useCallback(
-    createTimeInputChangeHandler(setEndMinutes, 59, endMinutesInputFocused),
-    [endMinutesInputFocused]
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      const maxValue = 59;
+
+      if (value === '') {
+        handleTimeInputChange('', setEndMinutes);
+        return;
+      }
+
+      const numericValue = value.replace(/[^0-9]/g, '');
+      const numValue = parseInt(numericValue, 10);
+
+      if (isNaN(numValue)) return;
+
+      if (endMinutesInputFocused) {
+        if (numValue <= maxValue) {
+          handleTimeInputChange(numericValue, setEndMinutes);
+        }
+      } else {
+        if (numValue >= 0 && numValue <= maxValue) {
+          handleTimeInputChange(
+            numValue.toString().padStart(2, '0'),
+            setEndMinutes
+          );
+        }
+      }
+    },
+    [endMinutesInputFocused, handleTimeInputChange]
   );
 
-  // Generic focus handler factory
-  const createFocusHandler = (
-    setFocused: React.Dispatch<React.SetStateAction<boolean>>,
+  // Focus and blur handlers
+  const handleHoursFocus = useCallback(() => {
+    setHoursInputFocused(true);
+    if (hours.startsWith('0') && hours !== '0') {
+      setHours(hours.replace(/^0+/, ''));
+    }
+  }, [hours]);
+
+  const handleHoursBlur = useCallback(() => {
+    setHoursInputFocused(false);
+    if (hours !== '') {
+      const numValue = parseInt(hours, 10);
+      if (!isNaN(numValue) && numValue >= 0 && numValue <= 23) {
+        const paddedValue = numValue.toString().padStart(2, '0');
+        setHours(paddedValue);
+        handleDataChange();
+      }
+    }
+  }, [hours, handleDataChange]);
+
+  const handleMinutesFocus = useCallback(() => {
+    setMinutesInputFocused(true);
+    if (minutes.startsWith('0') && minutes !== '0') {
+      setMinutes(minutes.replace(/^0+/, ''));
+    }
+  }, [minutes]);
+
+  const handleMinutesBlur = useCallback(() => {
+    setMinutesInputFocused(false);
+    if (minutes !== '') {
+      const numValue = parseInt(minutes, 10);
+      if (!isNaN(numValue) && numValue >= 0 && numValue <= 59) {
+        const paddedValue = numValue.toString().padStart(2, '0');
+        setMinutes(paddedValue);
+        handleDataChange();
+      }
+    }
+  }, [minutes, handleDataChange]);
+
+  const handleEndHoursFocus = useCallback(() => {
+    setEndHoursInputFocused(true);
+    if (endHours.startsWith('0') && endHours !== '0') {
+      setEndHours(endHours.replace(/^0+/, ''));
+    }
+  }, [endHours]);
+
+  const handleEndHoursBlur = useCallback(() => {
+    setEndHoursInputFocused(false);
+    if (endHours !== '') {
+      const numValue = parseInt(endHours, 10);
+      if (!isNaN(numValue) && numValue >= 0 && numValue <= 23) {
+        const paddedValue = numValue.toString().padStart(2, '0');
+        setEndHours(paddedValue);
+        handleDataChange();
+      }
+    }
+  }, [endHours, handleDataChange]);
+
+  const handleEndMinutesFocus = useCallback(() => {
+    setEndMinutesInputFocused(true);
+    if (endMinutes.startsWith('0') && endMinutes !== '0') {
+      setEndMinutes(endMinutes.replace(/^0+/, ''));
+    }
+  }, [endMinutes]);
+
+  const handleEndMinutesBlur = useCallback(() => {
+    setEndMinutesInputFocused(false);
+    if (endMinutes !== '') {
+      const numValue = parseInt(endMinutes, 10);
+      if (!isNaN(numValue) && numValue >= 0 && numValue <= 59) {
+        const paddedValue = numValue.toString().padStart(2, '0');
+        setEndMinutes(paddedValue);
+        handleDataChange();
+      }
+    }
+  }, [endMinutes, handleDataChange]);
+
+  // Handle select changes for mobile (immediate update)
+  const handleSelectChange = (
     value: string,
     setter: React.Dispatch<React.SetStateAction<string>>
   ) => {
-    return () => {
-      setFocused(true);
-      if (value.startsWith('0') && value !== '0') {
-        setter(value.replace(/^0+/, ''));
-      }
-    };
-  };
-
-  // Generic blur handler factory
-  const createBlurHandler = (
-    setFocused: React.Dispatch<React.SetStateAction<boolean>>,
-    value: string,
-    setter: React.Dispatch<React.SetStateAction<string>>,
-    maxValue: number
-  ) => {
-    return () => {
-      setFocused(false);
-      if (value !== '') {
-        const numValue = parseInt(value, 10);
-        if (!isNaN(numValue) && numValue >= 0 && numValue <= maxValue) {
-          const paddedValue = numValue.toString().padStart(2, '0');
-          setter(paddedValue);
-          handleDataChange();
-        }
-      }
-    };
-  };
-
-  // Create specific handlers using the factories
-  const handleHoursFocus = useCallback(
-    createFocusHandler(setHoursInputFocused, hours, setHours),
-    [hours]
-  );
-
-  const handleHoursBlur = useCallback(
-    createBlurHandler(setHoursInputFocused, hours, setHours, 23),
-    [hours]
-  );
-
-  const handleMinutesFocus = useCallback(
-    createFocusHandler(setMinutesInputFocused, minutes, setMinutes),
-    [minutes]
-  );
-
-  const handleMinutesBlur = useCallback(
-    createBlurHandler(setMinutesInputFocused, minutes, setMinutes, 59),
-    [minutes]
-  );
-
-  const handleEndHoursFocus = useCallback(
-    createFocusHandler(setEndHoursInputFocused, endHours, setEndHours),
-    [endHours]
-  );
-
-  const handleEndHoursBlur = useCallback(
-    createBlurHandler(setEndHoursInputFocused, endHours, setEndHours, 23),
-    [endHours]
-  );
-
-  const handleEndMinutesFocus = useCallback(
-    createFocusHandler(setEndMinutesInputFocused, endMinutes, setEndMinutes),
-    [endMinutes]
-  );
-
-  const handleEndMinutesBlur = useCallback(
-    createBlurHandler(setEndMinutesInputFocused, endMinutes, setEndMinutes, 59),
-    [endMinutes]
-  );
-
-  // Handle select changes for mobile (immediate update)
-  const handleSelectChange = (value: string, setter: React.Dispatch<React.SetStateAction<string>>) => {
     setter(value);
 
     // Update immediately
@@ -538,7 +672,10 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   };
 
   // Handle select changes for end time on mobile
-  const handleEndSelectChange = (value: string, setter: React.Dispatch<React.SetStateAction<string>>) => {
+  const handleEndSelectChange = (
+    value: string,
+    setter: React.Dispatch<React.SetStateAction<string>>
+  ) => {
     setter(value);
 
     // Update immediately
@@ -548,7 +685,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   };
 
   // Done button handler - save changes and close the picker
-  const handleDone = () => {
+  const handleDone = useCallback(() => {
     // Ensure any pending time input changes are saved
     if (timeInputDebounceTimerRef.current) {
       clearTimeout(timeInputDebounceTimerRef.current);
@@ -556,7 +693,8 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     }
 
     // Get the final date values and send them to the parent
-    const { startDate: resultStartDate, endDate: resultEndDate } = createResultDates();
+    const { startDate: resultStartDate, endDate: resultEndDate } =
+      createResultDates();
 
     // Pass wasMultiDay flag to help determine if we need to remove startDateProperty
     // We only need to consider it as "was multi-day" if we're changing to single-day
@@ -564,16 +702,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     const needsMultiDayConversion = wasMultiDay.current && !isNowMultiDay;
 
     onDone(resultStartDate, resultEndDate, isAllDay, needsMultiDayConversion);
-  };
-
-  // Cancel button handler - close the picker without saving
-  const handleCancel = () => {
-    if (timeInputDebounceTimerRef.current) {
-      clearTimeout(timeInputDebounceTimerRef.current);
-      timeInputDebounceTimerRef.current = null;
-    }
-    onClose();
-  };
+  }, [createResultDates, isAllDay, onDone]);
 
   // Modal title based on selection mode
   const modalTitle = endDate ? 'Date Range' : 'Select Date';
@@ -583,9 +712,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     <div className="mobile-modal-overlay">
       <div className="date-time-picker-modal" ref={modalRef}>
         <div className="date-time-picker-header">
-          <div className="date-time-picker-title">
-            {modalTitle}
-          </div>
+          <div className="date-time-picker-title">{modalTitle}</div>
           <div className="date-time-picker-header-buttons">
             <button
               className="date-time-picker-close-button"
@@ -599,7 +726,12 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
         {endDate && (
           <div className="date-range-summary">
-            <div><strong>{startDate.toLocaleDateString()} - {endDate.toLocaleDateString()}</strong></div>
+            <div>
+              <strong>
+                {startDate.toLocaleDateString()} -{' '}
+                {endDate.toLocaleDateString()}
+              </strong>
+            </div>
             <button
               className="date-range-clear"
               onClick={handleClearEndDate}
@@ -629,15 +761,21 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
           {!isAllDay && (
             <>
               <div className="date-time-picker-time">
-                {isMultiDay && <span className="date-time-picker-time-label">Start</span>}
+                {isMultiDay && (
+                  <span className="date-time-picker-time-label">Start</span>
+                )}
                 <Clock size={16} className="date-time-picker-time-icon" />
                 <div className="time-input-with-controls">
                   <select
                     value={hours}
-                    onChange={(e) => handleSelectChange(e.target.value, setHours)}
+                    onChange={e => handleSelectChange(e.target.value, setHours)}
                   >
-                    {Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0')).map((val) => (
-                      <option key={val} value={val}>{val}</option>
+                    {Array.from({ length: 24 }, (_, i) =>
+                      i.toString().padStart(2, '0')
+                    ).map(val => (
+                      <option key={val} value={val}>
+                        {val}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -645,10 +783,16 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
                 <div className="time-input-with-controls">
                   <select
                     value={minutes}
-                    onChange={(e) => handleSelectChange(e.target.value, setMinutes)}
+                    onChange={e =>
+                      handleSelectChange(e.target.value, setMinutes)
+                    }
                   >
-                    {Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0')).map((val) => (
-                      <option key={val} value={val}>{val}</option>
+                    {Array.from({ length: 12 }, (_, i) =>
+                      (i * 5).toString().padStart(2, '0')
+                    ).map(val => (
+                      <option key={val} value={val}>
+                        {val}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -661,10 +805,16 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
                   <div className="time-input-with-controls">
                     <select
                       value={endHours}
-                      onChange={(e) => handleEndSelectChange(e.target.value, setEndHours)}
+                      onChange={e =>
+                        handleEndSelectChange(e.target.value, setEndHours)
+                      }
                     >
-                      {Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0')).map((val) => (
-                        <option key={val} value={val}>{val}</option>
+                      {Array.from({ length: 24 }, (_, i) =>
+                        i.toString().padStart(2, '0')
+                      ).map(val => (
+                        <option key={val} value={val}>
+                          {val}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -672,10 +822,16 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
                   <div className="time-input-with-controls">
                     <select
                       value={endMinutes}
-                      onChange={(e) => handleEndSelectChange(e.target.value, setEndMinutes)}
+                      onChange={e =>
+                        handleEndSelectChange(e.target.value, setEndMinutes)
+                      }
                     >
-                      {Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0')).map((val) => (
-                        <option key={val} value={val}>{val}</option>
+                      {Array.from({ length: 12 }, (_, i) =>
+                        (i * 5).toString().padStart(2, '0')
+                      ).map(val => (
+                        <option key={val} value={val}>
+                          {val}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -685,7 +841,10 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
           )}
 
           <div className="date-time-picker-done-container">
-            <button className="date-time-picker-done-button" onClick={handleDone}>
+            <button
+              className="date-time-picker-done-button"
+              onClick={handleDone}
+            >
               Done
             </button>
           </div>
@@ -702,9 +861,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
       ref={modalRef}
     >
       <div className="date-time-picker-header">
-        <div className="date-time-picker-title">
-          {modalTitle}
-        </div>
+        <div className="date-time-picker-title">{modalTitle}</div>
         <div className="date-time-picker-header-buttons">
           <button
             className="date-time-picker-close-button"
@@ -718,7 +875,11 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
       {endDate && (
         <div className="date-range-summary">
-          <div><strong>{startDate.toLocaleDateString()} - {endDate.toLocaleDateString()}</strong></div>
+          <div>
+            <strong>
+              {startDate.toLocaleDateString()} - {endDate.toLocaleDateString()}
+            </strong>
+          </div>
           <button
             className="date-range-clear"
             onClick={handleClearEndDate}
@@ -748,7 +909,9 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
         {!isAllDay && (
           <>
             <div className="date-time-picker-time">
-              {isMultiDay && <span className="date-time-picker-time-label">Start</span>}
+              {isMultiDay && (
+                <span className="date-time-picker-time-label">Start</span>
+              )}
               <Clock size={16} className="date-time-picker-time-icon" />
               <div className="time-input-with-controls">
                 <input

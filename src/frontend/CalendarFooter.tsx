@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { SettingsPanel } from './SettingsPanel';
 import { CalendarSettings } from '../TasksCalendarSettings';
-import { Plus, Trash2, RefreshCw, Settings, ChevronDown, Calendar } from 'lucide-react';
+import {
+  Plus,
+  Trash2,
+  RefreshCw,
+  Settings,
+  ChevronDown,
+  Calendar,
+} from 'lucide-react';
 
 interface CalendarFooterProps {
   getCalendarSettings: (calendarId: string) => Promise<CalendarSettings>;
@@ -22,10 +29,12 @@ export const CalendarFooter: React.FC<CalendarFooterProps> = ({
   onCalendarAdd,
   onCalendarDelete,
   onSettingsChange,
-  onRefresh
+  onRefresh,
 }) => {
   const [showSettings, setShowSettings] = useState(false);
-  const [activeSettings, setActiveSettings] = useState<CalendarSettings | null>(null);
+  const [activeSettings, setActiveSettings] = useState<CalendarSettings | null>(
+    null
+  );
   const calendarsList = getCalendarsList();
 
   // Fetch active calendar settings when activeCalendarId changes
@@ -52,7 +61,7 @@ export const CalendarFooter: React.FC<CalendarFooterProps> = ({
           <select
             className="calendar-selector"
             value={activeCalendarId}
-            onChange={(e) => onCalendarChange(e.target.value)}
+            onChange={e => onCalendarChange(e.target.value)}
             aria-label="Select calendar"
           >
             {calendarsList.map(cal => (
@@ -97,7 +106,11 @@ export const CalendarFooter: React.FC<CalendarFooterProps> = ({
             <button
               className="calendar-action-button calendar-delete-button"
               onClick={() => {
-                if (confirm(`Are you sure you want to delete '${activeSettings.name}'?`)) {
+                if (
+                  confirm(
+                    `Are you sure you want to delete '${activeSettings.name}'?`
+                  )
+                ) {
                   onCalendarDelete(activeSettings.id);
                 }
               }}

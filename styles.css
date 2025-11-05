@@ -142,7 +142,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.2s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    opacity 0.2s ease;
   opacity: 0.7;
   padding: 10px;
   top: 20px;
@@ -235,7 +238,10 @@
   background-color: var(--interactive-accent-hover) !important;
 }
 
-.tasks-calendar-container .fc-more-popover .fc-daygrid-dot-event .fc-event-title {
+.tasks-calendar-container
+  .fc-more-popover
+  .fc-daygrid-dot-event
+  .fc-event-title {
   font-weight: normal;
 }
 
@@ -324,7 +330,7 @@
 }
 
 .tasks-calendar-container .fc-viewMenu-button::after {
-  content: "▼";
+  content: '▼';
   font-size: 0.7em;
   position: absolute;
   right: 8px;
@@ -373,8 +379,12 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .task-preview-content {
@@ -406,11 +416,13 @@
 }
 
 /* タブアイコンのスタイル調整 */
-.workspace-tab-header[data-type="tasks-calendar-view"] .workspace-tab-header-inner-icon {
+.workspace-tab-header[data-type='tasks-calendar-view']
+  .workspace-tab-header-inner-icon {
   opacity: 0.9;
 }
 
-.workspace-tab-header[data-type="tasks-calendar-view"].is-active .workspace-tab-header-inner-icon {
+.workspace-tab-header[data-type='tasks-calendar-view'].is-active
+  .workspace-tab-header-inner-icon {
   opacity: 1;
 }
 
@@ -487,7 +499,9 @@
   flex-shrink: 0;
 }
 
-.tasks-calendar-container .calendar-selector:focus + .calendar-selector-chevron {
+.tasks-calendar-container
+  .calendar-selector:focus
+  + .calendar-selector-chevron {
   transform: rotate(180deg);
   color: var(--text-accent);
 }
@@ -570,7 +584,7 @@
 }
 
 /* Default option styling */
-.tasks-calendar-container .calendar-selector option[value="default"] {
+.tasks-calendar-container .calendar-selector option[value='default'] {
   font-weight: 600;
 }
 
@@ -758,7 +772,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .task-click-tooltip-open-button:hover,
@@ -831,7 +847,9 @@
   line-height: 1.5;
   padding: 2px 4px;
   border-radius: 4px;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .task-click-tooltip-file-link {
@@ -870,8 +888,14 @@
 
 /* Animation for the tooltip */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* DateTimePicker Modal styling */
@@ -917,7 +941,9 @@
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .date-time-picker-close-button:hover {
@@ -993,7 +1019,7 @@
 }
 
 .date-time-picker-calendar .fc-daygrid-day.fc-day-today {
-  background-color: transparent;  /* 今日のハイライトを無効化 */
+  background-color: transparent; /* 今日のハイライトを無効化 */
 }
 
 .date-time-picker-calendar .fc-daygrid-day-number {
@@ -1004,7 +1030,9 @@
 .date-time-picker-calendar .fc-col-header-cell {
   padding: 6px 0;
   font-size: 0.85em;
-  background-color: var(--background-secondary); /* 本体カレンダーと同じ背景色 */
+  background-color: var(
+    --background-secondary
+  ); /* 本体カレンダーと同じ背景色 */
   color: var(--text-normal);
 }
 
@@ -1022,7 +1050,7 @@
   font-size: 0.9em;
 }
 
-.date-time-picker-all-day input[type="checkbox"] {
+.date-time-picker-all-day input[type='checkbox'] {
   margin-right: 8px;
 }
 
@@ -1085,8 +1113,14 @@
 
 /* Animation for the tooltip */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Status picker styling */
@@ -1132,7 +1166,9 @@
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .status-picker-close-button:hover {
@@ -1211,7 +1247,9 @@
   cursor: pointer;
   padding: 2px 4px;
   border-radius: 4px;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
   display: inline-block;
 }
 
@@ -1262,8 +1300,14 @@
 
 /* Add a modern zoom animation for mobile modals */
 @keyframes zoomIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Additional mobile styling improvements */
@@ -1312,8 +1356,12 @@
 }
 
 @keyframes fadeBackdrop {
-  from { opacity: 0; }
-  to { opacity: 0.5; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.5;
+  }
 }
 
 /* Update the existing selector to not display event time in most places */
@@ -1504,7 +1552,7 @@
 }
 
 /* Input */
-.tasks-calendar-settings-modal input[type="text"] {
+.tasks-calendar-settings-modal input[type='text'] {
   padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid var(--background-modifier-border);
@@ -1515,7 +1563,7 @@
   transition: all 0.2s ease;
 }
 
-.tasks-calendar-settings-modal input[type="text"]:focus {
+.tasks-calendar-settings-modal input[type='text']:focus {
   border-color: var(--text-accent);
   outline: none;
   box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb), 0.2);
@@ -1712,8 +1760,12 @@
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modalSlideIn {
@@ -1823,7 +1875,9 @@
   line-height: 1.5;
   resize: none;
   overflow-y: hidden;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
   align-content: center;
 }
 
@@ -1873,7 +1927,10 @@
 }
 
 .task-click-tooltip-cancel-button {
-  background-color: var(--background-secondary-alt, var(--background-secondary));
+  background-color: var(
+    --background-secondary-alt,
+    var(--background-secondary)
+  );
   color: var(--text-muted);
   border: 1px solid var(--background-modifier-border);
 }
@@ -1956,7 +2013,9 @@
   padding: 8px 20px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .date-time-picker-done-button:hover {

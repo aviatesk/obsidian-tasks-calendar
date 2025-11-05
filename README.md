@@ -1,6 +1,11 @@
 # Tasks Calendar
 
-Tasks Calendar is an [Obsidian.md](https://obsidian.md/) plugin that leverages [FullCalendar](https://fullcalendar.io/) to visualize tasks on an interactive calendar. By integrating with the [Dataview](https://blacksmithgu.github.io/obsidian-dataview/) plugin, it automatically gathers tasks from your notes and presents them in a flexible, easy-to-manage interface.
+Tasks Calendar is an [Obsidian.md](https://obsidian.md/) plugin that leverages
+[FullCalendar](https://fullcalendar.io/) to visualize tasks on an interactive
+calendar. By integrating with the
+[Dataview](https://blacksmithgu.github.io/obsidian-dataview/) plugin, it
+automatically gathers tasks from your notes and presents them in a flexible,
+easy-to-manage interface.
 
 ## Supported Task Formats
 
@@ -19,11 +24,10 @@ Tasks Calendar is an [Obsidian.md](https://obsidian.md/) plugin that leverages [
 - Supports file property tasks (using frontmatter):
   ```yaml
   ---
-  ...
+  ---
   due: YYYY-MM-DD
-  start: YYYY-MM-DD  # Optional for multi-day tasks
-  status: " " # optional, empty string means this task is "Incomplete"
-  ...
+  start: YYYY-MM-DD # Optional for multi-day tasks
+  status: ' ' # optional, empty string means this task is "Incomplete"
   ---
   ```
   The file name becomes the task title, and the entire note becomes a task.
@@ -32,20 +36,20 @@ That's it. You are free to write your tasks wherever you want.
 
 ## Features
 
-- **Dynamic Task Aggregation**:
-  Scans your vault for tasks regardless of location.
+- **Dynamic Task Aggregation**: Scans your vault for tasks regardless of
+  location.
   - Customizable Dataview queries to filter target files
   - Filter tasks by status or tags
   - Supports multi-day tasks and events with specific times
 
-- **Interactive Calendar Interface**:
-  Offers multiple views: Month, Week, 3 Days, Day, and List.
+- **Interactive Calendar Interface**: Offers multiple views: Month, Week, 3
+  Days, Day, and List.
   - Drag & drop to update task dates
   - Intuitive tooltips and popovers for quick task edits
 
-- **Customization Options**:
-  Configure calendar settings such as view type, first day of the week, and date properties.
-  Manage multiple calendars with individual settings.
+- **Customization Options**: Configure calendar settings such as view type,
+  first day of the week, and date properties. Manage multiple calendars with
+  individual settings.
 
 ## Preview
 
@@ -101,7 +105,8 @@ That's it. You are free to write your tasks wherever you want.
 
 ## Installation
 
-1. Ensure the [Dataview](https://blacksmithgu.github.io/obsidian-dataview/) plugin is installed.
+1. Ensure the [Dataview](https://blacksmithgu.github.io/obsidian-dataview/)
+   plugin is installed.
 2. Run `npm install && npm run build` to generate the `main.js` file.
 3. Copy `main.js`, `styles.css`, and `manifest.json` to:
    ```
@@ -111,40 +116,48 @@ That's it. You are free to write your tasks wherever you want.
 
 ## Usage
 
-- **Opening the Calendar**
-  Use the ribbon icon or the `Open Tasks Calendar` command. The calendar view opens automatically on startup after a brief delay.
+- **Opening the Calendar** Use the ribbon icon or the `Open Tasks Calendar`
+  command. The calendar view opens automatically on startup after a brief delay.
 
-- **Interacting with Tasks**
-  Click a task to update its details, or drag & drop to adjust dates. The view refreshes automatically when tasks are updated in your vault.
+- **Interacting with Tasks** Click a task to update its details, or drag & drop
+  to adjust dates. The view refreshes automatically when tasks are updated in
+  your vault.
 
-- **File Property Tasks**
-  Add status and date properties to your frontmatter to treat entire notes as tasks. The file name will display as the task title on the calendar.
+- **File Property Tasks** Add status and date properties to your frontmatter to
+  treat entire notes as tasks. The file name will display as the task title on
+  the calendar.
 
 ## Related Plugins
 
 ### Comparison with obsidian-full-calendar
 
-[obsidian-full-calendar](https://github.com/obsidian-community/obsidian-full-calendar) is a similar plugin that also uses the FullCalendar library. The key difference is in how tasks are managed:
+[obsidian-full-calendar](https://github.com/obsidian-community/obsidian-full-calendar)
+is a similar plugin that also uses the FullCalendar library. The key difference
+is in how tasks are managed:
 
-|  | Tasks Calendar | obsidian-full-calendar |
-|--|---------------|---------------|
-| **Task Storage** | Tasks can be written anywhere in your vault or use file frontmatter | One note per task approach |
-| **Task Discovery** | Uses Dataview to scan and aggregate tasks | Relies on dedicated note properties |
-| **Philosophy** | Freedom to organize tasks in any note structure | Structured approach with dedicated notes |
+|                    | Tasks Calendar                                                      | obsidian-full-calendar                   |
+| ------------------ | ------------------------------------------------------------------- | ---------------------------------------- |
+| **Task Storage**   | Tasks can be written anywhere in your vault or use file frontmatter | One note per task approach               |
+| **Task Discovery** | Uses Dataview to scan and aggregate tasks                           | Relies on dedicated note properties      |
+| **Philosophy**     | Freedom to organize tasks in any note structure                     | Structured approach with dedicated notes |
 
 ### Compatibility with Tasks Plugin
 
-Tasks Calendar works seamlessly with the [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin as both share similar philosophies for task management:
+Tasks Calendar works seamlessly with the
+[Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin as both
+share similar philosophies for task management:
 
 - Both allow tasks to be written anywhere in your vault
 - Both scan your vault to gather and display tasks
 - Use Tasks for powerful task filtering and management
-- Use Tasks Calendar for visual calendar representation and simple task management
+- Use Tasks Calendar for visual calendar representation and simple task
+  management
 
 ### Feature Parity Note
 
-Tasks Calendar is not intended to be a direct replacement for obsidian-full-calendar.
-Certain obsidian-full-calendar features (like Google Calendar integration) may or may not be added in the future.
+Tasks Calendar is not intended to be a direct replacement for
+obsidian-full-calendar. Certain obsidian-full-calendar features (like Google
+Calendar integration) may or may not be added in the future.
 
 ## License
 
@@ -152,7 +165,8 @@ Distributed under the MIT License.
 
 ## Support
 
-If you find this plugin useful and would like to support its development, you can donate via:
+If you find this plugin useful and would like to support its development, you
+can donate via:
 
 - [Ko-fi](https://ko-fi.com/aviatesk)
 - [Buy Me A Coffee](https://www.buymeacoffee.com/aviatesk)

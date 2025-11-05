@@ -26,7 +26,11 @@ export function getCurrentDateFormatted(): string {
  * @param isEndDate Whether the date is an end date (needs adjustment for all-day events)
  * @returns Formatted date string
  */
-export function formatDateForTask(date: Date, isAllDay: boolean, isEndDate: boolean): string {
+export function formatDateForTask(
+  date: Date,
+  isAllDay: boolean,
+  isEndDate: boolean
+): string {
   // Create copy of the date to avoid modifying the original
   let dateToFormat = new Date(date);
 

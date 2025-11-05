@@ -1,5 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { FileText, Pencil, X, Calendar, Tag, Info, Check, XCircle, Edit, Plus, Trash2, AlertCircle } from 'lucide-react';
+import {
+  FileText,
+  Pencil,
+  X,
+  Calendar,
+  Tag,
+  Info,
+  Check,
+  XCircle,
+  Edit,
+  Plus,
+  Trash2,
+  AlertCircle,
+} from 'lucide-react';
 import { DateTimePickerModal } from './DateTimePickerModal';
 import { StatusPickerDropdown } from './StatusPickerDropdown';
 import { formatStatus, getStatusIcon } from '../backend/status';
@@ -20,17 +33,37 @@ interface TaskClickTooltipProps {
   line?: number;
   isAllDay?: boolean;
   // Add handlers for updates
-  onUpdateDates?: (startDate: Date | null, endDate: Date | null, isAllDay: boolean, wasMultiDay: boolean) => void;
+  onUpdateDates?: (
+    startDate: Date | null,
+    endDate: Date | null,
+    isAllDay: boolean,
+    wasMultiDay: boolean
+  ) => void;
   onUpdateStatus?: (newStatus: string) => void;
-  onUpdateText?: (newText: string, originalText: string, taskText: string) => Promise<boolean>;
+  onUpdateText?: (
+    newText: string,
+    originalText: string,
+    taskText: string
+  ) => Promise<boolean>;
   // Add hover link handler
-  onHoverLink?: (event: React.MouseEvent, filePath: string, line?: number) => void;
+  onHoverLink?: (
+    event: React.MouseEvent,
+    filePath: string,
+    line?: number
+  ) => void;
   // Delete task callback
   onDeleteTask?: (filePath: string, line?: number) => Promise<boolean>;
   // New props for task creation mode
   isCreateMode?: boolean;
   selectedDate?: Date;
-  onCreateTask?: (text: string, startDate: Date | null, endDate: Date | null, isAllDay: boolean, status: string, targetPath: string) => Promise<boolean>;
+  onCreateTask?: (
+    text: string,
+    startDate: Date | null,
+    endDate: Date | null,
+    isAllDay: boolean,
+    status: string,
+    targetPath: string
+  ) => Promise<boolean>;
   availableDestinations?: string[]; // Added prop for available destinations
 }
 
@@ -67,23 +100,29 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
 
   // State for dynamic updates of dates
   const [startDate, setStartDate] = useState<string | undefined>(
-    isCreateMode && selectedDate
-      ? selectedDate.toISOString()
-      : initialStartDate
+    isCreateMode && selectedDate ? selectedDate.toISOString() : initialStartDate
   );
   const [endDate, setEndDate] = useState<string | undefined>(initialEndDate);
   const [isAllDay, setIsAllDay] = useState<boolean>(!!initialIsAllDay);
 
   // Text editing state
   const [isEditing, setIsEditing] = useState<boolean>(isCreateMode);
-  const [editedText, setEditedText] = useState<string>(isCreateMode ? "" : cleanText || '');
+  const [editedText, setEditedText] = useState<string>(
+    isCreateMode ? '' : cleanText || ''
+  );
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   // Date picker state - simplified to a single date picker
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showStatusPicker, setShowStatusPicker] = useState(false);
-  const [datePickerPosition, setDatePickerPosition] = useState({ top: 0, left: 0 });
-  const [statusPickerPosition, setStatusPickerPosition] = useState({ top: 0, left: 0 });
+  const [datePickerPosition, setDatePickerPosition] = useState({
+    top: 0,
+    left: 0,
+  });
+  const [statusPickerPosition, setStatusPickerPosition] = useState({
+    top: 0,
+    left: 0,
+  });
 
   // Add state for managing status in create mode
   const [currentStatus, setCurrentStatus] = useState<string>(status);
@@ -92,7 +131,9 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
 
   // Add state for destination selection
-  const [selectedDestination, setSelectedDestination] = useState<string>(filePath || availableDestinations[0]);
+  const [selectedDestination, setSelectedDestination] = useState<string>(
+    filePath || availableDestinations[0]
+  );
 
   // Auto-focus and resize the textarea when entering edit mode
   useEffect(() => {
@@ -104,7 +145,10 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   // Handle clicks outside the tooltip
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (tooltipRef.current && !tooltipRef.current.contains(event.target as Node)) {
+      if (
+        tooltipRef.current &&
+        !tooltipRef.current.contains(event.target as Node)
+      ) {
         // Don't close if editing to prevent accidental data loss
         if (!isEditing) {
           onClose();
@@ -136,7 +180,9 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   };
 
   // Handle tab key to move focus to buttons
-  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleTextareaKeyDown = (
+    e: React.KeyboardEvent<HTMLTextAreaElement>
+  ) => {
     if (e.key === 'Tab') {
       e.preventDefault(); // Prevent default tab behavior
 
@@ -196,7 +242,10 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   };
 
   // Helper to adjust end date for all-day events (convert exclusive end to inclusive end for display)
-  const adjustEndDateForDisplay = (dateStr: string, isAllDayFormat: boolean): string => {
+  const adjustEndDateForDisplay = (
+    dateStr: string,
+    isAllDayFormat: boolean
+  ): string => {
     if (!dateStr || !isAllDayFormat) return dateStr;
     // For all-day events, we need to subtract a day from the end date for display
     // This converts the exclusive end date (stored value) to inclusive end date (display value)
@@ -215,7 +264,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           weekday: 'short',
           year: 'numeric',
           month: 'short',
-          day: 'numeric'
+          day: 'numeric',
         });
       }
 
@@ -225,9 +274,9 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
         month: 'short',
         day: 'numeric',
         hour: 'numeric',
-        minute: 'numeric'
+        minute: 'numeric',
       });
-    } catch (e) {
+    } catch {
       return dateStr;
     }
   };
@@ -288,7 +337,12 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   };
 
   // Updated date save handler - stores changes locally without updating parent
-  const handleDateDone = (newStartDate: Date, newEndDate: Date | null, newAllDay: boolean, wasMultiDay: boolean) => {
+  const handleDateDone = (
+    newStartDate: Date,
+    newEndDate: Date | null,
+    newAllDay: boolean,
+    wasMultiDay: boolean
+  ) => {
     const startDate = newStartDate.toISOString();
     const endDate = newEndDate ? newEndDate.toISOString() : undefined;
 
@@ -318,11 +372,16 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     if (!startDate) return null;
 
     // Adjust end date for all-day events before formatting
-    const displayEndDate = endDate ? adjustEndDateForDisplay(endDate, isAllDay) : undefined;
+    const displayEndDate = endDate
+      ? adjustEndDateForDisplay(endDate, isAllDay)
+      : undefined;
 
     return (
       <div className="task-click-tooltip-info-item">
-        <Calendar size={isMobile ? 18 : 16} className="task-click-tooltip-icon-small" />
+        <Calendar
+          size={isMobile ? 18 : 16}
+          className="task-click-tooltip-icon-small"
+        />
         <div
           className="task-click-tooltip-date-container"
           onClick={handleDateClick}
@@ -332,7 +391,9 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
             {formatDateString(startDate, isAllDay)}
             {displayEndDate && (
               <>
-                <span className="task-click-tooltip-info-text">{isAllDay ? ' to ' : ' → '}</span>
+                <span className="task-click-tooltip-info-text">
+                  {isAllDay ? ' to ' : ' → '}
+                </span>
                 {formatDateString(displayEndDate, isAllDay)}
               </>
             )}
@@ -348,7 +409,10 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
 
     return (
       <div className="task-click-tooltip-info-item">
-        <Tag size={isMobile ? 18 : 16} className="task-click-tooltip-icon-small" />
+        <Tag
+          size={isMobile ? 18 : 16}
+          className="task-click-tooltip-icon-small"
+        />
         <div className="task-click-tooltip-tags-container">
           {tags.map((tag, index) => (
             <span key={index} className="task-click-tooltip-tag-code">
@@ -382,7 +446,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
         setIsDeleting(false);
       }
     } catch (error) {
-      console.error("Failed to delete task:", error);
+      console.error('Failed to delete task:', error);
       setShowDeleteConfirm(false);
       setIsDeleting(false);
     }
@@ -395,7 +459,10 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     return (
       <div className="task-click-tooltip-delete-confirm">
         <div className="task-click-tooltip-delete-message">
-          <AlertCircle size={isMobile ? 20 : 18} className="task-click-tooltip-delete-icon" />
+          <AlertCircle
+            size={isMobile ? 20 : 18}
+            className="task-click-tooltip-delete-icon"
+          />
           <span>Are you sure you want to delete this task?</span>
         </div>
         <div className="task-click-tooltip-delete-actions">
@@ -434,7 +501,9 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
             onChange={handleTextChange}
             onKeyDown={handleTextareaKeyDown}
             disabled={isSaving}
-            placeholder={isCreateMode ? "Type your new task here..." : "Task text..."}
+            placeholder={
+              isCreateMode ? 'Type your new task here...' : 'Task text...'
+            }
             spellCheck={false}
             autoFocus
           />
@@ -444,7 +513,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
               className="task-click-tooltip-cancel-button"
               onClick={handleTextCancel}
               disabled={isSaving}
-              title={isCreateMode ? "Cancel task creation" : "Cancel editing"}
+              title={isCreateMode ? 'Cancel task creation' : 'Cancel editing'}
             >
               Cancel
               <XCircle size={isMobile ? 18 : 16} />
@@ -454,10 +523,15 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
               className="task-click-tooltip-save-button"
               onClick={handleTextSave}
               disabled={isSaving || (isCreateMode && !editedText.trim())}
-              title={isCreateMode ? "Create task" : "Save changes"}
+              title={isCreateMode ? 'Create task' : 'Save changes'}
             >
               {isSaving ? 'Saving...' : isCreateMode ? 'Create' : 'Save'}
-              {!isSaving && (isCreateMode ? <Plus size={isMobile ? 18 : 16} /> : <Check size={isMobile ? 18 : 16} />)}
+              {!isSaving &&
+                (isCreateMode ? (
+                  <Plus size={isMobile ? 18 : 16} />
+                ) : (
+                  <Check size={isMobile ? 18 : 16} />
+                ))}
             </button>
           </div>
         </div>
@@ -470,7 +544,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           className="task-click-tooltip-main-text"
           onClick={onUpdateText ? handleEditStart : undefined}
           style={onUpdateText ? { cursor: 'pointer' } : undefined}
-          title={onUpdateText ? "Click to edit task text" : undefined}
+          title={onUpdateText ? 'Click to edit task text' : undefined}
         >
           {cleanText || taskText}
         </div>
@@ -489,13 +563,10 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
 
   const renderStatusIcon = () => {
     const statusToUse = isCreateMode ? currentStatus : status;
-    return React.createElement(
-      getStatusIcon(statusToUse),
-      {
-        size: isMobile ? 18 : 16,
-        className: "task-click-tooltip-icon-small"
-      }
-    );
+    return React.createElement(getStatusIcon(statusToUse), {
+      size: isMobile ? 18 : 16,
+      className: 'task-click-tooltip-icon-small',
+    });
   };
 
   // Render different container based on mobile or desktop
@@ -507,7 +578,9 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
             {isCreateMode ? (
               <>
                 <Plus size={18} className="task-click-tooltip-icon" />
-                <span className="task-click-tooltip-file">New Task in {fileName}</span>
+                <span className="task-click-tooltip-file">
+                  New Task in {fileName}
+                </span>
               </>
             ) : (
               <>
@@ -543,7 +616,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
             <button
               className="task-click-tooltip-close-button"
               onClick={isEditing ? handleTextCancel : onClose}
-              title={isEditing ? "Cancel editing" : "Close"}
+              title={isEditing ? 'Cancel editing' : 'Close'}
             >
               <X size={18} />
             </button>
@@ -559,7 +632,11 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
                 <span
                   className="task-click-tooltip-info-text task-click-tooltip-status-text"
                   onClick={handleStatusClick}
-                  title={isEditing ? "Finish editing task first" : "Click to change status"}
+                  title={
+                    isEditing
+                      ? 'Finish editing task first'
+                      : 'Click to change status'
+                  }
                 >
                   <span className="task-click-tooltip-status-value">
                     {formatStatus(isCreateMode ? currentStatus : status)}
@@ -580,29 +657,43 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
                 title="Click to open task"
               >
                 <Info size={18} className="task-click-tooltip-icon-small" />
-                <span className="task-click-tooltip-info-text">{filePath}{line ? ` (line ${line})` : ''}</span>
+                <span className="task-click-tooltip-info-text">
+                  {filePath}
+                  {line ? ` (line ${line})` : ''}
+                </span>
               </div>
             )}
 
             {isCreateMode && (
               <div className="task-click-tooltip-info-item">
-                <Info size={18} className="task-click-tooltip-icon-small task-click-tooltip-icon-info" />
+                <Info
+                  size={18}
+                  className="task-click-tooltip-icon-small task-click-tooltip-icon-info"
+                />
                 {availableDestinations.length <= 1 ? (
                   <span className="task-click-tooltip-info-text">
-                    Will be created in {selectedDestination} {selectedDestination.endsWith('/') ? '(new task note)' : '(new task list)'}
+                    Will be created in {selectedDestination}{' '}
+                    {selectedDestination.endsWith('/')
+                      ? '(new task note)'
+                      : '(new task list)'}
                   </span>
                 ) : (
                   <div className="task-click-tooltip-destination-select">
-                    <div className="task-click-tooltip-destination-label">Will be created in</div>
+                    <div className="task-click-tooltip-destination-label">
+                      Will be created in
+                    </div>
                     <select
                       value={selectedDestination}
-                      onChange={(e) => setSelectedDestination(e.target.value)}
+                      onChange={e => setSelectedDestination(e.target.value)}
                       className="task-click-tooltip-inline-dropdown"
                       disabled={isSaving}
                     >
                       {availableDestinations.map((destination, index) => (
                         <option key={index} value={destination}>
-                          {destination} {destination.endsWith('/') ? '(new task note)' : '(new task list)'}
+                          {destination}{' '}
+                          {destination.endsWith('/')
+                            ? '(new task note)'
+                            : '(new task list)'}
                         </option>
                       ))}
                     </select>
@@ -650,7 +741,9 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           {isCreateMode ? (
             <>
               <Plus size={16} className="task-click-tooltip-icon" />
-              <span className="task-click-tooltip-file">New Task in {fileName}</span>
+              <span className="task-click-tooltip-file">
+                New Task in {fileName}
+              </span>
             </>
           ) : (
             <>
@@ -686,7 +779,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           <button
             className="task-click-tooltip-close-button"
             onClick={isEditing ? handleTextCancel : onClose}
-            title={isEditing ? "Cancel editing" : "Close"}
+            title={isEditing ? 'Cancel editing' : 'Close'}
           >
             <X size={16} />
           </button>
@@ -702,7 +795,11 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
               <span
                 className="task-click-tooltip-info-text task-click-tooltip-status-text"
                 onClick={handleStatusClick}
-                title={isEditing ? "Finish editing task first" : "Click to change status"}
+                title={
+                  isEditing
+                    ? 'Finish editing task first'
+                    : 'Click to change status'
+                }
               >
                 <span className="task-click-tooltip-status-value">
                   {formatStatus(isCreateMode ? currentStatus : status)}
@@ -723,29 +820,43 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
               title="Click to open task"
             >
               <Info size={16} className="task-click-tooltip-icon-small" />
-              <span className="task-click-tooltip-info-text">{filePath}{line ? ` (line ${line})` : ''}</span>
+              <span className="task-click-tooltip-info-text">
+                {filePath}
+                {line ? ` (line ${line})` : ''}
+              </span>
             </div>
           )}
 
           {isCreateMode && (
             <div className="task-click-tooltip-info-item">
-              <Info size={16} className="task-click-tooltip-icon-small task-click-tooltip-icon-info" />
+              <Info
+                size={16}
+                className="task-click-tooltip-icon-small task-click-tooltip-icon-info"
+              />
               {availableDestinations.length <= 1 ? (
                 <span className="task-click-tooltip-info-text">
-                  Will be created in {selectedDestination} {selectedDestination.endsWith('/') ? '(new task note)' : '(new task list)'}
+                  Will be created in {selectedDestination}{' '}
+                  {selectedDestination.endsWith('/')
+                    ? '(new task note)'
+                    : '(new task list)'}
                 </span>
               ) : (
                 <div className="task-click-tooltip-destination-select">
-                  <div className="task-click-tooltip-destination-label">Will be created in</div>
+                  <div className="task-click-tooltip-destination-label">
+                    Will be created in
+                  </div>
                   <select
                     value={selectedDestination}
-                    onChange={(e) => setSelectedDestination(e.target.value)}
+                    onChange={e => setSelectedDestination(e.target.value)}
                     className="task-click-tooltip-inline-dropdown"
                     disabled={isSaving}
                   >
                     {availableDestinations.map((destination, index) => (
                       <option key={index} value={destination}>
-                        {destination} {destination.endsWith('/') ? '(new task note)' : '(new task list)'}
+                        {destination}{' '}
+                        {destination.endsWith('/')
+                          ? '(new task note)'
+                          : '(new task list)'}
                       </option>
                     ))}
                   </select>

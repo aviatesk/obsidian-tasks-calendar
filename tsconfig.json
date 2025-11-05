@@ -15,24 +15,16 @@
     "noUnusedLocals": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "lib": [
-      "DOM",
-      "ES5",
-      "ES6",
-      "ES7",
-      "ES2021"
-    ],
+    "skipLibCheck": true,
+    "lib": ["DOM", "ES5", "ES6", "ES7", "ES2021"],
     "jsx": "react",
     "paths": {
       "api/*": ["node_modules/obsidian-dataview/lib/api/*"],
       "data-index/*": ["node_modules/obsidian-dataview/lib/data-index/*"],
       "data-model/*": ["node_modules/obsidian-dataview/lib/data-model/*"],
       "expression/*": ["node_modules/obsidian-dataview/lib/expression/*"],
-      "query/*": ["node_modules/obsidian-dataview/lib/query/*"],
+      "query/*": ["node_modules/obsidian-dataview/lib/query/*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx"
-  ]
+  "include": ["**/*.ts", "**/*.tsx"]
 }

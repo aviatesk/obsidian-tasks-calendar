@@ -1,8 +1,8 @@
-import { App, MarkdownPreviewView, MarkdownView, Platform } from "obsidian";
+import { App, MarkdownPreviewView, MarkdownView, Platform } from 'obsidian';
 
 export default function openTask(app: App, filePath: string, line?: number) {
   // We can simplify by directly checking for existing open leaves
-  const leaves = app.workspace.getLeavesOfType("markdown");
+  const leaves = app.workspace.getLeavesOfType('markdown');
   const existingLeaf = leaves.find(leaf => {
     const view = leaf.view;
     if (view instanceof MarkdownView) {
@@ -26,7 +26,11 @@ export default function openTask(app: App, filePath: string, line?: number) {
 }
 
 // Helper function to navigate to specific line if provided
-function handleLineNavigation(app: App, line?: number, view: MarkdownView | null = null) {
+function handleLineNavigation(
+  app: App,
+  line?: number,
+  view: MarkdownView | null = null
+) {
   if (line) {
     if (!view) {
       view = app.workspace.getActiveViewOfType(MarkdownView);
@@ -35,7 +39,7 @@ function handleLineNavigation(app: App, line?: number, view: MarkdownView | null
       // Apply scroll with the calculated offset to center the line
       // Use longer timeout on mobile for better reliability
       const scrollDelay = Platform.isMobile ? 500 : 250;
-      if (view.getMode() == "preview") {
+      if (view.getMode() == 'preview') {
         const previewMode = view.previewMode;
         if (previewMode instanceof MarkdownPreviewView) {
           // const fontSizeStr = getComputedStyle(app.workspace.containerEl).getPropertyValue('--font-text-size');
@@ -93,7 +97,7 @@ function handleLineNavigation(app: App, line?: number, view: MarkdownView | null
           // fallback case
           setTimeout(() => {
             previewMode.applyScroll(line);
-          }, scrollDelay)
+          }, scrollDelay);
           return;
         }
       }
@@ -104,11 +108,14 @@ function handleLineNavigation(app: App, line?: number, view: MarkdownView | null
 
         // Scroll to the cursor position with some context
         setTimeout(() => {
-          editor.scrollIntoView({
-            from: { line: Math.max(0, line - 2), ch: 0 },
-            to: { line: line + 2, ch: 0 }
-          }, true);
-        }, scrollDelay)
+          editor.scrollIntoView(
+            {
+              from: { line: Math.max(0, line - 2), ch: 0 },
+              to: { line: line + 2, ch: 0 },
+            },
+            true
+          );
+        }, scrollDelay);
       }
     }
   }

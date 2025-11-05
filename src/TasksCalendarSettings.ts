@@ -1,14 +1,14 @@
 export interface EventProps {
-  textColor?: string,
-  backgroundColor?: string,
-  display?: string,
-  priority?: number,
+  textColor?: string;
+  backgroundColor?: string;
+  display?: string;
+  priority?: number;
 }
 interface DefaultEventProps {
-  textColor: string,
-  backgroundColor: string,
-  display: string,
-  priority: number,
+  textColor: string;
+  backgroundColor: string;
+  display: string;
+  priority: number;
 }
 
 /**
@@ -17,7 +17,7 @@ interface DefaultEventProps {
  * - '#xxx': string starting with '#' matches task tag of the same string
  */
 interface EventPropsMap {
-  [key: string]: EventProps
+  [key: string]: EventProps;
 }
 
 /**
@@ -26,17 +26,17 @@ interface EventPropsMap {
  */
 export interface UserCalendarSettings {
   id: string;
-  name: string;                  // name to be displayed in the UI
-  viewType?: string;             // the default view type
-  query?: string;                // Dataview query
-  dateProperty?: string;         // property name to get the date
-  startDateProperty?: string;    // property name to get the start date
-  excludedStatuses?: string[];   // excluded statuses, tasks with these statuses will be filtered out
-  includedStatuses?: string[];   // included statuses, empty array means including every task
-  excludedTags?: string[];       // excluded tags, tasks with these tags will be filtered out
-  includedTags?: string[];       // included tags, empty array means including every task
-  eventPropsMap?: EventPropsMap  // event info map
-  newTaskFilePaths?: string[];   // New setting for multiple task creation file paths
+  name: string; // name to be displayed in the UI
+  viewType?: string; // the default view type
+  query?: string; // Dataview query
+  dateProperty?: string; // property name to get the date
+  startDateProperty?: string; // property name to get the start date
+  excludedStatuses?: string[]; // excluded statuses, tasks with these statuses will be filtered out
+  includedStatuses?: string[]; // included statuses, empty array means including every task
+  excludedTags?: string[]; // excluded tags, tasks with these tags will be filtered out
+  includedTags?: string[]; // included tags, empty array means including every task
+  eventPropsMap?: EventPropsMap; // event info map
+  newTaskFilePaths?: string[]; // New setting for multiple task creation file paths
 }
 
 /**
@@ -45,17 +45,17 @@ export interface UserCalendarSettings {
  */
 export interface CalendarSettings {
   id: string;
-  name: string;                 // name to be displayed in the UI
-  viewType: string;             // the default view type
-  query: string;                // Dataview query
-  dateProperty: string;         // property name to get the date
-  startDateProperty: string;    // property name to get the start date
-  excludedStatuses: string[];   // excluded statuses, tasks with these statuses will be filtered out
-  includedStatuses: string[];   // included statuses, empty array means including every task
-  excludedTags: string[];       // excluded tags, tasks with these tags will be filtered out
-  includedTags: string[];       // included tags, empty array means including every task
-  eventPropsMap: EventPropsMap  // event info map
-  newTaskFilePaths: string[];   // New setting for multiple task creation file paths
+  name: string; // name to be displayed in the UI
+  viewType: string; // the default view type
+  query: string; // Dataview query
+  dateProperty: string; // property name to get the date
+  startDateProperty: string; // property name to get the start date
+  excludedStatuses: string[]; // excluded statuses, tasks with these statuses will be filtered out
+  includedStatuses: string[]; // included statuses, empty array means including every task
+  excludedTags: string[]; // excluded tags, tasks with these tags will be filtered out
+  includedTags: string[]; // included tags, empty array means including every task
+  eventPropsMap: EventPropsMap; // event info map
+  newTaskFilePaths: string[]; // New setting for multiple task creation file paths
 }
 
 export interface PluginSettings {
@@ -65,14 +65,14 @@ export interface PluginSettings {
 
 export const VIEW_TYPE = 'tasks-calendar-view';
 
-export const HOVER_LINK_SOURCE = "tasks-calendar-hover-link"
+export const HOVER_LINK_SOURCE = 'tasks-calendar-hover-link';
 
 export const DEFAULT_EVENT_PROPS: DefaultEventProps = {
   textColor: 'var(--text-on-accent)',
   backgroundColor: 'var(--interactive-accent)',
   display: 'auto',
   priority: 0,
-}
+};
 
 export const DEFAULT_CALENDAR_SETTINGS: CalendarSettings = {
   id: 'default',
@@ -82,9 +82,9 @@ export const DEFAULT_CALENDAR_SETTINGS: CalendarSettings = {
   startDateProperty: 'start',
   query: '""',
   excludedStatuses: [
-    "x", // completed
-    "X", // completed
-    "-" // cancelled
+    'x', // completed
+    'X', // completed
+    '-', // cancelled
   ],
   includedStatuses: [],
   excludedTags: [],
@@ -93,8 +93,8 @@ export const DEFAULT_CALENDAR_SETTINGS: CalendarSettings = {
     // E.g., include completed status with a different style
     // 'x': { textColor: 'var(--text-faint)', backgroundColor: 'var(--background-secondary)', display: 'block', priority: -1 },
   },
-  newTaskFilePaths: ['Tasks.md'] // Default file path for new tasks
-}
+  newTaskFilePaths: ['Tasks.md'], // Default file path for new tasks
+};
 
 export const DEFAULT_PLUGIN_SETTINGS: PluginSettings = {
   activeCalendar: 'default',
@@ -105,7 +105,9 @@ export const DEFAULT_PLUGIN_SETTINGS: PluginSettings = {
  * Convert a UserCalendarSettings object to a complete CalendarSettings object
  * by filling in missing properties with defaults
  */
-export function toCalendarSettings(settings: UserCalendarSettings): CalendarSettings {
+export function toCalendarSettings(
+  settings: UserCalendarSettings
+): CalendarSettings {
   return Object.assign({}, DEFAULT_CALENDAR_SETTINGS, settings);
 }
 
@@ -113,7 +115,9 @@ export function toCalendarSettings(settings: UserCalendarSettings): CalendarSett
  * Convert a CalendarSettings object to a minimal UserCalendarSettings object
  * for storage in data.json
  */
-export function toUserCalendarSettings(settings: CalendarSettings): UserCalendarSettings {
+export function toUserCalendarSettings(
+  settings: CalendarSettings
+): UserCalendarSettings {
   const userSettings: UserCalendarSettings = {
     id: settings.id,
     name: settings.name,
@@ -126,21 +130,38 @@ export function toUserCalendarSettings(settings: CalendarSettings): UserCalendar
     userSettings.query = settings.query;
   if (settings.dateProperty !== DEFAULT_CALENDAR_SETTINGS.dateProperty)
     userSettings.dateProperty = settings.dateProperty;
-  if (settings.startDateProperty !== DEFAULT_CALENDAR_SETTINGS.startDateProperty)
+  if (
+    settings.startDateProperty !== DEFAULT_CALENDAR_SETTINGS.startDateProperty
+  )
     userSettings.startDateProperty = settings.startDateProperty;
   if (settings.newTaskFilePaths !== DEFAULT_CALENDAR_SETTINGS.newTaskFilePaths)
     userSettings.newTaskFilePaths = settings.newTaskFilePaths;
 
   // For arrays and objects, we need to check if they're different
-  if (JSON.stringify(settings.includedStatuses) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.includedStatuses))
+  if (
+    JSON.stringify(settings.includedStatuses) !==
+    JSON.stringify(DEFAULT_CALENDAR_SETTINGS.includedStatuses)
+  )
     userSettings.includedStatuses = settings.includedStatuses;
-  if (JSON.stringify(settings.includedTags) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.includedTags))
+  if (
+    JSON.stringify(settings.includedTags) !==
+    JSON.stringify(DEFAULT_CALENDAR_SETTINGS.includedTags)
+  )
     userSettings.includedTags = settings.includedTags;
-  if (JSON.stringify(settings.excludedStatuses) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.excludedStatuses))
+  if (
+    JSON.stringify(settings.excludedStatuses) !==
+    JSON.stringify(DEFAULT_CALENDAR_SETTINGS.excludedStatuses)
+  )
     userSettings.excludedStatuses = settings.excludedStatuses;
-  if (JSON.stringify(settings.excludedTags) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.excludedTags))
+  if (
+    JSON.stringify(settings.excludedTags) !==
+    JSON.stringify(DEFAULT_CALENDAR_SETTINGS.excludedTags)
+  )
     userSettings.excludedTags = settings.excludedTags;
-  if (JSON.stringify(settings.eventPropsMap) !== JSON.stringify(DEFAULT_CALENDAR_SETTINGS.eventPropsMap))
+  if (
+    JSON.stringify(settings.eventPropsMap) !==
+    JSON.stringify(DEFAULT_CALENDAR_SETTINGS.eventPropsMap)
+  )
     userSettings.eventPropsMap = settings.eventPropsMap;
 
   return userSettings;

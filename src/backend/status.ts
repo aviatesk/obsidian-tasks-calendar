@@ -5,16 +5,16 @@ import {
   CircleMinus,
   CircleAlert,
   CircleHelp,
-  CircleCheck
+  CircleCheck,
 } from 'lucide-react';
 
 /**
  * Interface defining a task status option
  */
 export interface TaskStatusOption {
-  value: string;        // The actual status character
-  label: string;        // Display name
-  prop?: string;        // Property name to add (optional)
+  value: string; // The actual status character
+  label: string; // Display name
+  prop?: string; // Property name to add (optional)
   preserveOldProp?: boolean; // Whether to preserve old properties when changing to this status
 }
 
@@ -24,10 +24,10 @@ export interface TaskStatusOption {
 export const STATUS_OPTIONS: TaskStatusOption[] = [
   { value: ' ', label: 'Incomplete' },
   { value: '/', label: 'In Progress' },
-  { value: 'x', label: 'Completed', prop: "completion" }, // use "completion" since "completed" is preserved for dataview task data structure
-  { value: 'X', label: 'Done', prop: "completion" },  // `X` also treated as "Complete"
-  { value: '-', label: 'Cancelled', prop: "cancelled" },
-  { value: '>', label: 'Deferred', prop: "deferred", preserveOldProp: true },
+  { value: 'x', label: 'Completed', prop: 'completion' }, // use "completion" since "completed" is preserved for dataview task data structure
+  { value: 'X', label: 'Done', prop: 'completion' }, // `X` also treated as "Complete"
+  { value: '-', label: 'Cancelled', prop: 'cancelled' },
+  { value: '>', label: 'Deferred', prop: 'deferred', preserveOldProp: true },
   { value: '!', label: 'Important' },
   { value: '?', label: 'Question' },
 ];
@@ -43,8 +43,9 @@ STATUS_OPTIONS.forEach(option => {
 /**
  * Status options for dropdown - with duplicates removed
  */
-export const DROPDOWN_STATUS_OPTIONS = STATUS_OPTIONS.filter((option, index) =>
-  STATUS_OPTIONS.findIndex(o => o.label === option.label) === index
+export const DROPDOWN_STATUS_OPTIONS = STATUS_OPTIONS.filter(
+  (option, index) =>
+    STATUS_OPTIONS.findIndex(o => o.label === option.label) === index
 );
 
 /**

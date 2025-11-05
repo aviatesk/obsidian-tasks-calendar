@@ -1,10 +1,13 @@
-import { App, Vault, TFile } from "obsidian";
-import { FileOperationError } from "./error-handling";
+import { App, Vault, TFile } from 'obsidian';
+import { FileOperationError } from './error-handling';
 
 /**
  * Ensures a directory exists, creating it and parent directories if needed
  */
-export async function ensureDirectory(vault: Vault, dirPath: string): Promise<void> {
+export async function ensureDirectory(
+  vault: Vault,
+  dirPath: string
+): Promise<void> {
   const dirs = dirPath.split('/').filter(dir => dir.length > 0);
   let currentPath = '';
 
@@ -17,7 +20,9 @@ export async function ensureDirectory(vault: Vault, dirPath: string): Promise<vo
       }
     }
   } catch (error) {
-    throw new FileOperationError(`Failed to create directory ${currentPath}: ${error.message}`);
+    throw new FileOperationError(
+      `Failed to create directory ${currentPath}: ${error.message}`
+    );
   }
 }
 
@@ -36,10 +41,10 @@ export async function processFileLine(
   file: TFile,
   line: number,
   processor: (lineContent: string) => string
-): Promise<{ original: string, updated: string, changed: boolean }> {
-  let result = { original: "", updated: "", changed: false };
+): Promise<{ original: string; updated: string; changed: boolean }> {
+  let result = { original: '', updated: '', changed: false };
 
-  await vault.process(file, (content) => {
+  await vault.process(file, content => {
     const lines = content.split('\n');
 
     if (line < 0 || line >= lines.length) {
@@ -100,7 +105,7 @@ export async function appendToFile(
   }
 
   // Using process for appending content
-  await vault.process(file, (fileContent) => {
+  await vault.process(file, fileContent => {
     return fileContent + content;
   });
 
@@ -115,19 +120,14 @@ export async function appendToFile(
  * @param newName New file name (without extension)
  * @throws FileOperationError if file operation fails
  */
-export async function renameFile(
-  app: App,
-  file: TFile,
-  newName: string
-) {
+export async function renameFile(app: App, file: TFile, newName: string) {
   // Get the file extension
   const extension = file.extension;
   // Get the parent path
   const parentPath = file.parent ? file.parent.path + '/' : '';
   // Create the new path
   const newPath = `${parentPath}${newName}.${extension}`;
-  if (file.path == newPath)
-    return undefined;
+  if (file.path == newPath) return undefined;
   await app.fileManager.renameFile(file, newPath);
   return file.path;
 }

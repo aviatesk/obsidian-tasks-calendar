@@ -24,11 +24,11 @@ export async function createTask(
 ): Promise<boolean> {
   // Validate inputs
   if (!taskText.trim()) {
-    throw new TaskValidationError("Task text cannot be empty");
+    throw new TaskValidationError('Task text cannot be empty');
   }
 
   if (!targetPath) {
-    throw new TaskValidationError("Target path must be specified");
+    throw new TaskValidationError('Target path must be specified');
   }
 
   // Format the task with proper markdown syntax
@@ -43,8 +43,7 @@ export async function createTask(
     const formattedDate = formatDateForTask(startDate, isAllDay, false);
     formattedTask += ` [${dateProperty}:: ${formattedDate}]`;
     dueDate = formattedDate;
-  }
-  else if (startDate && endDate) {
+  } else if (startDate && endDate) {
     const formattedStartDate = formatDateForTask(startDate, isAllDay, false);
     formattedTask += ` [${startDateProperty}:: ${formattedStartDate}]`;
     startDateVal = formattedStartDate;
@@ -52,8 +51,7 @@ export async function createTask(
     const formattedEndDate = formatDateForTask(endDate, isAllDay, true);
     formattedTask += ` [${dateProperty}:: ${formattedEndDate}]`;
     dueDate = formattedEndDate;
-  }
-  else if (startDate) {
+  } else if (startDate) {
     const formattedStartDate = formatDateForTask(startDate, isAllDay, false);
     formattedTask += ` [${dateProperty}:: ${formattedStartDate}]`;
     dueDate = formattedStartDate;
@@ -76,11 +74,10 @@ export async function createTask(
       // If file exists, append the task to it
       return await appendToFile(app.vault, fullPath, formattedTask);
     } else {
-      const file = await app.vault.create(fullPath, "");
-      await app.fileManager.processFrontMatter(file, (frontmatter) => {
+      const file = await app.vault.create(fullPath, '');
+      await app.fileManager.processFrontMatter(file, frontmatter => {
         frontmatter[dateProperty] = dueDate;
-        if (startDateVal)
-          frontmatter[startDateProperty] = startDateVal;
+        if (startDateVal) frontmatter[startDateProperty] = startDateVal;
         frontmatter['status'] = ' ';
       });
       return true;

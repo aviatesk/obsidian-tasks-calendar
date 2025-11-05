@@ -1,5 +1,5 @@
-import { Plugin, WorkspaceLeaf } from "obsidian";
-import { getAPI } from "obsidian-dataview";
+import { Plugin, WorkspaceLeaf } from 'obsidian';
+import { getAPI } from 'obsidian-dataview';
 import {
   CalendarSettings,
   PluginSettings,
@@ -9,9 +9,9 @@ import {
   VIEW_TYPE,
   toCalendarSettings,
   toUserCalendarSettings,
-} from "./TasksCalendarSettings";
-import { TasksCalendarItemView } from "./TasksCalendarItemView";
-import { SettingTab } from "./TasksCalendarSettingsTab";
+} from './TasksCalendarSettings';
+import { TasksCalendarItemView } from './TasksCalendarItemView';
+import { SettingTab } from './TasksCalendarSettingsTab';
 
 export default class TasksCalendarPlugin extends Plugin {
   private _settings: PluginSettings;
@@ -34,15 +34,12 @@ export default class TasksCalendarPlugin extends Plugin {
     }
 
     // Register view with plugin instance
-    this.registerView(
-      VIEW_TYPE,
-      (leaf) => new TasksCalendarItemView(leaf, this),
-    );
+    this.registerView(VIEW_TYPE, leaf => new TasksCalendarItemView(leaf, this));
 
     // Add command to open calendar
     this.addCommand({
-      id: "open",
-      name: "Open Tasks Calendar",
+      id: 'open',
+      name: 'Open Tasks Calendar',
       callback: () => this.activateView(),
     });
 
@@ -51,16 +48,16 @@ export default class TasksCalendarPlugin extends Plugin {
 
     this.registerHoverLinkSource(HOVER_LINK_SOURCE, {
       defaultMod: true,
-      display: "Tasks Calendar",
+      display: 'Tasks Calendar',
     });
 
     this.app.workspace.onLayoutReady(() => {
-      this.addRibbonIcon("lucide-calendar-check", "Tasks Calendar", () => {
+      this.addRibbonIcon('lucide-calendar-check', 'Tasks Calendar', () => {
         this.activateView();
       });
 
       this.registerEvent(
-        this.app.workspace.on("layout-change", () => {
+        this.app.workspace.on('layout-change', () => {
           setTimeout(() => {
             if (this.app.workspace.getLeavesOfType(VIEW_TYPE).length > 0) {
               const view =
@@ -70,7 +67,7 @@ export default class TasksCalendarPlugin extends Plugin {
               }
             }
           }, 100);
-        }),
+        })
       );
 
       setTimeout(() => this.activateView(), 300);
@@ -106,7 +103,7 @@ export default class TasksCalendarPlugin extends Plugin {
   }
 
   getCalendarsList(): { id: string; name: string }[] {
-    return this._settings.calendars.map((cal) => ({
+    return this._settings.calendars.map(cal => ({
       id: cal.id,
       name: cal.name,
     }));
@@ -118,7 +115,7 @@ export default class TasksCalendarPlugin extends Plugin {
   }
 
   async deleteCalendar(id: string): Promise<void> {
-    const index = this._settings.calendars.findIndex((c) => c.id === id);
+    const index = this._settings.calendars.findIndex(c => c.id === id);
     if (index > -1) {
       this._settings.calendars.splice(index, 1);
     }
@@ -138,7 +135,7 @@ export default class TasksCalendarPlugin extends Plugin {
       await this.loadSettings();
     }
 
-    const userSettings = this._settings.calendars.find((c) => c.id === id);
+    const userSettings = this._settings.calendars.find(c => c.id === id);
     if (!userSettings) {
       return DEFAULT_CALENDAR_SETTINGS;
     }
@@ -148,9 +145,7 @@ export default class TasksCalendarPlugin extends Plugin {
   }
 
   async saveCalendarSettings(settings: CalendarSettings): Promise<void> {
-    const index = this._settings.calendars.findIndex(
-      (c) => c.id === settings.id,
-    );
+    const index = this._settings.calendars.findIndex(c => c.id === settings.id);
     if (index > -1) {
       this._settings.calendars[index] = settings;
     } else {

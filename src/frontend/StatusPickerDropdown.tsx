@@ -28,13 +28,17 @@ export const StatusPickerDropdown: React.FC<StatusPickerDropdownProps> = ({
       const sourceEl = document.createElement('div');
       sourceEl.style.position = 'absolute';
       sourceEl.style.left = `${position.left}px`;
-      sourceEl.style.top = `${position.top - 5}px`;  // 5px offset to represent the original element
-      sourceEl.style.width = '100px';  // Approximate width
-      sourceEl.style.height = '20px';  // Approximate height
+      sourceEl.style.top = `${position.top - 5}px`; // 5px offset to represent the original element
+      sourceEl.style.width = '100px'; // Approximate width
+      sourceEl.style.height = '20px'; // Approximate height
       document.body.appendChild(sourceEl);
 
       // Calculate optimal position
-      const optimalPosition = calculateOptimalPosition(sourceEl, modalRef.current, 10);
+      const optimalPosition = calculateOptimalPosition(
+        sourceEl,
+        modalRef.current,
+        10
+      );
       setFinalPosition(optimalPosition);
 
       // Clean up temporary element
@@ -48,7 +52,10 @@ export const StatusPickerDropdown: React.FC<StatusPickerDropdownProps> = ({
   useEffect(() => {
     // Close modal when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
         onClose();
       }
     };
@@ -68,9 +75,7 @@ export const StatusPickerDropdown: React.FC<StatusPickerDropdownProps> = ({
     <div className="mobile-modal-overlay">
       <div className="status-picker-modal" ref={modalRef}>
         <div className="status-picker-header">
-          <div className="status-picker-title">
-            Task Status
-          </div>
+          <div className="status-picker-title">Task Status</div>
           <div className="status-picker-header-buttons">
             <button
               className="status-picker-close-button"
@@ -84,7 +89,7 @@ export const StatusPickerDropdown: React.FC<StatusPickerDropdownProps> = ({
 
         <div className="status-picker-content">
           <div className="status-picker-options">
-            {DROPDOWN_STATUS_OPTIONS.map((option) => (
+            {DROPDOWN_STATUS_OPTIONS.map(option => (
               <div
                 key={option.label}
                 className={`status-picker-option ${option.value === currentStatus ? 'selected' : ''}`}
@@ -94,11 +99,13 @@ export const StatusPickerDropdown: React.FC<StatusPickerDropdownProps> = ({
                   {option.value === currentStatus && <Check size={14} />}
                 </div>
                 <div className="status-picker-option-text">
-                  {React.createElement(
-                    getStatusIcon(option.value),
-                    { size: 14, style: { marginRight: '6px' } }
-                  )}
-                  <span className="status-markdown-preview">[{option.value === ' ' ? ' ' : option.value}]</span>
+                  {React.createElement(getStatusIcon(option.value), {
+                    size: 14,
+                    style: { marginRight: '6px' },
+                  })}
+                  <span className="status-markdown-preview">
+                    [{option.value === ' ' ? ' ' : option.value}]
+                  </span>
                   <span className="status-label">{option.label}</span>
                 </div>
               </div>
@@ -117,9 +124,7 @@ export const StatusPickerDropdown: React.FC<StatusPickerDropdownProps> = ({
       ref={modalRef}
     >
       <div className="status-picker-header">
-        <div className="status-picker-title">
-          Task Status
-        </div>
+        <div className="status-picker-title">Task Status</div>
         <div className="status-picker-header-buttons">
           <button
             className="status-picker-close-button"
@@ -133,7 +138,7 @@ export const StatusPickerDropdown: React.FC<StatusPickerDropdownProps> = ({
 
       <div className="status-picker-content">
         <div className="status-picker-options">
-          {DROPDOWN_STATUS_OPTIONS.map((option) => (
+          {DROPDOWN_STATUS_OPTIONS.map(option => (
             <div
               key={option.label}
               className={`status-picker-option ${option.value === currentStatus ? 'selected' : ''}`}
@@ -143,11 +148,13 @@ export const StatusPickerDropdown: React.FC<StatusPickerDropdownProps> = ({
                 {option.value === currentStatus && <Check size={14} />}
               </div>
               <div className="status-picker-option-text">
-                {React.createElement(
-                  getStatusIcon(option.value),
-                  { size: 14, style: { marginRight: '6px' } }
-                )}
-                <span className="status-markdown-preview">[{option.value === ' ' ? ' ' : option.value}]</span>
+                {React.createElement(getStatusIcon(option.value), {
+                  size: 14,
+                  style: { marginRight: '6px' },
+                })}
+                <span className="status-markdown-preview">
+                  [{option.value === ' ' ? ' ' : option.value}]
+                </span>
                 <span className="status-label">{option.label}</span>
               </div>
             </div>

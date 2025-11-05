@@ -29,7 +29,7 @@ export function calculateOptimalPosition(
     const modalRect = modalEl.getBoundingClientRect();
 
     // Center the tooltip horizontally below the event
-    let left = targetRect.left + (targetRect.width / 2) - (modalRect.width / 2);
+    let left = targetRect.left + targetRect.width / 2 - modalRect.width / 2;
     let top = targetRect.bottom + offset;
 
     // Make sure the tooltip stays within the container horizontally
@@ -46,14 +46,22 @@ export function calculateOptimalPosition(
         top = targetRect.top - modalRect.height - offset;
       } else {
         // Not enough space above or below, position at optimal location within container
-        top = Math.max(containerRect.top + offset,
-              Math.min(containerRect.bottom - modalRect.height - offset, top));
+        top = Math.max(
+          containerRect.top + offset,
+          Math.min(containerRect.bottom - modalRect.height - offset, top)
+        );
       }
     }
 
     // Ensure we're not going outside the viewport in any case
-    left = Math.max(offset, Math.min(viewportWidth - modalRect.width - offset, left));
-    top = Math.max(offset, Math.min(viewportHeight - modalRect.height - offset, top));
+    left = Math.max(
+      offset,
+      Math.min(viewportWidth - modalRect.width - offset, left)
+    );
+    top = Math.max(
+      offset,
+      Math.min(viewportHeight - modalRect.height - offset, top)
+    );
 
     // Direct style manipulation is necessary here instead of returning values
     // because the component that calls this function may not immediately apply the position

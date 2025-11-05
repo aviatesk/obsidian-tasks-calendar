@@ -4,16 +4,16 @@ import { TaskValidationError } from './error-handling';
  * Represents different parts of a parsed task
  */
 export interface ParsedTask {
-  leadingWhitespace: string;       // Whitespace before the list marker
-  checkboxPrefix: string;          // The full prefix including list marker and checkbox
-  status: string;                  // The character in the checkbox
-  tagsBeforeContent: string[];     // Tags before content (#TODO, etc.)
+  leadingWhitespace: string; // Whitespace before the list marker
+  checkboxPrefix: string; // The full prefix including list marker and checkbox
+  status: string; // The character in the checkbox
+  tagsBeforeContent: string[]; // Tags before content (#TODO, etc.)
   propertiesBeforeContent: Map<string, string>; // Properties before content
-  content: string;                 // The main task text
-  tagsAfterContent: string[];      // Tags after content
+  content: string; // The main task text
+  tagsAfterContent: string[]; // Tags after content
   propertiesAfterContent: Map<string, string>; // Properties after content
-  blockReference: string;          // Block reference (^abc123)
-  listMarker: string;              // The type of list marker (-, *, +, 1., etc.)
+  blockReference: string; // Block reference (^abc123)
+  listMarker: string; // The type of list marker (-, *, +, 1., etc.)
 }
 
 // Define interfaces for element types
@@ -44,7 +44,7 @@ type TaskElement = TagElement | PropertyElement;
 export function parseTask(taskLine: string): ParsedTask {
   // If this is null, the function might not be called with a task line
   if (!taskLine) {
-    throw new TaskValidationError("Task line is empty or undefined");
+    throw new TaskValidationError('Task line is empty or undefined');
   }
 
   // Define regex patterns for different components
@@ -56,23 +56,25 @@ export function parseTask(taskLine: string): ParsedTask {
 
   // Start with default structure
   const result: ParsedTask = {
-    leadingWhitespace: "",         // New property for whitespace
-    checkboxPrefix: "",
-    status: " ",  // Default to incomplete
+    leadingWhitespace: '', // New property for whitespace
+    checkboxPrefix: '',
+    status: ' ', // Default to incomplete
     tagsBeforeContent: [],
     propertiesBeforeContent: new Map(),
-    content: "",
+    content: '',
     tagsAfterContent: [],
     propertiesAfterContent: new Map(),
-    blockReference: "",
-    listMarker: "-"  // Default list marker
+    blockReference: '',
+    listMarker: '-', // Default list marker
   };
 
   // Extract checkbox prefix
   const checkboxMatch = taskLine.match(checkboxPattern);
   if (!checkboxMatch) {
     // Not a task, fail parsing
-    throw new TaskValidationError("Invalid task format: Line must start with a list marker followed by '[ ]'");
+    throw new TaskValidationError(
+      "Invalid task format: Line must start with a list marker followed by '[ ]'"
+    );
   }
 
   // Explicitly preserve tab characters in the leading whitespace
@@ -86,23 +88,31 @@ export function parseTask(taskLine: string): ParsedTask {
   const blockRefMatch = remainingText.match(blockRefPattern);
   if (blockRefMatch) {
     result.blockReference = blockRefMatch[1];
-    remainingText = remainingText.slice(0, remainingText.length - blockRefMatch[0].length);
+    remainingText = remainingText.slice(
+      0,
+      remainingText.length - blockRefMatch[0].length
+    );
   }
 
   // Collect all property matches and their positions
-  const propertyMatches: {start: number, end: number, name: string, value: string}[] = [];
+  const propertyMatches: {
+    start: number;
+    end: number;
+    name: string;
+    value: string;
+  }[] = [];
   let match;
   while ((match = propertyPattern.exec(remainingText)) !== null) {
     propertyMatches.push({
       start: match.index,
       end: match.index + match[0].length,
       name: match[1].trim(),
-      value: match[2].trim()
+      value: match[2].trim(),
     });
   }
 
   // Collect all tag matches and their positions
-  const tagMatches: {start: number, end: number, tag: string}[] = [];
+  const tagMatches: { start: number; end: number; tag: string }[] = [];
   while ((match = tagPattern.exec(remainingText)) !== null) {
     // Skip tags inside property values
     let insideProperty = false;
@@ -117,7 +127,7 @@ export function parseTask(taskLine: string): ParsedTask {
       tagMatches.push({
         start: match.index,
         end: match.index + match[0].length,
-        tag: match[0]
+        tag: match[0],
       });
     }
   }
@@ -125,7 +135,7 @@ export function parseTask(taskLine: string): ParsedTask {
   // Sort all properties and tags by position
   const allElements: TaskElement[] = [
     ...propertyMatches.map(p => ({ type: 'property' as const, ...p })),
-    ...tagMatches.map(t => ({ type: 'tag' as const, ...t }))
+    ...tagMatches.map(t => ({ type: 'tag' as const, ...t })),
   ].sort((a, b) => a.start - b.start);
 
   // Find the first non-property, non-tag text segment that can be considered content
@@ -148,7 +158,9 @@ export function parseTask(taskLine: string): ParsedTask {
 
     // Check if there's text before this element
     if (element.start > lastEndIndex) {
-      const textSegment = remainingText.substring(lastEndIndex, element.start).trim();
+      const textSegment = remainingText
+        .substring(lastEndIndex, element.start)
+        .trim();
       if (textSegment && !foundContentStart) {
         // This is the first significant text segment - it's our content start
         contentStartIndex = lastEndIndex;
@@ -192,11 +204,13 @@ export function parseTask(taskLine: string): ParsedTask {
 
   // Extract the content using the identified boundaries
   if (foundContentStart) {
-    result.content = remainingText.substring(contentStartIndex, contentEndIndex).trim();
+    result.content = remainingText
+      .substring(contentStartIndex, contentEndIndex)
+      .trim();
   } else {
     // Handle case where there's no clear content (just tags and properties)
     // In this case, we'll use an empty content string
-    result.content = "";
+    result.content = '';
   }
 
   return result;
@@ -239,8 +253,11 @@ export function sanitizeContentForTags(text: string): string {
  * @param taskLine The full task line text
  * @returns Array of content fragments with their positions
  */
-export function findContentFragments(parsedTask: ParsedTask, taskLine: string): {text: string, start: number, end: number}[] {
-  const fragments: {text: string, start: number, end: number}[] = [];
+export function findContentFragments(
+  parsedTask: ParsedTask,
+  taskLine: string
+): { text: string; start: number; end: number }[] {
+  const fragments: { text: string; start: number; end: number }[] = [];
 
   // Remove the checkbox prefix for analysis
   const checkboxLength = parsedTask.checkboxPrefix.length;
@@ -253,7 +270,7 @@ export function findContentFragments(parsedTask: ParsedTask, taskLine: string): 
       fragments.push({
         text: parsedTask.content,
         start: startPos,
-        end: startPos + parsedTask.content.length
+        end: startPos + parsedTask.content.length,
       });
     }
     return fragments;
@@ -263,19 +280,21 @@ export function findContentFragments(parsedTask: ParsedTask, taskLine: string): 
   const maskedPositions = new Array(lineWithoutCheckbox.length).fill(false);
 
   // Mark tag positions
-  [...parsedTask.tagsBeforeContent, ...parsedTask.tagsAfterContent].forEach(tag => {
-    const tagIndex = lineWithoutCheckbox.indexOf(tag);
-    if (tagIndex >= 0) {
-      for (let i = tagIndex; i < tagIndex + tag.length; i++) {
-        maskedPositions[i] = true;
+  [...parsedTask.tagsBeforeContent, ...parsedTask.tagsAfterContent].forEach(
+    tag => {
+      const tagIndex = lineWithoutCheckbox.indexOf(tag);
+      if (tagIndex >= 0) {
+        for (let i = tagIndex; i < tagIndex + tag.length; i++) {
+          maskedPositions[i] = true;
+        }
       }
     }
-  });
+  );
 
   // Mark property positions
   const allProperties = new Map([
     ...parsedTask.propertiesBeforeContent.entries(),
-    ...parsedTask.propertiesAfterContent.entries()
+    ...parsedTask.propertiesAfterContent.entries(),
   ]);
 
   allProperties.forEach((value, name) => {
@@ -292,7 +311,11 @@ export function findContentFragments(parsedTask: ParsedTask, taskLine: string): 
   if (parsedTask.blockReference) {
     const refIndex = lineWithoutCheckbox.indexOf(parsedTask.blockReference);
     if (refIndex >= 0) {
-      for (let i = refIndex; i < refIndex + parsedTask.blockReference.length; i++) {
+      for (
+        let i = refIndex;
+        i < refIndex + parsedTask.blockReference.length;
+        i++
+      ) {
         maskedPositions[i] = true;
       }
     }
@@ -313,13 +336,15 @@ export function findContentFragments(parsedTask: ParsedTask, taskLine: string): 
       // End of a fragment
       inFragment = false;
       const fragmentEnd = isMarked ? i : i + 1;
-      const fragmentText = lineWithoutCheckbox.substring(fragmentStart, fragmentEnd).trim();
+      const fragmentText = lineWithoutCheckbox
+        .substring(fragmentStart, fragmentEnd)
+        .trim();
 
       if (fragmentText) {
         fragments.push({
           text: fragmentText,
           start: fragmentStart + checkboxLength,
-          end: fragmentEnd + checkboxLength
+          end: fragmentEnd + checkboxLength,
         });
       }
     }
@@ -336,7 +361,7 @@ export function findContentFragments(parsedTask: ParsedTask, taskLine: string): 
  * @returns A full task string
  */
 export function reconstructTask(task: ParsedTask): string {
-  let result = "";
+  let result = '';
 
   // Add leading whitespace if present
   if (task.leadingWhitespace) {
@@ -353,14 +378,15 @@ export function reconstructTask(task: ParsedTask): string {
 
   // Add tags before content (with proper spacing)
   if (task.tagsBeforeContent.length > 0) {
-    result += task.tagsBeforeContent.join(" ") + " ";
+    result += task.tagsBeforeContent.join(' ') + ' ';
   }
 
   // Add properties before content (with proper spacing)
   if (task.propertiesBeforeContent.size > 0) {
-    const props = Array.from(task.propertiesBeforeContent.entries())
-      .map(([name, value]) => `[${name}:: ${value}]`);
-    result += props.join(" ") + " ";
+    const props = Array.from(task.propertiesBeforeContent.entries()).map(
+      ([name, value]) => `[${name}:: ${value}]`
+    );
+    result += props.join(' ') + ' ';
   }
 
   // Add main content (ensure it doesn't end with a character that could merge with a tag)
@@ -370,26 +396,27 @@ export function reconstructTask(task: ParsedTask): string {
 
   // Add tags after content (with proper spacing)
   if (task.tagsAfterContent.length > 0) {
-    if (task.content && !result.endsWith(" ")) {
-      result += " ";
+    if (task.content && !result.endsWith(' ')) {
+      result += ' ';
     }
-    result += task.tagsAfterContent.join(" ");
+    result += task.tagsAfterContent.join(' ');
   }
 
   // Add properties after content (with proper spacing)
   if (task.propertiesAfterContent.size > 0) {
-    if (!result.endsWith(" ")) {
-      result += " ";
+    if (!result.endsWith(' ')) {
+      result += ' ';
     }
-    const props = Array.from(task.propertiesAfterContent.entries())
-      .map(([name, value]) => `[${name}:: ${value}]`);
-    result += props.join(" ");
+    const props = Array.from(task.propertiesAfterContent.entries()).map(
+      ([name, value]) => `[${name}:: ${value}]`
+    );
+    result += props.join(' ');
   }
 
   // Add block reference if present (with proper spacing)
   if (task.blockReference) {
-    if (!result.endsWith(" ")) {
-      result += " ";
+    if (!result.endsWith(' ')) {
+      result += ' ';
     }
     result += task.blockReference;
   }
@@ -400,7 +427,7 @@ export function reconstructTask(task: ParsedTask): string {
   // Clean up only the non-leading part
   const nonLeadingPart = result.slice(task.leadingWhitespace.length);
   // Replace multiple spaces with a single space in the non-leading part
-  const cleanedNonLeadingPart = nonLeadingPart.replace(/ +/g, " ").trim();
+  const cleanedNonLeadingPart = nonLeadingPart.replace(/ +/g, ' ').trim();
 
   return leadingPart + cleanedNonLeadingPart;
 }
@@ -412,7 +439,10 @@ export function reconstructTask(task: ParsedTask): string {
  * @param taskLine The original task line
  * @returns True if content is split or ambiguous
  */
-export function hasSplitContent(parsedTask: ParsedTask, taskLine: string): boolean {
+export function hasSplitContent(
+  parsedTask: ParsedTask,
+  taskLine: string
+): boolean {
   const fragments = findContentFragments(parsedTask, taskLine);
   return fragments.length > 1;
 }
@@ -424,20 +454,24 @@ export function hasSplitContent(parsedTask: ParsedTask, taskLine: string): boole
  * @param taskLine The original task line
  * @returns An object with issue detection results
  */
-export function detectTaskIssues(parsedTask: ParsedTask, taskLine: string): {
-  hasSplitContent: boolean,
-  hasInvalidProperties: boolean,
-  hasEmbeddedTags: boolean,
-  contentFragments: {text: string, start: number, end: number}[]
+export function detectTaskIssues(
+  parsedTask: ParsedTask,
+  taskLine: string
+): {
+  hasSplitContent: boolean;
+  hasInvalidProperties: boolean;
+  hasEmbeddedTags: boolean;
+  contentFragments: { text: string; start: number; end: number }[];
 } {
   // Check for split content
   const contentFragments = findContentFragments(parsedTask, taskLine);
   const splitContent = contentFragments.length > 1;
 
   // Check for properties that don't have proper format
-  const invalidProps =
-    [...parsedTask.propertiesBeforeContent.entries(), ...parsedTask.propertiesAfterContent.entries()]
-      .some(([key, value]) => !key || key.includes(']') || value.includes(']'));
+  const invalidProps = [
+    ...parsedTask.propertiesBeforeContent.entries(),
+    ...parsedTask.propertiesAfterContent.entries(),
+  ].some(([key, value]) => !key || key.includes(']') || value.includes(']'));
 
   // Check for embedded tags in content
   const embeddedTagsInContent = hasEmbeddedTags(parsedTask.content);
@@ -446,7 +480,7 @@ export function detectTaskIssues(parsedTask: ParsedTask, taskLine: string): {
     hasSplitContent: splitContent,
     hasInvalidProperties: invalidProps,
     hasEmbeddedTags: embeddedTagsInContent,
-    contentFragments
+    contentFragments,
   };
 }
 
@@ -464,7 +498,7 @@ export function cloneTask(task: ParsedTask): ParsedTask {
     propertiesBeforeContent: new Map(task.propertiesBeforeContent),
     tagsAfterContent: [...task.tagsAfterContent],
     propertiesAfterContent: new Map(task.propertiesAfterContent),
-    listMarker: task.listMarker  // Preserve the list marker
+    listMarker: task.listMarker, // Preserve the list marker
   };
 }
 
@@ -479,7 +513,10 @@ export function fixTaskSpacing(task: ParsedTask): ParsedTask {
   if (!task.content.trim()) return task;
 
   // Fix spacing between content and following tags/properties
-  if (task.tagsAfterContent.length > 0 || task.propertiesAfterContent.size > 0) {
+  if (
+    task.tagsAfterContent.length > 0 ||
+    task.propertiesAfterContent.size > 0
+  ) {
     // Ensure content doesn't end with a character that could merge with a tag
     if (!task.content.endsWith(' ')) {
       task.content += ' ';
@@ -496,7 +533,10 @@ export function fixTaskSpacing(task: ParsedTask): ParsedTask {
  * @param key Property name to look for
  * @returns Property value or undefined if not found
  */
-export function getTaskProperty(task: ParsedTask, key: string): string | undefined {
+export function getTaskProperty(
+  task: ParsedTask,
+  key: string
+): string | undefined {
   // Check in properties before content
   if (task.propertiesBeforeContent.has(key)) {
     return task.propertiesBeforeContent.get(key);
@@ -518,7 +558,11 @@ export function getTaskProperty(task: ParsedTask, key: string): string | undefin
  * @param value Property value
  * @returns Updated task
  */
-export function setTaskProperty(task: ParsedTask, key: string, value: string): ParsedTask {
+export function setTaskProperty(
+  task: ParsedTask,
+  key: string,
+  value: string
+): ParsedTask {
   const updatedTask = { ...task };
 
   // If property already exists, update in the same location
