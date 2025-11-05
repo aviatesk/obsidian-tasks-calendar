@@ -5,8 +5,8 @@
   "main": "main.js",
   "type": "module",
   "scripts": {
-    "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "clean": "rm main.js",
     "version": "node version-bump.mjs && git add manifest.json versions.json",
     "fix:format": "prettier --write .",
     "fix:lint": "eslint . --fix",
@@ -14,8 +14,7 @@
     "check:format": "prettier --check .",
     "check:lint": "eslint . --max-warnings 0",
     "check:tsc": "npx tsc --noEmit",
-    "check": "npm run check:format && npm run check:lint && npm run check:tsc",
-    "prepare": "husky"
+    "check": "npm run check:format && npm run check:lint && npm run check:tsc"
   },
   "keywords": [
     "obsidian",
@@ -53,8 +52,6 @@
     "@fullcalendar/list": "^6.1.15",
     "@fullcalendar/react": "^6.1.10",
     "@fullcalendar/timegrid": "^6.1.15",
-    "@types/react": "^18.2.55",
-    "@types/react-dom": "^18.2.19",
     "lucide-react": "^0.479.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
