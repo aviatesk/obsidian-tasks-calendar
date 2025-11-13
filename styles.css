@@ -1,7 +1,9 @@
+:root {
+  --tasks-calendar-control-height: 2em;
+  --tasks-calendar-control-height-mobile: 1.75em;
+}
+
 .tasks-calendar-container {
-  padding: 0 20px;
-  height: 100%;
-  overflow-y: auto;
   min-height: 300px; /* Ensure minimum height */
   display: flex;
   flex-direction: column;
@@ -33,6 +35,7 @@
   padding: 4px 8px;
   cursor: pointer;
   font-size: 0.9em;
+  display: inline-flex;
 }
 .tasks-calendar-container .calendar-delete-button {
   background-color: #e57373;
@@ -459,7 +462,7 @@
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
   padding: 0 8px;
-  height: 42px;
+  height: var(--tasks-calendar-control-height);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: all 0.25s ease;
 }
@@ -532,8 +535,8 @@
   color: var(--text-muted);
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
-  width: 42px;
-  height: 42px;
+  width: var(--tasks-calendar-control-height);
+  height: var(--tasks-calendar-control-height);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -600,7 +603,7 @@
   .tasks-calendar-container .calendar-selector-container {
     max-width: 60%; /* Allow room for action buttons */
     min-width: 140px;
-    height: 42px;
+    height: var(--tasks-calendar-control-height);
     flex: 1;
   }
 
@@ -618,8 +621,8 @@
   }
 
   .tasks-calendar-container .calendar-action-button {
-    width: 38px;
-    height: 38px;
+    width: var(--tasks-calendar-control-height-mobile);
+    height: var(--tasks-calendar-control-height-mobile);
     flex: 0 0 auto; /* Don't allow buttons to grow/shrink */
   }
 
@@ -637,8 +640,8 @@
     }
 
     .tasks-calendar-container .calendar-action-button {
-      width: 34px;
-      height: 34px;
+      width: var(--tasks-calendar-control-height-mobile);
+      height: var(--tasks-calendar-control-height-mobile);
     }
 
     .tasks-calendar-container .calendar-actions {
