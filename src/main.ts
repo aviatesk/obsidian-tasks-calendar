@@ -12,16 +12,18 @@ import {
 } from './TasksCalendarSettings';
 import { TasksCalendarItemView } from './TasksCalendarItemView';
 import { SettingTab } from './TasksCalendarSettingsTab';
+import { createLogger } from './logging';
 
 export default class TasksCalendarPlugin extends Plugin {
+  private readonly logger = createLogger('Plugin');
   private _settings: PluginSettings;
   dataviewApi = getAPI();
   _onChangeCallback = () => {};
 
   async onload() {
+    this.logger.log('Loading plugin');
     await this.loadSettings();
 
-    // for first time users, save the default settings
     await this.saveSettings();
 
     const dataviewApi = this.dataviewApi;
@@ -31,6 +33,8 @@ export default class TasksCalendarPlugin extends Plugin {
         oldOnChange();
         this._onChangeCallback();
       };
+    } else {
+      this.logger.warn('Dataview API not available');
     }
 
     // Register view with plugin instance
@@ -75,6 +79,7 @@ export default class TasksCalendarPlugin extends Plugin {
   }
 
   onunload() {
+    this.logger.log('Unloading plugin');
     this._onChangeCallback = () => {};
   }
 

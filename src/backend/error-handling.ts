@@ -1,4 +1,5 @@
 import { Notice } from 'obsidian';
+import type { Logger } from '../logging';
 
 /**
  * Error thrown when task validation fails
@@ -25,20 +26,15 @@ export class FileOperationError extends Error {
  */
 export default function handleError(
   error: unknown,
-  context: string = ''
+  context: string = '',
+  logger: Logger
 ): void {
   if (error instanceof TaskValidationError) {
-    // Task validation errors are expected and should be clearly explained to users
     new Notice(`${context}: ${error.message}`);
   } else if (error instanceof FileOperationError) {
-    // File operation errors are also expected but relate to system issues
     new Notice(`${context}: ${error.message}`);
   } else {
-    // unknown error
-    // Log detailed information for debugging
-    console.error('Unexpected error:', error);
-
-    // Show a user-friendly message
+    logger.error(`${context}: ${error}`);
     new Notice(
       `${context}. An unexpected error occurred. Check the console for details.`
     );

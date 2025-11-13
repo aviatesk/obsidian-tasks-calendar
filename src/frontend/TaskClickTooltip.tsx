@@ -18,6 +18,7 @@ import { StatusPickerDropdown } from './StatusPickerDropdown';
 import { formatStatus, getStatusIcon } from '../backend/status';
 import { Platform } from 'obsidian';
 import { DEFAULT_CALENDAR_SETTINGS } from 'src/TasksCalendarSettings';
+import { createLogger } from '../logging';
 
 interface TaskClickTooltipProps {
   taskText: string;
@@ -97,6 +98,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   const saveButtonRef = useRef<HTMLButtonElement>(null);
   const fileName = filePath.split('/').pop() || filePath;
   const isMobile = Platform.isMobile;
+  const logger = createLogger('TaskClickTooltip');
 
   // State for dynamic updates of dates
   const [startDate, setStartDate] = useState<string | undefined>(
@@ -446,7 +448,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
         setIsDeleting(false);
       }
     } catch (error) {
-      console.error('Failed to delete task:', error);
+      logger.error(`Failed to delete task: ${error}`);
       setShowDeleteConfirm(false);
       setIsDeleting(false);
     }

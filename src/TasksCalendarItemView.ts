@@ -33,8 +33,10 @@ import { calculateOptimalPosition } from './backend/position';
 import { createTask } from './backend/create';
 import { deleteTask } from './backend/delete';
 import handleError from './backend/error-handling';
+import { createLogger } from './logging';
 
 export class TasksCalendarItemView extends ItemView {
+  private readonly logger = createLogger('ItemView');
   calendar: Calendar | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private taskPreviewRenderer: ReactRenderer | null = null;
@@ -453,7 +455,7 @@ export class TasksCalendarItemView extends ItemView {
 
       this.calendar?.refetchEvents();
     } catch (error) {
-      handleError(error, 'Failed to update task date');
+      handleError(error, 'Failed to update task date', this.logger);
     }
   }
 
@@ -506,7 +508,7 @@ export class TasksCalendarItemView extends ItemView {
 
       this.calendar?.refetchEvents();
     } catch (error) {
-      handleError(error, 'Failed to update task status');
+      handleError(error, 'Failed to update task status', this.logger);
     }
   }
 
@@ -579,7 +581,7 @@ export class TasksCalendarItemView extends ItemView {
 
       return false;
     } catch (error) {
-      handleError(error, 'Failed to update task text');
+      handleError(error, 'Failed to update task text', this.logger);
       return false;
     }
   }
@@ -621,7 +623,7 @@ export class TasksCalendarItemView extends ItemView {
 
       return false;
     } catch (error) {
-      handleError(error, 'Failed to create task');
+      handleError(error, 'Failed to create task', this.logger);
       return false;
     }
   }
@@ -672,7 +674,7 @@ export class TasksCalendarItemView extends ItemView {
 
       new Notice('Task date updated successfully');
     } catch (error) {
-      handleError(error, 'Failed to update task date');
+      handleError(error, 'Failed to update task date', this.logger);
     }
   }
 
@@ -716,7 +718,7 @@ export class TasksCalendarItemView extends ItemView {
       new Notice('Failed to delete task');
       return false;
     } catch (error) {
-      handleError(error, 'Failed to delete task');
+      handleError(error, 'Failed to delete task', this.logger);
       return false;
     }
   }
@@ -740,6 +742,7 @@ export class TasksCalendarItemView extends ItemView {
   ) {
     const dataviewApi = this.plugin.dataviewApi;
     if (!dataviewApi) {
+      this.logger.warn('Dataview plugin not available');
       new Notice(
         'Dataview plugin is not available, Tasks Calendar may not work correctly.'
       );
@@ -747,9 +750,10 @@ export class TasksCalendarItemView extends ItemView {
     }
     try {
       const events = getTasksAsEvents(dataviewApi, this.settings);
+      this.logger.log(`Fetched ${events.length} events`);
       successCallback(events);
     } catch (error) {
-      console.error('Error fetching events:', error);
+      this.logger.error(`Failed to fetch events: ${error}`);
       failureCallback(error);
     }
   }

@@ -124,9 +124,25 @@ See also [Obsidian style guide](./obsidian-style-guide.md)
 
 ### Logging guidelines
 
-All logging uses the `WithLogging` base class (or helper methods in `main.ts`),
-which automatically adds `[TasksCalendar.ComponentName]` prefixes. Follow these
-message format conventions:
+All logging uses the `createLogger()` helper function from `src/logging.ts`,
+which automatically adds `[TasksCalendar.ComponentName]` prefixes. Create a
+logger instance in each class or component:
+
+```typescript
+import { createLogger } from './logging';
+
+class MyComponent {
+  private readonly logger = createLogger('MyComponent');
+
+  someMethod() {
+    this.logger.log('Operation completed');
+    this.logger.warn('Warning message');
+    this.logger.error('Error message');
+  }
+}
+```
+
+Follow these message format conventions:
 
 #### Message format
 
