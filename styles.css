@@ -635,12 +635,6 @@
     flex: 0 0 auto; /* Don't allow buttons to grow/shrink */
   }
 
-  .tasks-calendar-container .calendar-selector-icon,
-  .tasks-calendar-container .calendar-action-button svg {
-    width: 18px;
-    height: 18px;
-  }
-
   /* Make sure very small screens still look good */
   @media (max-width: 370px) {
     .tasks-calendar-container .calendar-selector-container {
@@ -655,12 +649,6 @@
 
     .tasks-calendar-container .calendar-actions {
       gap: 4px;
-    }
-
-    .tasks-calendar-container .calendar-selector-icon,
-    .tasks-calendar-container .calendar-action-button svg {
-      width: 16px;
-      height: 16px;
     }
   }
 }

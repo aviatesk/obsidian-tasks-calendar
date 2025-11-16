@@ -66,7 +66,7 @@ export const CalendarFooter: React.FC<CalendarFooterProps> = ({
               </option>
             ))}
           </select>
-          <ChevronDown size={16} className="calendar-selector-chevron" />
+          <ChevronDown size={18} className="calendar-selector-chevron" />
         </div>
 
         <div className="calendar-actions">
@@ -76,7 +76,7 @@ export const CalendarFooter: React.FC<CalendarFooterProps> = ({
             title="Add new calendar"
             aria-label="Add new calendar"
           >
-            <Plus size={20} />
+            <Plus size={18} />
           </button>
 
           <button
@@ -86,7 +86,7 @@ export const CalendarFooter: React.FC<CalendarFooterProps> = ({
             aria-label="Settings"
             aria-pressed={showSettings}
           >
-            <Settings size={20} />
+            <Settings size={18} />
           </button>
 
           <button
@@ -95,7 +95,7 @@ export const CalendarFooter: React.FC<CalendarFooterProps> = ({
             title="Refresh tasks"
             aria-label="Refresh tasks"
           >
-            <RefreshCw size={20} />
+            <RefreshCw size={18} />
           </button>
 
           {activeSettings && activeSettings.id !== 'default' && (
@@ -113,7 +113,7 @@ export const CalendarFooter: React.FC<CalendarFooterProps> = ({
               title="Delete calendar"
               aria-label="Delete calendar"
             >
-              <Trash2 size={20} />
+              <Trash2 size={18} />
             </button>
           )}
         </div>

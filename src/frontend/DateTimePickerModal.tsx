@@ -769,7 +769,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
                 {isMultiDay && (
                   <span className="date-time-picker-time-label">Start</span>
                 )}
-                <Clock size={16} className="date-time-picker-time-icon" />
+                <Clock size={18} className="date-time-picker-time-icon" />
                 <div className="time-input-with-controls">
                   <select
                     value={hours}
@@ -806,7 +806,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
               {isMultiDay && (
                 <div className="date-time-picker-time">
                   <span className="date-time-picker-time-label">End</span>
-                  <Clock size={16} className="date-time-picker-time-icon" />
+                  <Clock size={18} className="date-time-picker-time-icon" />
                   <div className="time-input-with-controls">
                     <select
                       value={endHours}
@@ -917,7 +917,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
               {isMultiDay && (
                 <span className="date-time-picker-time-label">Start</span>
               )}
-              <Clock size={16} className="date-time-picker-time-icon" />
+              <Clock size={18} className="date-time-picker-time-icon" />
               <div className="time-input-with-controls">
                 <input
                   type="text"
@@ -950,7 +950,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
             {isMultiDay && (
               <div className="date-time-picker-time">
                 <span className="date-time-picker-time-label">End</span>
-                <Clock size={16} className="date-time-picker-time-icon" />
+                <Clock size={18} className="date-time-picker-time-icon" />
                 <div className="time-input-with-controls">
                   <input
                     type="text"

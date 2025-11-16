@@ -380,10 +380,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
 
     return (
       <div className="task-click-tooltip-info-item">
-        <Calendar
-          size={isMobile ? 18 : 16}
-          className="task-click-tooltip-icon-small"
-        />
+        <Calendar size={18} className="task-click-tooltip-icon-small" />
         <div
           className="task-click-tooltip-date-container"
           onClick={handleDateClick}
@@ -411,10 +408,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
 
     return (
       <div className="task-click-tooltip-info-item">
-        <Tag
-          size={isMobile ? 18 : 16}
-          className="task-click-tooltip-icon-small"
-        />
+        <Tag size={18} className="task-click-tooltip-icon-small" />
         <div className="task-click-tooltip-tags-container">
           {tags.map((tag, index) => (
             <span key={index} className="task-click-tooltip-tag-code">
@@ -461,10 +455,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     return (
       <div className="task-click-tooltip-delete-confirm">
         <div className="task-click-tooltip-delete-message">
-          <AlertCircle
-            size={isMobile ? 20 : 18}
-            className="task-click-tooltip-delete-icon"
-          />
+          <AlertCircle size={18} className="task-click-tooltip-delete-icon" />
           <span>Are you sure you want to delete this task?</span>
         </div>
         <div className="task-click-tooltip-delete-actions">
@@ -832,7 +823,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           {isCreateMode && (
             <div className="task-click-tooltip-info-item">
               <Info
-                size={16}
+                size={18}
                 className="task-click-tooltip-icon-small task-click-tooltip-icon-info"
               />
               {availableDestinations.length <= 1 ? (
