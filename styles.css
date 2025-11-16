@@ -101,6 +101,7 @@
 }
 
 .tasks-calendar-container .fc-header-toolbar {
+  margin-top: 0.5em !important;
   margin-bottom: 0.5em !important;
   .fc-button {
     height: 2em;
@@ -108,8 +109,6 @@
 }
 
 .is-mobile .tasks-calendar-container .fc-header-toolbar {
-  margin-top: 0.1em !important;
-  margin-bottom: 0.1em !important;
   .fc-button {
     height: 1.75em;
   }
@@ -920,8 +919,18 @@
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   width: 280px;
+  max-width: 90vw;
   animation: fadeIn 0.2s ease;
   overflow: hidden;
+}
+
+.is-mobile .date-time-picker-modal {
+  width: 320px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .date-time-picker-header {
@@ -967,22 +976,34 @@
 .date-time-picker-calendar-container {
   padding: 8px;
   height: auto;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .date-time-picker-calendar {
   height: auto;
+  width: 100%;
 }
 
 .date-time-picker-calendar .fc {
   background-color: var(--background-primary);
   font-size: 0.85em;
-  height: auto;
+  height: auto !important;
+  width: 100% !important;
 }
 
 /* Make sure all dates are visible */
-.date-time-picker-calendar .fc-view {
-  overflow: visible;
+.date-time-picker-calendar .fc-view,
+.date-time-picker-calendar .fc-view-harness,
+.date-time-picker-calendar .fc-daygrid-body,
+.date-time-picker-calendar .fc-scrollgrid,
+.date-time-picker-calendar .fc-scrollgrid-sync-table,
+.date-time-picker-calendar .fc-scroller-harness,
+.date-time-picker-calendar .fc-scroller,
+.date-time-picker-calendar .fc-scroller-liquid-absolute {
+  overflow: visible !important;
+  height: auto !important;
+  position: relative !important;
+  width: 100% !important;
 }
 
 /* Make the calendar more compact */
@@ -995,12 +1016,6 @@
 .date-time-picker-calendar .fc-daygrid-day-frame {
   min-height: auto;
   height: 100%;
-}
-
-/* Fix white space issue */
-.date-time-picker-calendar .fc-header-toolbar {
-  margin-bottom: 0.5em !important;
-  padding: 0 !important;
 }
 
 .date-time-picker-calendar .fc-daygrid-day {
@@ -1043,9 +1058,7 @@
 .date-time-picker-calendar .fc-col-header-cell {
   padding: 6px 0;
   font-size: 0.85em;
-  background-color: var(
-    --background-secondary
-  ); /* 本体カレンダーと同じ背景色 */
+  background-color: var(--background-secondary);
   color: var(--text-normal);
 }
 

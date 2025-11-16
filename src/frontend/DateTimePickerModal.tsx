@@ -272,7 +272,8 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
           center: 'title',
           right: 'next',
         },
-        aspectRatio: 0.75,
+        height: 'auto',
+        contentHeight: 'auto',
         selectable: true,
         selectMirror: true,
         unselectAuto: false,
@@ -361,7 +362,10 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
         },
         datesSet: () => {
           // Update highlighting when the view changes (e.g., month changes)
-          updateSelectedDateHighlight();
+          setTimeout(() => {
+            calendar.updateSize();
+            updateSelectedDateHighlight();
+          }, 0);
         },
         dayHeaderFormat: { weekday: 'narrow' },
         fixedWeekCount: false,
@@ -370,10 +374,11 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
       calendar.render();
       calendarInstance.current = calendar;
 
-      // Apply the selected date highlight after render
+      // Recalculate size and apply highlighting after render
       setTimeout(() => {
+        calendar.updateSize();
         updateSelectedDateHighlight();
-      }, 100);
+      }, 0);
 
       return () => {
         calendar.destroy();
