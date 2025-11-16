@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 interface CalendarFooterProps {
-  getCalendarSettings: (calendarId: string) => Promise<CalendarSettings>;
+  getCalendarSettings: (calendarId: string) => CalendarSettings;
   getCalendarsList: () => { id: string; name: string }[];
   activeCalendarId: string;
   onCalendarChange: (calendarId: string) => void;
@@ -39,12 +39,8 @@ export const CalendarFooter: React.FC<CalendarFooterProps> = ({
 
   // Fetch active calendar settings when activeCalendarId changes
   useEffect(() => {
-    const fetchSettings = async () => {
-      const settings = await getCalendarSettings(activeCalendarId);
-      setActiveSettings(settings);
-    };
-
-    fetchSettings();
+    const settings = getCalendarSettings(activeCalendarId);
+    setActiveSettings(settings);
   }, [activeCalendarId, getCalendarSettings]);
 
   // Handle settings changes without closing the panel

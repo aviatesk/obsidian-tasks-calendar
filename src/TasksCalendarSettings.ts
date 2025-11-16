@@ -61,6 +61,7 @@ export interface CalendarSettings {
 export interface PluginSettings {
   activeCalendar: string;
   calendars: CalendarSettings[];
+  autoOpenOnStartup: boolean;
 }
 
 export const VIEW_TYPE = 'tasks-calendar-view';
@@ -99,7 +100,10 @@ export const DEFAULT_CALENDAR_SETTINGS: CalendarSettings = {
 export const DEFAULT_PLUGIN_SETTINGS: PluginSettings = {
   activeCalendar: 'default',
   calendars: [DEFAULT_CALENDAR_SETTINGS],
+  autoOpenOnStartup: true,
 };
+
+export const AUTO_OPEN_DELAY = 300;
 
 /**
  * Convert a UserCalendarSettings object to a complete CalendarSettings object

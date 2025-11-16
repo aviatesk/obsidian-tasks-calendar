@@ -76,8 +76,8 @@ export class TasksCalendarItemView extends ItemView {
     this.renderFooter();
 
     // Delay calendar initialization to ensure container is properly sized
-    setTimeout(async () => {
-      this.settings = await this.plugin.getCalendarSettings();
+    setTimeout(() => {
+      this.settings = this.plugin.configManager.getCalendarSettings();
       this.initializeCalendar(calendarEl);
     }, 100);
   }
@@ -237,12 +237,14 @@ export class TasksCalendarItemView extends ItemView {
                 const option = document.createElement('div');
                 option.className = 'view-option';
                 option.textContent = view.name;
-                option.addEventListener('click', async () => {
+                option.addEventListener('click', () => {
                   if (this.calendar) {
                     this.calendar.changeView(view.value);
                     dropdown.classList.remove('show');
                     this.settings.viewType = view.value;
-                    this.plugin.saveCalendarSettings(this.settings);
+                    this.plugin.configManager.saveCalendarSettings(
+                      this.settings
+                    );
                   }
                 });
                 dropdown.appendChild(option);
@@ -818,17 +820,17 @@ export class TasksCalendarItemView extends ItemView {
 
     this.footerRenderer.render(
       React.createElement(CalendarFooter, {
-        getCalendarSettings: async (calendarId: string) => {
-          return await this.plugin.getCalendarSettings({ id: calendarId });
+        getCalendarSettings: (calendarId: string) => {
+          return this.plugin.configManager.getCalendarSettings(calendarId);
         },
         getCalendarsList: () => {
-          return this.plugin.getCalendarsList();
+          return this.plugin.configManager.getCalendarsList();
         },
         activeCalendarId: this.settings.id,
         onCalendarChange: async calendarId => {
-          await this.plugin.setActiveCalendarId(calendarId);
+          await this.plugin.configManager.setActiveCalendarId(calendarId);
 
-          this.settings = await this.plugin.getCalendarSettings();
+          this.settings = this.plugin.configManager.getCalendarSettings();
           if (this.calendar) {
             this.calendar.changeView(this.settings.viewType);
             this.calendar.refetchEvents();
@@ -841,11 +843,11 @@ export class TasksCalendarItemView extends ItemView {
           const newCalendarSettings: CalendarSettings = {
             ...DEFAULT_CALENDAR_SETTINGS,
             id: newId,
-            name: `New Calendar ${this.plugin.getCalendarsList().length + 1}`,
+            name: `New Calendar ${this.plugin.configManager.getCalendarsList().length + 1}`,
           };
 
-          await this.plugin.addCalendar(newCalendarSettings);
-          await this.plugin.setActiveCalendarId(newId);
+          await this.plugin.configManager.addCalendar(newCalendarSettings);
+          await this.plugin.configManager.setActiveCalendarId(newId);
           this.settings = newCalendarSettings;
 
           this.renderFooter();
@@ -854,9 +856,9 @@ export class TasksCalendarItemView extends ItemView {
           }
         },
         onCalendarDelete: async calendarId => {
-          await this.plugin.deleteCalendar(calendarId);
+          await this.plugin.configManager.deleteCalendar(calendarId);
 
-          this.settings = await this.plugin.getCalendarSettings();
+          this.settings = this.plugin.configManager.getCalendarSettings();
 
           this.renderFooter();
           if (this.calendar) {
@@ -865,16 +867,14 @@ export class TasksCalendarItemView extends ItemView {
         },
         onSettingsChange: async (settings: CalendarSettings) => {
           this.settings = settings;
-          await this.plugin.saveCalendarSettings(settings);
+          await this.plugin.configManager.saveCalendarSettings(settings);
 
           if (this.calendar) {
             this.calendar.refetchEvents();
           }
         },
         onRefresh: async () => {
-          this.settings = await this.plugin.getCalendarSettings({
-            reload: true,
-          });
+          this.settings = this.plugin.configManager.getCalendarSettings();
           if (this.calendar) {
             this.calendar.refetchEvents();
           }

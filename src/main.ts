@@ -1,30 +1,27 @@
 import { Plugin, WorkspaceLeaf } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
 import {
-  CalendarSettings,
-  PluginSettings,
-  DEFAULT_PLUGIN_SETTINGS,
-  DEFAULT_CALENDAR_SETTINGS,
   HOVER_LINK_SOURCE,
   VIEW_TYPE,
-  toCalendarSettings,
-  toUserCalendarSettings,
+  AUTO_OPEN_DELAY,
 } from './TasksCalendarSettings';
 import { TasksCalendarItemView } from './TasksCalendarItemView';
 import { SettingTab } from './TasksCalendarSettingsTab';
 import { createLogger } from './logging';
+import { ConfigManager } from './ConfigManager';
 
 export default class TasksCalendarPlugin extends Plugin {
   private readonly logger = createLogger('Plugin');
-  private _settings: PluginSettings;
+  configManager!: ConfigManager;
   dataviewApi = getAPI();
   _onChangeCallback = () => {};
 
   async onload() {
     this.logger.log('Loading plugin');
-    await this.loadSettings();
-
-    await this.saveSettings();
+    this.configManager = await ConfigManager.initialize(
+      () => this.loadData(),
+      data => this.saveData(data)
+    );
 
     const dataviewApi = this.dataviewApi;
     if (dataviewApi) {
@@ -37,17 +34,14 @@ export default class TasksCalendarPlugin extends Plugin {
       this.logger.warn('Dataview API not available');
     }
 
-    // Register view with plugin instance
     this.registerView(VIEW_TYPE, leaf => new TasksCalendarItemView(leaf, this));
 
-    // Add command to open calendar
     this.addCommand({
       id: 'open',
       name: 'Open Tasks Calendar',
       callback: () => this.activateView(),
     });
 
-    // Add settings tab
     this.addSettingTab(new SettingTab(this.app, this));
 
     this.registerHoverLinkSource(HOVER_LINK_SOURCE, {
@@ -74,7 +68,9 @@ export default class TasksCalendarPlugin extends Plugin {
         })
       );
 
-      setTimeout(() => this.activateView(), 300);
+      if (this.configManager.get('autoOpenOnStartup')) {
+        setTimeout(() => this.activateView(), AUTO_OPEN_DELAY);
+      }
     });
   }
 
@@ -83,90 +79,11 @@ export default class TasksCalendarPlugin extends Plugin {
     this._onChangeCallback = () => {};
   }
 
-  private async loadSettings() {
-    let loaded: PluginSettings = await this.loadData();
-    if (!loaded) loaded = DEFAULT_PLUGIN_SETTINGS;
-    this._settings = loaded;
-  }
-
-  async saveSettings() {
-    const calendars = this._settings.calendars.map(toUserCalendarSettings);
-    await this.saveData({
-      activeCalendar: this._settings.activeCalendar,
-      calendars,
-    });
-  }
-
-  // Accessor methods for plugin settings
-  getActiveCalendarId(): string {
-    return this._settings.activeCalendar;
-  }
-
-  async setActiveCalendarId(id: string): Promise<void> {
-    this._settings.activeCalendar = id;
-    await this.saveSettings();
-  }
-
-  getCalendarsList(): { id: string; name: string }[] {
-    return this._settings.calendars.map(cal => ({
-      id: cal.id,
-      name: cal.name,
-    }));
-  }
-
-  async addCalendar(settings: CalendarSettings): Promise<void> {
-    this._settings.calendars.push(settings);
-    await this.saveSettings();
-  }
-
-  async deleteCalendar(id: string): Promise<void> {
-    const index = this._settings.calendars.findIndex(c => c.id === id);
-    if (index > -1) {
-      this._settings.calendars.splice(index, 1);
-    }
-
-    if (this._settings.activeCalendar === id) {
-      this._settings.activeCalendar = DEFAULT_PLUGIN_SETTINGS.activeCalendar;
-    }
-
-    await this.saveSettings();
-  }
-
-  async getCalendarSettings({
-    id = this._settings.activeCalendar,
-    reload = false,
-  } = {}): Promise<CalendarSettings> {
-    if (reload) {
-      await this.loadSettings();
-    }
-
-    const userSettings = this._settings.calendars.find(c => c.id === id);
-    if (!userSettings) {
-      return DEFAULT_CALENDAR_SETTINGS;
-    }
-
-    // Convert from UserCalendarSettings to CalendarSettings
-    return toCalendarSettings(userSettings);
-  }
-
-  async saveCalendarSettings(settings: CalendarSettings): Promise<void> {
-    const index = this._settings.calendars.findIndex(c => c.id === settings.id);
-    if (index > -1) {
-      this._settings.calendars[index] = settings;
-    } else {
-      this._settings.calendars.push(settings);
-    }
-    await this.saveSettings();
-  }
-
-  async activateView() {
+  private async activateView() {
     const { workspace } = this.app;
     const leaves = workspace.getLeavesOfType(VIEW_TYPE);
-
     let leaf: WorkspaceLeaf | null = null;
-
     if (leaves.length > 0) {
-      // View already exists, show it
       leaf = leaves[0];
     } else {
       leaf = workspace.getRightLeaf(false);
@@ -177,7 +94,6 @@ export default class TasksCalendarPlugin extends Plugin {
         });
       }
     }
-
     if (leaf) {
       workspace.revealLeaf(leaf);
     }
