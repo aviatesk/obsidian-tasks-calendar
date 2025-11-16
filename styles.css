@@ -101,6 +101,7 @@
 }
 
 .tasks-calendar-container .fc-header-toolbar {
+  margin-bottom: 0.5em !important;
   .fc-button {
     height: 2em;
   }
