@@ -710,7 +710,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   }, [createResultDates, isAllDay, onDone]);
 
   // Modal title based on selection mode
-  const modalTitle = endDate ? 'Date Range' : 'Select Date';
+  const modalTitle = endDate ? 'Date range' : 'Select date';
 
   // Render different container based on mobile or desktop
   return isMobile ? (

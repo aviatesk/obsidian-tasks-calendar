@@ -75,7 +75,7 @@ export const StatusPickerDropdown: React.FC<StatusPickerDropdownProps> = ({
     <div className="mobile-modal-overlay">
       <div className="status-picker-modal" ref={modalRef}>
         <div className="status-picker-header">
-          <div className="status-picker-title">Task Status</div>
+          <div className="status-picker-title">Task status</div>
           <div className="status-picker-header-buttons">
             <button
               className="status-picker-close-button"
@@ -124,7 +124,7 @@ export const StatusPickerDropdown: React.FC<StatusPickerDropdownProps> = ({
       ref={modalRef}
     >
       <div className="status-picker-header">
-        <div className="status-picker-title">Task Status</div>
+        <div className="status-picker-title">Task status</div>
         <div className="status-picker-header-buttons">
           <button
             className="status-picker-close-button"

@@ -261,10 +261,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <div className="body">
             <form className="form" onSubmit={e => e.preventDefault()}>
               <div className="section">
-                <div className="section-title">Basic Configuration</div>
+                <div className="section-title">Basic configuration</div>
 
                 <div className="field-container">
-                  <label className="label">Calendar Name</label>
+                  <label className="label">Calendar name</label>
                   <div className="input-wrapper">
                     <input
                       type="text"
@@ -286,7 +286,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
                 {/* Task Creation Destinations - Multiple File Paths */}
                 <div className="field-container">
-                  <label className="label">Task Creation Destinations</label>
+                  <label className="label">Task creation destinations</label>
                   <div className="description">
                     Destinations where new tasks will be created when clicking
                     on dates. When a file path (ending with <code>.md</code>) is
@@ -380,7 +380,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </div>
 
                 <div className="field-container">
-                  <label className="label">Due Date Property</label>
+                  <label className="label">Due date property</label>
                   <div className="input-wrapper">
                     <input
                       type="text"
@@ -408,7 +408,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </div>
 
                 <div className="field-container">
-                  <label className="label">Start Date Property</label>
+                  <label className="label">Start date property</label>
                   <div className="input-wrapper">
                     <input
                       type="text"
@@ -436,7 +436,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </div>
 
                 <div className="field-container">
-                  <label className="label">Dataview Query</label>
+                  <label className="label">Dataview query</label>
                   <div className="input-wrapper">
                     <input
                       type="text"
@@ -464,10 +464,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </div>
 
               <div className="section">
-                <div className="section-title">Task Filtering</div>
+                <div className="section-title">Task filtering</div>
 
                 {renderItemList(
-                  'Excluded Task Statuses',
+                  'Excluded task statuses',
                   'excludedStatuses',
                   newExcludedStatus,
                   setNewExcludedStatus,
@@ -478,7 +478,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 )}
 
                 {renderItemList(
-                  'Included Task Statuses',
+                  'Included task statuses',
                   'includedStatuses',
                   newStatus,
                   setNewStatus,
@@ -489,7 +489,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 )}
 
                 {renderItemList(
-                  'Excluded Tags',
+                  'Excluded tags',
                   'excludedTags',
                   newExcludedTag,
                   setNewExcludedTag,
@@ -500,7 +500,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 )}
 
                 {renderItemList(
-                  'Included Tags',
+                  'Included tags',
                   'includedTags',
                   newTag,
                   setNewTag,
