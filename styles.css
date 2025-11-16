@@ -100,7 +100,8 @@
   cursor: pointer;
 }
 
-.tasks-calendar-container .fc-header-toolbar {
+.tasks-calendar-container .fc-header-toolbar,
+.date-time-picker-modal .fc-header-toolbar {
   margin-top: 0.5em !important;
   margin-bottom: 0.5em !important;
   .fc-button {
@@ -767,7 +768,7 @@
   border: none;
   cursor: pointer;
   font-size: 1.2em;
-  padding: 6px;
+  padding: 6px !important;
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -1333,18 +1334,20 @@
   background-color: var(--background-secondary-alt);
 }
 
+.is-mobile .date-time-picker-header {
+  height: 2em;
+}
+.is-mobile .date-time-picker-close-button {
+  height: 1.75em;
+}
+.is-mobile .date-time-picker-done-button {
+  height: 1.75em;
+}
+
 .is-mobile .task-click-tooltip-content,
 .is-mobile .date-time-picker-content,
 .is-mobile .status-picker-content {
   padding: 16px;
-}
-
-.is-mobile .task-click-tooltip-open-button,
-.is-mobile .task-click-tooltip-close-button,
-.is-mobile .task-click-tooltip-delete-button,
-.is-mobile .date-time-picker-close-button,
-.is-mobile .status-picker-close-button {
-  padding: 10px;
 }
 
 /* Increase touch target sizes on mobile */
