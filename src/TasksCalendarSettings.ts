@@ -80,11 +80,23 @@ export const DEFAULT_EVENT_PROPS: DefaultEventProps = {
  * any user-defined `eventPropsMap` overrides.
  */
 export const STATUS_DEFAULT_EVENT_PROPS: Record<string, EventProps> = {
-  '-': {
+  x: {
     textColor: 'var(--text-faint)',
     backgroundColor: 'var(--background-secondary)',
     display: 'block',
     priority: -1,
+  },
+  X: {
+    textColor: 'var(--text-faint)',
+    backgroundColor: 'var(--background-secondary)',
+    display: 'block',
+    priority: -1,
+  },
+  '-': {
+    textColor: 'var(--text-faint)',
+    backgroundColor: 'var(--background-secondary)',
+    display: 'block',
+    priority: -2,
   },
 };
 
