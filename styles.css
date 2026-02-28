@@ -378,7 +378,9 @@
   transition: filter 0.2s ease;
 }
 
-.tasks-calendar-container .fc-event.tasks-calendar-status-- .fc-event-title {
+.tasks-calendar-container
+  .fc-event.tasks-calendar-event-cancelled
+  .fc-event-title {
   text-decoration: line-through;
 }
 

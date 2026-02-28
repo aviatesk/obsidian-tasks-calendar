@@ -178,9 +178,7 @@ function createEvent(
     priority,
   };
   const classNames =
-    source.status in STATUS_DEFAULT_EVENT_PROPS
-      ? [`tasks-calendar-status-${source.status.replace(/[^a-zA-Z0-9]/g, '_')}`]
-      : [];
+    source.status === '-' ? ['tasks-calendar-event-cancelled'] : [];
   return {
     textColor: eventProps.textColor,
     backgroundColor: eventProps.backgroundColor,
