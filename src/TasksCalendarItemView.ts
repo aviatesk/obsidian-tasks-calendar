@@ -820,6 +820,7 @@ export class TasksCalendarItemView extends ItemView {
 
     this.footerRenderer.render(
       React.createElement(CalendarFooter, {
+        app: this.app,
         getCalendarSettings: (calendarId: string) => {
           return this.plugin.configManager.getCalendarSettings(calendarId);
         },

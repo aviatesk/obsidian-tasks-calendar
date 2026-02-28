@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SettingsPanel } from './SettingsPanel';
+import { App } from 'obsidian';
 import { CalendarSettings } from '../TasksCalendarSettings';
 import {
   Plus,
@@ -9,8 +9,10 @@ import {
   ChevronDown,
   Calendar,
 } from 'lucide-react';
+import { CalendarSettingsModal } from './CalendarSettingsModal';
 
 interface CalendarFooterProps {
+  app: App;
   getCalendarSettings: (calendarId: string) => CalendarSettings;
   getCalendarsList: () => { id: string; name: string }[];
   activeCalendarId: string;
@@ -22,6 +24,7 @@ interface CalendarFooterProps {
 }
 
 export const CalendarFooter: React.FC<CalendarFooterProps> = ({
+  app,
   getCalendarSettings,
   getCalendarsList,
   activeCalendarId,
@@ -31,22 +34,31 @@ export const CalendarFooter: React.FC<CalendarFooterProps> = ({
   onSettingsChange,
   onRefresh,
 }) => {
-  const [showSettings, setShowSettings] = useState(false);
   const [activeSettings, setActiveSettings] = useState<CalendarSettings | null>(
     null
   );
   const calendarsList = getCalendarsList();
 
-  // Fetch active calendar settings when activeCalendarId changes
   useEffect(() => {
     const settings = getCalendarSettings(activeCalendarId);
     setActiveSettings(settings);
   }, [activeCalendarId, getCalendarSettings]);
 
-  // Handle settings changes without closing the panel
   const handleSettingsChange = (updatedSettings: CalendarSettings) => {
     setActiveSettings(updatedSettings);
     onSettingsChange(updatedSettings);
+  };
+
+  const openSettingsModal = () => {
+    if (!activeSettings) return;
+    new CalendarSettingsModal(
+      app,
+      activeSettings,
+      handleSettingsChange,
+      activeSettings.id !== 'default'
+        ? () => onCalendarDelete(activeSettings.id)
+        : undefined
+    ).open();
   };
 
   return (
@@ -80,11 +92,10 @@ export const CalendarFooter: React.FC<CalendarFooterProps> = ({
           </button>
 
           <button
-            className={`calendar-action-button calendar-settings-button ${showSettings ? 'active' : ''}`}
-            onClick={() => setShowSettings(!showSettings)}
+            className="calendar-action-button calendar-settings-button"
+            onClick={openSettingsModal}
             title="Settings"
             aria-label="Settings"
-            aria-pressed={showSettings}
           >
             <Settings size={18} />
           </button>
@@ -118,19 +129,6 @@ export const CalendarFooter: React.FC<CalendarFooterProps> = ({
           )}
         </div>
       </div>
-
-      {showSettings && activeSettings && (
-        <SettingsPanel
-          settings={activeSettings}
-          onSettingsChange={handleSettingsChange}
-          onDeleteCalendar={
-            activeSettings.id !== 'default'
-              ? () => onCalendarDelete(activeSettings.id)
-              : undefined
-          }
-          onClose={() => setShowSettings(false)}
-        />
-      )}
     </div>
   );
 };
