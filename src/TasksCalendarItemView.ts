@@ -217,50 +217,51 @@ export class TasksCalendarItemView extends ItemView {
           text: 'Views',
           click: e => {
             const button = e.currentTarget as HTMLElement;
-            const viewDropdown = button.querySelector('.view-dropdown');
+            let dropdown = button.querySelector<HTMLElement>('.view-dropdown');
 
-            if (viewDropdown) {
-              viewDropdown.classList.toggle('show');
-            } else {
-              const dropdown = document.createElement('div');
+            if (!dropdown) {
+              dropdown = document.createElement('div');
               dropdown.className = 'view-dropdown';
-
-              const views = [
-                { name: 'Month', value: 'dayGridMonth' },
-                { name: 'Week', value: 'timeGridWeek' },
-                { name: '3 Days', value: 'timeGridThreeDay' },
-                { name: 'Day', value: 'timeGridDay' },
-                { name: 'List', value: 'listWeek' },
-              ];
-
-              views.forEach(view => {
-                const option = document.createElement('div');
-                option.className = 'view-option';
-                option.textContent = view.name;
-                option.addEventListener('click', () => {
-                  if (this.calendar) {
-                    this.calendar.changeView(view.value);
-                    dropdown.classList.remove('show');
-                    this.settings.viewType = view.value;
-                    this.plugin.configManager.saveCalendarSettings(
-                      this.settings
-                    );
-                  }
-                });
-                dropdown.appendChild(option);
-              });
-
               button.appendChild(dropdown);
-              dropdown.classList.add('show');
 
-              // Close dropdown when clicking outside
               this.closeDropdown = (event: MouseEvent) => {
                 if (!button.contains(event.target as Node)) {
-                  dropdown.classList.remove('show');
+                  dropdown!.classList.remove('show');
                 }
               };
               document.addEventListener('click', this.closeDropdown);
             }
+
+            // Rebuild options each time to reflect the current active view.
+            dropdown.empty();
+            const currentView =
+              this.calendar?.view.type ?? this.settings.viewType;
+            const views = [
+              { name: 'Month', value: 'dayGridMonth' },
+              { name: 'Week', value: 'timeGridWeek' },
+              { name: '3 Days', value: 'timeGridThreeDay' },
+              { name: 'Day', value: 'timeGridDay' },
+              { name: 'List', value: 'listWeek' },
+            ];
+
+            views.forEach(view => {
+              const option = dropdown!.createDiv({
+                cls:
+                  'view-option' +
+                  (view.value === currentView ? ' is-active' : ''),
+                text: view.name,
+              });
+              option.addEventListener('click', () => {
+                if (this.calendar) {
+                  this.calendar.changeView(view.value);
+                  dropdown!.classList.remove('show');
+                  this.settings.viewType = view.value;
+                  this.plugin.configManager.saveCalendarSettings(this.settings);
+                }
+              });
+            });
+
+            dropdown.classList.toggle('show');
           },
         },
       },

@@ -328,6 +328,11 @@
   color: var(--text-accent);
 }
 
+.view-option.is-active {
+  color: var(--text-accent);
+  font-weight: 500;
+}
+
 /* Style the header buttons */
 .tasks-calendar-container .fc-toolbar-chunk {
   position: relative;
