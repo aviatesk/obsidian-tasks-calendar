@@ -378,6 +378,10 @@
   transition: filter 0.2s ease;
 }
 
+.tasks-calendar-container .fc-event.tasks-calendar-status-- .fc-event-title {
+  text-decoration: line-through;
+}
+
 /* Task preview popup styles */
 .task-preview-popup {
   position: absolute;

@@ -75,6 +75,19 @@ export const DEFAULT_EVENT_PROPS: DefaultEventProps = {
   priority: 0,
 };
 
+/**
+ * Built-in default styles for well-known task statuses, applied before
+ * any user-defined `eventPropsMap` overrides.
+ */
+export const STATUS_DEFAULT_EVENT_PROPS: Record<string, EventProps> = {
+  '-': {
+    textColor: 'var(--text-faint)',
+    backgroundColor: 'var(--background-secondary)',
+    display: 'block',
+    priority: -1,
+  },
+};
+
 export const DEFAULT_CALENDAR_SETTINGS: CalendarSettings = {
   id: 'default',
   name: 'Default',

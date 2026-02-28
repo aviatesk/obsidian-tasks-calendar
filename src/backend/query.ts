@@ -4,6 +4,7 @@ import { EventInput } from '@fullcalendar/core';
 import {
   CalendarSettings,
   DEFAULT_EVENT_PROPS,
+  STATUS_DEFAULT_EVENT_PROPS,
 } from '../TasksCalendarSettings';
 import { DEFAULT_CALENDAR_SETTINGS } from '../TasksCalendarSettings';
 import { normalizeTag } from './tag';
@@ -134,12 +135,16 @@ function createEvent(
   }
 
   // apply event info
-  let eventProps = DEFAULT_EVENT_PROPS;
-  // Check for status match first (highest priority)
+  let eventProps = Object.assign(
+    {},
+    DEFAULT_EVENT_PROPS,
+    STATUS_DEFAULT_EVENT_PROPS[source.status] ?? {}
+  );
+  // User-defined eventPropsMap overrides built-in defaults.
   if (settings.eventPropsMap[source.status]) {
     eventProps = Object.assign(
       {},
-      DEFAULT_EVENT_PROPS,
+      eventProps,
       settings.eventPropsMap[source.status]
     );
   }
@@ -172,10 +177,15 @@ function createEvent(
     tags: source.tags,
     priority,
   };
+  const classNames =
+    source.status in STATUS_DEFAULT_EVENT_PROPS
+      ? [`tasks-calendar-status-${source.status.replace(/[^a-zA-Z0-9]/g, '_')}`]
+      : [];
   return {
     textColor: eventProps.textColor,
     backgroundColor: eventProps.backgroundColor,
     display: eventProps.display,
+    classNames,
     title: cleanText,
     start: startDate.toJSDate(),
     end: endDate?.toJSDate(),
