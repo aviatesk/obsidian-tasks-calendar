@@ -158,8 +158,8 @@ is in how tasks are managed:
 
 |                    | Tasks Calendar                                                      | obsidian-full-calendar                   |
 | ------------------ | ------------------------------------------------------------------- | ---------------------------------------- |
-| **Task Storage**   | Tasks can be written anywhere in your vault or use file frontmatter | One note per task approach               |
-| **Task Discovery** | Uses Dataview to scan and aggregate tasks                           | Relies on dedicated note properties      |
+| **Task storage**   | Tasks can be written anywhere in your vault or use file frontmatter | One note per task approach               |
+| **Task discovery** | Uses Dataview to scan and aggregate tasks                           | Relies on dedicated note properties      |
 | **Philosophy**     | Freedom to organize tasks in any note structure                     | Structured approach with dedicated notes |
 
 ### Compatibility with Tasks plugin
