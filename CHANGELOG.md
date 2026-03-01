@@ -8,12 +8,16 @@ and this project adheres to
 
 <!-- links start -->
 
+[Unreleased]:
+  https://github.com/aviatesk/obsidian-tasks-calendar/compare/0.1.2...HEAD
 [0.1.2]:
   https://github.com/aviatesk/obsidian-tasks-calendar/compare/0.1.1...0.1.2
 [0.1.1]:
   https://github.com/aviatesk/obsidian-tasks-calendar/compare/0.1.0...0.1.1
 
 <!-- links end -->
+
+## [Unreleased]
 
 ## [0.1.2]
 
