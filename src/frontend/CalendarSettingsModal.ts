@@ -143,22 +143,23 @@ export class CalendarSettingsModal extends Modal {
   private renderPathList(el: HTMLElement): void {
     const paths = this.settings.newTaskFilePaths;
 
-    for (const path of paths) {
-      new Setting(el)
-        .setName(path)
-        .setClass('tasks-calendar-list-item')
-        .addExtraButton(btn =>
-          btn
-            .setIcon('trash')
-            .setTooltip('Remove')
-            .onClick(() => {
-              this.update(
-                'newTaskFilePaths',
-                paths.filter(p => p !== path)
-              );
-              this.buildContent();
-            })
-        );
+    if (paths.length > 0) {
+      const chipList = el.createDiv({ cls: 'tasks-calendar-chip-list' });
+      for (const path of paths) {
+        const chip = chipList.createDiv({ cls: 'tasks-calendar-chip' });
+        chip.createSpan({ text: path });
+        const removeBtn = chip.createSpan({
+          cls: 'tasks-calendar-chip-remove',
+          text: '×',
+        });
+        removeBtn.addEventListener('click', () => {
+          this.update(
+            'newTaskFilePaths',
+            paths.filter(p => p !== path)
+          );
+          this.buildContent();
+        });
+      }
     }
 
     let newPath = '';
@@ -252,22 +253,23 @@ export class CalendarSettingsModal extends Modal {
 
     const items = this.settings[field];
 
-    for (const item of items) {
-      new Setting(el)
-        .setName(item)
-        .setClass('tasks-calendar-list-item')
-        .addExtraButton(btn =>
-          btn
-            .setIcon('trash')
-            .setTooltip('Remove')
-            .onClick(() => {
-              this.update(
-                field,
-                items.filter(i => i !== item)
-              );
-              this.buildContent();
-            })
-        );
+    if (items.length > 0) {
+      const chipList = el.createDiv({ cls: 'tasks-calendar-chip-list' });
+      for (const item of items) {
+        const chip = chipList.createDiv({ cls: 'tasks-calendar-chip' });
+        chip.createSpan({ text: item });
+        const removeBtn = chip.createSpan({
+          cls: 'tasks-calendar-chip-remove',
+          text: '×',
+        });
+        removeBtn.addEventListener('click', () => {
+          this.update(
+            field,
+            items.filter(i => i !== item)
+          );
+          this.buildContent();
+        });
+      }
     }
 
     let newValue = '';
