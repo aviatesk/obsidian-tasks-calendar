@@ -26,6 +26,9 @@ and this project adheres to
   create the next occurrence with an updated due date. Supported patterns
   include `every day`, `every N days/weeks/months/years`, `every weekday`, and
   `every monday`..`every sunday`.
+- Editor autocomplete for task properties: typing `[` on a task line suggests
+  date property names and `recurrence`, with date properties pre-filled with
+  today's date. Recurrence values also offer pattern suggestions.
 
 ### Changed
 

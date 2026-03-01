@@ -7,6 +7,7 @@ import {
 } from './TasksCalendarSettings';
 import { TasksCalendarItemView } from './TasksCalendarItemView';
 import { SettingTab } from './TasksCalendarSettingsTab';
+import { TaskPropertySuggest } from './editor/TaskPropertySuggest';
 import { createLogger } from './logging';
 import { ConfigManager } from './ConfigManager';
 
@@ -48,6 +49,10 @@ export default class TasksCalendarPlugin extends Plugin {
       defaultMod: true,
       display: 'Tasks Calendar',
     });
+
+    this.registerEditorSuggest(
+      new TaskPropertySuggest(this.app, this.configManager)
+    );
 
     this.app.workspace.onLayoutReady(() => {
       this.addRibbonIcon('lucide-calendar-check', 'Tasks Calendar', () => {
