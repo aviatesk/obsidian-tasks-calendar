@@ -1,5 +1,5 @@
 import { Duration, DateTime } from 'luxon';
-import { DataviewApi, SMarkdownPage, STask } from 'obsidian-dataview';
+import type { DataviewApi, SMarkdownPage, STask } from 'obsidian-dataview';
 import { EventInput } from '@fullcalendar/core';
 import {
   CalendarSettings,

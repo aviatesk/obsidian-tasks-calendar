@@ -4,6 +4,7 @@ import {
   DEFAULT_CALENDAR_SETTINGS,
 } from '../TasksCalendarSettings';
 import { normalizeTag } from '../backend/tag';
+import { ConfirmModal } from './ConfirmModal';
 import { PathSuggest } from './PathSuggest';
 
 export class CalendarSettingsModal extends Modal {
@@ -317,14 +318,14 @@ export class CalendarSettingsModal extends Modal {
           .setButtonText('Delete')
           .setWarning()
           .onClick(() => {
-            if (
-              confirm(
-                `Are you sure you want to delete '${this.settings.name}'?`
-              )
-            ) {
-              this.onDeleteCalendar!();
-              this.close();
-            }
+            new ConfirmModal(
+              this.app,
+              `Are you sure you want to delete '${this.settings.name}'?`,
+              () => {
+                this.onDeleteCalendar!();
+                this.close();
+              }
+            ).open();
           })
       );
   }

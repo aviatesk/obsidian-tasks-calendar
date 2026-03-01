@@ -1,6 +1,7 @@
 import { App, setIcon, setTooltip } from 'obsidian';
 import { CalendarSettings } from '../TasksCalendarSettings';
 import { CalendarSettingsModal } from './CalendarSettingsModal';
+import { ConfirmModal } from './ConfirmModal';
 
 export interface CalendarFooterCallbacks {
   app: App;
@@ -106,11 +107,11 @@ export class CalendarFooter {
         title: 'Delete calendar',
         icon: 'trash-2',
         onClick: () => {
-          if (
-            confirm(`Are you sure you want to delete '${activeSettings.name}'?`)
-          ) {
-            this.callbacks.onCalendarDelete(activeSettings.id);
-          }
+          new ConfirmModal(
+            this.callbacks.app,
+            `Are you sure you want to delete '${activeSettings.name}'?`,
+            () => this.callbacks.onCalendarDelete(activeSettings.id)
+          ).open();
         },
       });
     }

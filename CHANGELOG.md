@@ -9,7 +9,9 @@ and this project adheres to
 <!-- links start -->
 
 [Unreleased]:
-  https://github.com/aviatesk/obsidian-tasks-calendar/compare/0.1.4...HEAD
+  https://github.com/aviatesk/obsidian-tasks-calendar/compare/0.1.5...HEAD
+[0.1.5]:
+  https://github.com/aviatesk/obsidian-tasks-calendar/compare/0.1.4...0.1.5
 [0.1.4]:
   https://github.com/aviatesk/obsidian-tasks-calendar/compare/0.1.3...0.1.4
 [0.1.3]:
@@ -22,6 +24,19 @@ and this project adheres to
 <!-- links end -->
 
 ## [Unreleased]
+
+## [0.1.5]
+
+### Changed
+
+- Replaced native `confirm()` dialogs with Obsidian `Modal` for consistent UI
+  and better mobile compatibility.
+- Replaced hardcoded CSS colors on the delete button with Obsidian CSS variables
+  for proper theme support.
+- Restored original Dataview `onChange` handler on plugin unload to prevent
+  leaked behavior across reloads.
+- Marked `obsidian-dataview` as external in the build configuration to exclude
+  unused bundled code, reducing `main.js` size by ~115KB.
 
 ## [0.1.4]
 

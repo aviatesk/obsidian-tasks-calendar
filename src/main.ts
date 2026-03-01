@@ -1,5 +1,5 @@
 import { Plugin, WorkspaceLeaf } from 'obsidian';
-import { getAPI } from 'obsidian-dataview';
+import type { DataviewApi } from 'obsidian-dataview';
 import {
   HOVER_LINK_SOURCE,
   VIEW_TYPE,
@@ -13,10 +13,21 @@ import { createDatePropertyPostProcessor } from './editor/DatePropertyPostProces
 import { createLogger, setLogLevel } from './logging';
 import { ConfigManager } from './ConfigManager';
 
+function getDataviewApi(app: Plugin['app']): DataviewApi | undefined {
+  const plugins = (app as unknown as Record<string, unknown>).plugins as
+    | Record<string, unknown>
+    | undefined;
+  const inner = plugins?.plugins as
+    | Record<string, { api?: DataviewApi }>
+    | undefined;
+  return inner?.dataview?.api;
+}
+
 export default class TasksCalendarPlugin extends Plugin {
   private readonly logger = createLogger('Plugin');
   configManager!: ConfigManager;
-  dataviewApi = getAPI();
+  dataviewApi?: DataviewApi;
+  private originalOnChange?: () => void;
   _onChangeCallback = () => {};
 
   async onload() {
@@ -31,11 +42,13 @@ export default class TasksCalendarPlugin extends Plugin {
       setLogLevel(value)
     );
 
+    this.dataviewApi = getDataviewApi(this.app);
     const dataviewApi = this.dataviewApi;
     if (dataviewApi) {
-      const oldOnChange = dataviewApi.index.onChange;
+      this.originalOnChange = dataviewApi.index.onChange;
+      const originalOnChange = this.originalOnChange;
       dataviewApi.index.onChange = () => {
-        oldOnChange();
+        originalOnChange();
         this._onChangeCallback();
       };
     } else {
@@ -95,6 +108,9 @@ export default class TasksCalendarPlugin extends Plugin {
 
   onunload() {
     this.logger.log('Unloading plugin');
+    if (this.dataviewApi && this.originalOnChange) {
+      this.dataviewApi.index.onChange = this.originalOnChange;
+    }
     this._onChangeCallback = () => {};
   }
 

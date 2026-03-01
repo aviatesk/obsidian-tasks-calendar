@@ -37,7 +37,7 @@
   display: inline-flex;
 }
 .tasks-calendar-container .calendar-delete-button {
-  background-color: #e57373;
+  background-color: var(--background-modifier-error);
 }
 
 .tasks-calendar-container .fc-button:hover,
@@ -49,8 +49,8 @@
   color: var(--text-accent);
 }
 .tasks-calendar-container .calendar-delete-button:hover {
-  background-color: #ef5350;
-  color: white;
+  background-color: var(--background-modifier-error-hover);
+  color: var(--text-on-accent);
 }
 
 .tasks-calendar-container .fc-button-active {
