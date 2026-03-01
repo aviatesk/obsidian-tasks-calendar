@@ -28,6 +28,9 @@ and this project adheres to
 
 ### Changed
 
+- Reserved `error` log level for unexpected logic errors. Race-condition
+  scenarios (file not found, validation failures) now use `warn`. Added `warn`
+  logs alongside Notice calls in early-return paths.
 - Default `excludedStatuses` is now empty. New calendars show all tasks
   including completed and cancelled ones. Existing calendars are unaffected.
 

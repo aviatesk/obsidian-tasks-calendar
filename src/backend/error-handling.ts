@@ -30,8 +30,10 @@ export default function handleError(
   logger: Logger
 ): void {
   if (error instanceof TaskValidationError) {
+    logger.warn(`${context}: ${error.message}`);
     new Notice(`${context}: ${error.message}`);
   } else if (error instanceof FileOperationError) {
+    logger.warn(`${context}: ${error.message}`);
     new Notice(`${context}: ${error.message}`);
   } else {
     logger.error(`${context}: ${error}`);

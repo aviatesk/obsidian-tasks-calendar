@@ -439,12 +439,14 @@ export class TasksCalendarItemView extends ItemView {
     line?: number
   ): Promise<void> {
     if (!filePath || !newStartDate) {
+      this.logger.warn('Unable to update task: missing required information');
       new Notice('Unable to update task: missing required information');
       return;
     }
 
     const file = this.app.vault.getAbstractFileByPath(filePath);
     if (!file || !(file instanceof TFile)) {
+      this.logger.warn(`File not found: ${filePath}`);
       new Notice(`File not found: ${filePath}`);
       return;
     }
@@ -503,12 +505,14 @@ export class TasksCalendarItemView extends ItemView {
     line?: number
   ): Promise<void> {
     if (!filePath) {
+      this.logger.warn('Unable to update task: missing file information');
       new Notice('Unable to update task: missing file information');
       return;
     }
 
     const file = this.app.vault.getAbstractFileByPath(filePath);
     if (!file || !(file instanceof TFile)) {
+      this.logger.warn(`File not found: ${filePath}`);
       new Notice(`File not found: ${filePath}`);
       return;
     }
@@ -534,12 +538,14 @@ export class TasksCalendarItemView extends ItemView {
     line?: number
   ): Promise<void> {
     if (!filePath) {
+      this.logger.warn('Unable to update task: missing file information');
       new Notice('Unable to update task: missing file information');
       return;
     }
 
     const file = this.app.vault.getAbstractFileByPath(filePath);
     if (!file || !(file instanceof TFile)) {
+      this.logger.warn(`File not found: ${filePath}`);
       new Notice(`File not found: ${filePath}`);
       return;
     }
@@ -600,12 +606,14 @@ export class TasksCalendarItemView extends ItemView {
     line?: number
   ): Promise<boolean> {
     if (!filePath) {
+      this.logger.warn('Unable to update task: missing file information');
       new Notice('Unable to update task: missing file information');
       return false;
     }
 
     const file = this.app.vault.getAbstractFileByPath(filePath);
     if (!file || !(file instanceof TFile)) {
+      this.logger.warn(`File not found: ${filePath}`);
       new Notice(`File not found: ${filePath}`);
       return false;
     }
@@ -712,12 +720,14 @@ export class TasksCalendarItemView extends ItemView {
     const line = newEvent.extendedProps.line;
 
     if (!filePath) {
+      this.logger.warn('Unable to update task: missing file information');
       new Notice('Unable to update task: missing file information');
       return;
     }
 
     const file = this.app.vault.getAbstractFileByPath(filePath);
     if (!file || !(file instanceof TFile)) {
+      this.logger.warn(`File not found: ${filePath}`);
       new Notice(`File not found: ${filePath}`);
       return;
     }
@@ -731,6 +741,7 @@ export class TasksCalendarItemView extends ItemView {
     const wasAllDay = oldEvent.allDay;
 
     if (!newStart) {
+      this.logger.warn('Event without start date cannot be updated');
       new Notice('Event without start date cannot be updated');
       return;
     }
@@ -762,12 +773,14 @@ export class TasksCalendarItemView extends ItemView {
     line?: number
   ): Promise<boolean> {
     if (!filePath) {
+      this.logger.warn('Unable to delete task: missing file information');
       new Notice('Unable to delete task: missing file information');
       return false;
     }
 
     const file = this.app.vault.getAbstractFileByPath(filePath);
     if (!file || !(file instanceof TFile)) {
+      this.logger.warn(`File not found: ${filePath}`);
       new Notice(`File not found: ${filePath}`);
       return false;
     }
@@ -791,6 +804,7 @@ export class TasksCalendarItemView extends ItemView {
         return true;
       }
 
+      this.logger.warn('Failed to delete task');
       new Notice('Failed to delete task');
       return false;
     } catch (error) {
@@ -829,7 +843,7 @@ export class TasksCalendarItemView extends ItemView {
       this.logger.log(`Fetched ${events.length} events`);
       successCallback(events);
     } catch (error) {
-      this.logger.error(`Failed to fetch events: ${error}`);
+      this.logger.warn(`Failed to fetch events: ${error}`);
       failureCallback(error);
     }
   }

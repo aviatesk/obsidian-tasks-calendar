@@ -60,7 +60,7 @@ export function openDatePropertyPicker(params: {
 
         const file = app.vault.getAbstractFileByPath(filePath);
         if (!(file instanceof TFile)) {
-          logger.error(`File not found: ${filePath}`);
+          logger.warn(`File not found: ${filePath}`);
           return;
         }
 

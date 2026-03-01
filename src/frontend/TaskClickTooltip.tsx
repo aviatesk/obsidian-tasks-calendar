@@ -526,7 +526,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
         setIsDeleting(false);
       }
     } catch (error) {
-      logger.error(`Failed to delete task: ${error}`);
+      logger.warn(`Failed to delete task: ${error}`);
       setShowDeleteConfirm(false);
       setIsDeleting(false);
     }
