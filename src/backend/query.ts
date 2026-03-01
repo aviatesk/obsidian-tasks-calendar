@@ -55,12 +55,13 @@ function sourceFilter(
   settings: CalendarSettings,
   isPage: boolean
 ) {
+  const status = source.status ?? ' ';
   const excludedStatuses = settings.excludedStatuses;
-  if (excludedStatuses.length && excludedStatuses.includes(source.status))
+  if (excludedStatuses.length && excludedStatuses.includes(status))
     return false;
 
   const includedStatuses = settings.includedStatuses;
-  if (includedStatuses.length && !includedStatuses.includes(source.status))
+  if (includedStatuses.length && !includedStatuses.includes(status))
     return false;
 
   if (settings.excludedTags.length && source.tags)
@@ -173,7 +174,7 @@ function createEvent(
     filePath,
     taskText,
     line: source.line,
-    status: source.status,
+    status: source.status ?? ' ',
     tags: source.tags,
     priority,
   };

@@ -74,8 +74,8 @@ export function formatStatus(status?: string): string {
 }
 
 // Add a new function to get the appropriate icon component for a status
-export const getStatusIcon = (status: string) => {
-  switch (status.trim().toLowerCase()) {
+export const getStatusIcon = (status: string | null | undefined) => {
+  switch ((status ?? '').trim().toLowerCase()) {
     case '':
     case ' ':
       return Circle; // Todo/Not started
