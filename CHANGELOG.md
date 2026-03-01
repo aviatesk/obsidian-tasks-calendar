@@ -19,6 +19,14 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Recurring task support: add a `[recurrence:: <pattern>]` inline property or
+  `recurrence` frontmatter field to a task, and completing it will automatically
+  create the next occurrence with an updated due date. Supported patterns
+  include `every day`, `every N days/weeks/months/years`, `every weekday`, and
+  `every monday`..`every sunday`.
+
 ## [0.1.2]
 
 ### Added

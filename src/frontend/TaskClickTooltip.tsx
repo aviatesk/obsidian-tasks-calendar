@@ -12,6 +12,7 @@ import {
   Plus,
   Trash2,
   AlertCircle,
+  Repeat,
 } from 'lucide-react';
 import { DateTimePickerModal } from './DateTimePickerModal';
 import { StatusPickerDropdown } from './StatusPickerDropdown';
@@ -55,6 +56,9 @@ interface TaskClickTooltipProps {
   ) => void;
   // Delete task callback
   onDeleteTask?: (filePath: string, line?: number) => Promise<boolean>;
+  // Recurrence
+  recurrence?: string;
+  onUpdateRecurrence?: (newPattern: string) => void;
   // New props for task creation mode
   isCreateMode?: boolean;
   selectedDate?: Date;
@@ -87,6 +91,8 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   onUpdateText,
   onHoverLink,
   onDeleteTask,
+  recurrence,
+  onUpdateRecurrence,
   // New props with defaults
   isCreateMode = false,
   selectedDate,
@@ -132,6 +138,13 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
 
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
+
+  // Recurrence editing state
+  const [isEditingRecurrence, setIsEditingRecurrence] =
+    useState<boolean>(false);
+  const [editedRecurrence, setEditedRecurrence] = useState<string>(
+    recurrence ?? ''
+  );
 
   // Add state for destination selection
   const [selectedDestination, setSelectedDestination] = useState<string>(
@@ -421,6 +434,76 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     );
   };
 
+  const handleRecurrenceSave = () => {
+    if (onUpdateRecurrence) {
+      onUpdateRecurrence(editedRecurrence.trim());
+    }
+    setIsEditingRecurrence(false);
+  };
+
+  const formatRecurrenceDisplay = () => {
+    if (!recurrence && !isEditingRecurrence) return null;
+
+    if (isEditingRecurrence) {
+      return (
+        <div className="task-click-tooltip-info-item">
+          <Repeat
+            size={isMobile ? 18 : 16}
+            className="task-click-tooltip-icon-small"
+          />
+          <div className="task-click-tooltip-recurrence-edit">
+            <input
+              type="text"
+              className="task-click-tooltip-recurrence-input"
+              value={editedRecurrence}
+              onChange={e => setEditedRecurrence(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') handleRecurrenceSave();
+                if (e.key === 'Escape') {
+                  setIsEditingRecurrence(false);
+                  setEditedRecurrence(recurrence ?? '');
+                }
+              }}
+              placeholder="e.g. every week"
+              autoFocus
+            />
+            <button
+              className="task-click-tooltip-recurrence-save"
+              onClick={handleRecurrenceSave}
+              title="Save recurrence"
+            >
+              <Check size={isMobile ? 18 : 16} />
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="task-click-tooltip-info-item">
+        <Repeat
+          size={isMobile ? 18 : 16}
+          className="task-click-tooltip-icon-small"
+        />
+        <span
+          className="task-click-tooltip-info-text"
+          onClick={
+            onUpdateRecurrence
+              ? () => {
+                  setIsEditingRecurrence(true);
+                  setEditedRecurrence(recurrence ?? '');
+                }
+              : undefined
+          }
+          style={onUpdateRecurrence ? { cursor: 'pointer' } : undefined}
+          title={onUpdateRecurrence ? 'Click to edit recurrence' : undefined}
+        >
+          {recurrence}
+        </span>
+      </div>
+    );
+  };
+
   // Delete task handlers
   const handleDeleteClick = () => {
     setShowDeleteConfirm(true);
@@ -641,6 +724,8 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
 
             {formatDateDisplay()}
 
+            {formatRecurrenceDisplay()}
+
             {formatTagsDisplay()}
 
             {!isCreateMode && (
@@ -803,6 +888,8 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           )}
 
           {formatDateDisplay()}
+
+          {formatRecurrenceDisplay()}
 
           {formatTagsDisplay()}
 

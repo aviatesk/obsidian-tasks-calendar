@@ -384,6 +384,15 @@
   text-decoration: line-through;
 }
 
+.tasks-calendar-container .fc-event.tasks-calendar-event-ghost {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.tasks-calendar-container .fc-event.tasks-calendar-event-ghost:hover {
+  filter: none;
+}
+
 /* Task preview popup styles */
 .task-preview-popup {
   position: absolute;
@@ -869,7 +878,35 @@
   transition: color 0.15s ease;
 }
 
-/* Add these styles to your CSS file */
+.task-click-tooltip-recurrence-edit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.task-click-tooltip-recurrence-input {
+  flex: 1;
+  font-size: 0.9em;
+  padding: 2px 6px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  min-width: 0;
+}
+
+.task-click-tooltip-recurrence-save {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-accent);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+
 .task-click-tooltip-tags-container {
   display: flex;
   flex-wrap: wrap;

@@ -9,24 +9,29 @@ easy-to-manage interface.
 
 ## Supported task formats
 
-- Supports tasks defined with basic dates:
+- Tasks with a due date:
   ```
   - [ ] Task description [due:: YYYY-MM-DD]
   ```
-- Supports multi-day tasks:
+- Multi-day tasks:
   ```
   - [ ] Task description [start:: YYYY-MM-DD] [due:: YYYY-MM-DD]
   ```
-- Supports tasks with specific date and time:
+- Tasks with a specific time:
   ```
   - [ ] Task description [due:: YYYY-MM-DDTHH:mm]
   ```
-- Supports file property tasks (using frontmatter):
+- Recurring tasks:
+  ```
+  - [ ] Weekly review [due:: 2026-03-01] [recurrence:: every week]
+  ```
+- File property tasks (using frontmatter):
   ```yaml
   ---
   due: YYYY-MM-DD
-  start: YYYY-MM-DD # Optional for multi-day tasks
-  status: ' ' # optional, empty string means this task is "Incomplete"
+  start: YYYY-MM-DD # optional, for multi-day tasks
+  status: ' ' # optional, empty means "Incomplete"
+  recurrence: every week # optional
   ---
   ```
   The file name becomes the task title, and the entire note becomes a task.
@@ -147,6 +152,24 @@ You can install Tasks Calendar either via
 - **File property tasks** Add status and date properties to your frontmatter to
   treat entire notes as tasks. The file name will display as the task title on
   the calendar.
+
+- **Recurring tasks** Add a `[recurrence:: <pattern>]` property to any task.
+  When the task is marked as completed, a new incomplete task is automatically
+  created with the next due date. The original task stays completed, and the new
+  task appears on the calendar at the next occurrence.
+
+  Supported patterns:
+  - `every day`, `every N days`
+  - `every week`, `every N weeks`
+  - `every month`, `every N months`
+  - `every year`, `every N years`
+  - `every weekday` (Monday through Friday)
+  - `every monday`, `every tuesday`, ..., `every sunday`
+
+  For inline tasks, the new task is inserted on the line immediately after the
+  completed task. For file property tasks, the completed file is renamed to
+  `<name> (completed <date>).md` and a new file with the original name is
+  created with the updated due date.
 
 ## Related plugins
 

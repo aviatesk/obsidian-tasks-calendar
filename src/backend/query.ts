@@ -8,6 +8,7 @@ import {
 } from '../TasksCalendarSettings';
 import { DEFAULT_CALENDAR_SETTINGS } from '../TasksCalendarSettings';
 import { normalizeTag } from './tag';
+import { parseRecurrence, calculateNextDate } from './recurrence';
 
 export interface ExtendedProps {
   filePath: string;
@@ -16,6 +17,8 @@ export interface ExtendedProps {
   status: string;
   priority: number;
   tags: string[];
+  recurrence?: string;
+  isGhost?: boolean;
 }
 
 // Helper function to check if a value is a DateTime object
@@ -170,6 +173,10 @@ function createEvent(
     .replace(/\[[\w\s-]+::\s*[^\]]*\]/g, '') // Remove metadata properties [key::value]
     .trim();
   const filePath = source.path ? source.path : source.file.path;
+  const recurrence = isPage
+    ? (source.file.frontmatter?.recurrence as string | undefined)
+    : (source['recurrence'] as string | undefined);
+
   const extendedProps: ExtendedProps = {
     filePath,
     taskText,
@@ -177,6 +184,7 @@ function createEvent(
     status: source.status ?? ' ',
     tags: source.tags,
     priority,
+    recurrence: typeof recurrence === 'string' ? recurrence : undefined,
   };
   const classNames =
     source.status === '-' ? ['tasks-calendar-event-cancelled'] : [];
@@ -193,6 +201,55 @@ function createEvent(
   };
 }
 
+function maybeCreateGhostEvent(
+  event: EventInput,
+  extendedProps: ExtendedProps
+): EventInput | null {
+  if (!extendedProps.recurrence) return null;
+  if (extendedProps.status === 'x' || extendedProps.status === 'X') return null;
+
+  const start = event.start;
+  if (!start) return null;
+
+  const rule = parseRecurrence(extendedProps.recurrence);
+  if (!rule) return null;
+
+  const startDate =
+    start instanceof Date
+      ? DateTime.fromJSDate(start)
+      : DateTime.fromISO(start as string);
+  if (!startDate.isValid) return null;
+
+  const hasTime =
+    startDate.hour !== 0 || startDate.minute !== 0 || startDate.second !== 0;
+  const isoStr = hasTime
+    ? startDate.toFormat("yyyy-MM-dd'T'HH:mm")
+    : startDate.toISODate()!;
+  const nextDateStr = calculateNextDate(isoStr, rule);
+  const nextDate = DateTime.fromISO(nextDateStr);
+  if (!nextDate.isValid) return null;
+
+  const ghostProps: ExtendedProps = {
+    ...extendedProps,
+    isGhost: true,
+  };
+
+  return {
+    textColor: event.textColor,
+    backgroundColor: event.backgroundColor,
+    display: event.display,
+    classNames: [
+      ...(Array.isArray(event.classNames) ? event.classNames : []),
+      'tasks-calendar-event-ghost',
+    ],
+    title: event.title,
+    start: nextDate.toJSDate(),
+    allDay: event.allDay,
+    editable: false,
+    extendedProps: ghostProps,
+  };
+}
+
 export default function getTasksAsEvents(
   dataviewApi: DataviewApi,
   settings: CalendarSettings
@@ -202,12 +259,27 @@ export default function getTasksAsEvents(
   const query = settings.query || DEFAULT_CALENDAR_SETTINGS.query;
 
   dataviewApi.pages(query).forEach((page: SMarkdownPage) => {
-    if (page && sourceFilter(page, settings, true))
-      events.push(createEvent(page, settings, true));
+    if (page && sourceFilter(page, settings, true)) {
+      const event = createEvent(page, settings, true);
+      events.push(event);
+      const ghost = maybeCreateGhostEvent(
+        event,
+        event.extendedProps as ExtendedProps
+      );
+      if (ghost) events.push(ghost);
+    }
     if (page && page.file.tasks) {
       page.file.tasks
         .filter(task => sourceFilter(task, settings, false))
-        .forEach(task => events.push(createEvent(task, settings, false)));
+        .forEach(task => {
+          const event = createEvent(task, settings, false);
+          events.push(event);
+          const ghost = maybeCreateGhostEvent(
+            event,
+            event.extendedProps as ExtendedProps
+          );
+          if (ghost) events.push(ghost);
+        });
     }
   });
 

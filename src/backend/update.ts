@@ -9,106 +9,240 @@ import {
   cloneTask,
 } from './parse';
 import { getCurrentDateFormatted, formatDateForTask } from './date';
-import { processFileLine, renameFile } from './file-operations';
+import {
+  processFileLine,
+  processFileLineWithInsert,
+  renameFile,
+} from './file-operations';
 import { STATUS_OPTIONS } from './status';
 import { TaskValidationError } from './error-handling';
+import {
+  buildRecurringTaskLine,
+  buildRecurringFrontmatter,
+} from './recurrence';
+
+export interface UpdateStatusResult {
+  recurringTaskCreated: boolean;
+}
 
 /**
- * Update task status in Obsidian document
+ * Update task status in Obsidian document.
  *
- * @param app Obsidian app instance
- * @param file Target file
- * @param line Line number of the task (undefined for frontmatter)
- * @param newStatus New status value
- * @throws TaskValidationError if task validation fails
- * @throws FileOperationError if file operation fails
+ * When a recurring task is completed, a new task instance is automatically
+ * created with the next due date.
  */
 export async function updateTaskStatus(
   app: App,
   file: TFile,
   line: number | undefined,
-  newStatus: string
-): Promise<void> {
-  // Handle frontmatter task property
+  newStatus: string,
+  dateProperty: string,
+  startDateProperty: string
+): Promise<UpdateStatusResult> {
+  const result: UpdateStatusResult = { recurringTaskCreated: false };
+
   if (line === undefined) {
-    await app.fileManager.processFrontMatter(file, frontmatter => {
-      // Get current status
-      const currentStatus = frontmatter.status || '';
+    await updateFrontmatterTaskStatus(
+      app,
+      file,
+      newStatus,
+      dateProperty,
+      startDateProperty,
+      result
+    );
+  } else {
+    await updateInlineTaskStatus(
+      app,
+      file,
+      line,
+      newStatus,
+      dateProperty,
+      startDateProperty,
+      result
+    );
+  }
 
-      // Find status options
-      const oldStatusOption = STATUS_OPTIONS.find(
-        option => option.value === currentStatus
+  return result;
+}
+
+function applyStatusChange(
+  currentStatus: string,
+  newStatus: string,
+  frontmatter: Record<string, unknown>
+): void {
+  const oldStatusOption = STATUS_OPTIONS.find(o => o.value === currentStatus);
+  const newStatusOption = STATUS_OPTIONS.find(o => o.value === newStatus);
+
+  const oldProp = oldStatusOption?.prop;
+  const newProp = newStatusOption?.prop;
+
+  frontmatter.status = newStatus;
+
+  if (
+    oldProp &&
+    oldProp !== newProp &&
+    newStatusOption?.preserveOldProp !== true
+  ) {
+    delete frontmatter[oldProp];
+  }
+
+  if (newProp) {
+    frontmatter[newProp] = getCurrentDateFormatted();
+  }
+}
+
+async function updateFrontmatterTaskStatus(
+  app: App,
+  file: TFile,
+  newStatus: string,
+  dateProperty: string,
+  startDateProperty: string,
+  result: UpdateStatusResult
+): Promise<void> {
+  let savedFrontmatter: Record<string, unknown> | null = null;
+
+  await app.fileManager.processFrontMatter(file, frontmatter => {
+    const currentStatus = (frontmatter.status as string) || '';
+    applyStatusChange(currentStatus, newStatus, frontmatter);
+
+    if (
+      isCompletionStatus(newStatus) &&
+      typeof frontmatter.recurrence === 'string'
+    ) {
+      savedFrontmatter = { ...frontmatter };
+    }
+  });
+
+  if (!savedFrontmatter) return;
+
+  const content = await app.vault.read(file);
+  const bodyMatch = content.match(/^---\n[\s\S]*?\n---\n?([\s\S]*)$/);
+  const body = bodyMatch ? bodyMatch[1] : '';
+
+  const recurring = buildRecurringFrontmatter(
+    savedFrontmatter,
+    body,
+    dateProperty,
+    startDateProperty
+  );
+  if (!recurring) return;
+
+  const nextDueDate = recurring.frontmatter[dateProperty] as string;
+  const safeDueDate = nextDueDate.split('T')[0];
+  const originalName = file.basename;
+  const parentPath = file.parent ? file.parent.path + '/' : '';
+  const newFileName = `${originalName} (${safeDueDate})`;
+  const newFilePath = `${parentPath}${newFileName}.${file.extension}`;
+
+  const newFile = await app.vault.create(newFilePath, recurring.body);
+  await app.fileManager.processFrontMatter(newFile, fm => {
+    Object.assign(fm, recurring.frontmatter);
+  });
+
+  result.recurringTaskCreated = true;
+}
+
+async function updateInlineTaskStatus(
+  app: App,
+  file: TFile,
+  line: number,
+  newStatus: string,
+  dateProperty: string,
+  startDateProperty: string,
+  result: UpdateStatusResult
+): Promise<void> {
+  const needsRecurrence = isCompletionStatus(newStatus);
+
+  if (needsRecurrence) {
+    await processFileLineWithInsert(app.vault, file, line, taskLine => {
+      const updatedLine = applyInlineStatusChange(taskLine, newStatus);
+
+      const parsedCompleted = parseTask(updatedLine);
+      const newTaskLine = buildRecurringTaskLine(
+        parsedCompleted,
+        dateProperty,
+        startDateProperty
       );
-      const newStatusOption = STATUS_OPTIONS.find(
-        option => option.value === newStatus
-      );
 
-      const oldProp = oldStatusOption?.prop;
-      const newProp = newStatusOption?.prop;
-
-      // Update status
-      frontmatter.status = newStatus;
-
-      // Handle old property
-      if (
-        oldProp &&
-        oldProp !== newProp &&
-        newStatusOption?.preserveOldProp !== true
-      ) {
-        delete frontmatter[oldProp];
+      if (newTaskLine) {
+        result.recurringTaskCreated = true;
       }
 
-      // Add new property if needed
-      if (newProp) {
-        const currentDate = getCurrentDateFormatted();
-        frontmatter[newProp] = currentDate;
-      }
+      return {
+        updated: updatedLine,
+        insertAfter: newTaskLine ?? undefined,
+      };
     });
   } else {
-    // Handle regular inline task
     await processFileLine(app.vault, file, line, taskLine => {
-      // Parse the task using our parser - may throw TaskValidationError
-      const parsedTask = parseTask(taskLine);
-
-      // Get the current status and find options
-      const currentStatus = parsedTask.status;
-      const oldStatusOption = STATUS_OPTIONS.find(
-        option => option.value === currentStatus
-      );
-      const newStatusOption = STATUS_OPTIONS.find(
-        option => option.value === newStatus
-      );
-
-      const oldProp = oldStatusOption?.prop;
-      const newProp = newStatusOption?.prop;
-
-      // Update the task status
-      let updatedTask = cloneTask(parsedTask);
-      updatedTask.status = newStatus;
-
-      // Only remove old property if:
-      // 1. It exists
-      // 2. It's different from the new property
-      // 3. The new status does NOT have preserveOldProp set to true
-      if (
-        oldProp &&
-        oldProp !== newProp &&
-        newStatusOption?.preserveOldProp !== true
-      ) {
-        // Remove old property using our helper function
-        updatedTask = removeTaskProperty(updatedTask, oldProp);
-      }
-
-      // Add new property if needed
-      if (newProp) {
-        const currentDate = getCurrentDateFormatted();
-        updatedTask = setTaskProperty(updatedTask, newProp, currentDate);
-      }
-
-      // Reconstruct and return the updated task line
-      return reconstructTask(updatedTask);
+      return applyInlineStatusChange(taskLine, newStatus);
     });
   }
+}
+
+function applyInlineStatusChange(taskLine: string, newStatus: string): string {
+  const parsedTask = parseTask(taskLine);
+
+  const currentStatus = parsedTask.status;
+  const oldStatusOption = STATUS_OPTIONS.find(o => o.value === currentStatus);
+  const newStatusOption = STATUS_OPTIONS.find(o => o.value === newStatus);
+
+  const oldProp = oldStatusOption?.prop;
+  const newProp = newStatusOption?.prop;
+
+  let updatedTask = cloneTask(parsedTask);
+  updatedTask.status = newStatus;
+
+  if (
+    oldProp &&
+    oldProp !== newProp &&
+    newStatusOption?.preserveOldProp !== true
+  ) {
+    updatedTask = removeTaskProperty(updatedTask, oldProp);
+  }
+
+  if (newProp) {
+    updatedTask = setTaskProperty(
+      updatedTask,
+      newProp,
+      getCurrentDateFormatted()
+    );
+  }
+
+  return reconstructTask(updatedTask);
+}
+
+function isCompletionStatus(status: string): boolean {
+  return status === 'x' || status === 'X';
+}
+
+export async function updateTaskRecurrence(
+  app: App,
+  file: TFile,
+  line: number | undefined,
+  newRecurrence: string
+): Promise<void> {
+  if (line === undefined) {
+    await app.fileManager.processFrontMatter(file, frontmatter => {
+      if (newRecurrence) {
+        frontmatter.recurrence = newRecurrence;
+      } else {
+        delete frontmatter.recurrence;
+      }
+    });
+    return;
+  }
+
+  await processFileLine(app.vault, file, line, taskLine => {
+    const parsedTask = parseTask(taskLine);
+    let updatedTask = cloneTask(parsedTask);
+    if (newRecurrence) {
+      updatedTask = setTaskProperty(updatedTask, 'recurrence', newRecurrence);
+    } else {
+      updatedTask = removeTaskProperty(updatedTask, 'recurrence');
+    }
+    return reconstructTask(updatedTask);
+  });
 }
 
 /**
