@@ -46,7 +46,6 @@ jobs:
           tag="${GITHUB_REF#refs/tags/}"
 
           gh release create "$tag" \
-            --title="$tag" \
-            --draft \
+            --title="v$tag" \
             --notes-file release_notes.txt \
             main.js manifest.json styles.css
