@@ -26,9 +26,7 @@
 .tasks-calendar-container .calendar-add-button,
 .tasks-calendar-container .calendar-settings-button,
 .tasks-calendar-container .calendar-delete-button,
-.tasks-calendar-container .calendar-action-button,
-.status-add-button,
-.status-reset-button {
+.tasks-calendar-container .calendar-action-button {
   background-color: var(--background-secondary);
   color: var(--text-normal);
   border: 1px solid var(--background-modifier-border);
@@ -46,9 +44,7 @@
 .tasks-calendar-container .calendar-add-button:hover,
 .tasks-calendar-container .calendar-settings-button:hover,
 .tasks-calendar-container .calendar-delete-button:hover,
-.tasks-calendar-container .calendar-action-button:hover,
-.status-add-button:hover,
-.status-reset-button:hover {
+.tasks-calendar-container .calendar-action-button:hover {
   background-color: var(--background-modifier-hover);
   color: var(--text-accent);
 }
@@ -393,62 +389,6 @@
   filter: none;
 }
 
-/* Task preview popup styles */
-.task-preview-popup {
-  position: absolute;
-  z-index: 1100;
-  background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  padding: 12px;
-  max-width: 400px;
-  max-height: 300px;
-  overflow-y: auto;
-  color: var(--text-normal);
-  font-size: 0.9em;
-  pointer-events: none; /* Allow mouse to pass through so it doesn't block other elements */
-  animation: fadeIn 0.15s ease-in;
-  word-break: break-word;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.task-preview-content {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.task-preview-file-info {
-  font-size: 0.85em;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--background-modifier-border);
-  padding-bottom: 6px;
-  margin-bottom: 6px;
-}
-
-.task-preview-task-text {
-  font-family: var(--font-monospace);
-  white-space: pre-wrap;
-  font-size: 0.9em;
-  line-height: 1.5;
-}
-
-.task-highlight {
-  background-color: var(--background-modifier-hover);
-  font-weight: bold;
-  border-radius: 4px;
-  padding: 2px 4px;
-}
-
 .workspace-tab-header[data-type='tasks-calendar-view']
   .workspace-tab-header-inner-icon {
   opacity: 0.9;
@@ -475,13 +415,6 @@
 }
 
 /* Calendar Selector Styling */
-.tasks-calendar-container .calendar-selector-wrapper {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  margin-right: 16px;
-}
-
 .tasks-calendar-container .calendar-selector-container {
   position: relative;
   display: flex;
@@ -542,16 +475,6 @@
 .tasks-calendar-container .calendar-selector option {
   font-size: 14px;
   padding: 8px;
-}
-
-.tasks-calendar-container .active-calendar-name {
-  margin-top: 4px;
-  font-size: 0.8em;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 250px;
 }
 
 /* Calendar Actions Styling */
@@ -812,14 +735,6 @@
   padding: 16px;
   max-height: 320px;
   overflow-y: auto;
-}
-
-.task-click-tooltip-text {
-  font-family: var(--font-monospace);
-  white-space: pre-wrap;
-  word-break: break-word;
-  line-height: 1.6;
-  margin-bottom: 8px;
 }
 
 /* Enhanced task click tooltip styles */
@@ -1406,27 +1321,6 @@
 .is-mobile .time-input-with-controls select {
   padding: 8px;
   font-size: 16px;
-}
-
-/* Backdrop for mobile modals */
-.mobile-modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 8000;
-  animation: fadeBackdrop 0.2s ease;
-}
-
-@keyframes fadeBackdrop {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 0.5;
-  }
 }
 
 /* Update the existing selector to not display event time in most places */
