@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Clock, X } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { FIRST_DAY } from 'src/TasksCalendarSettings';
 import { calculateOptimalPosition } from '../backend/position';
 
@@ -47,6 +47,8 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   });
 
   const [isAllDay, setIsAllDay] = useState<boolean>(initialIsAllDay);
+  const [isRange, setIsRange] = useState<boolean>(!!initialEndDate);
+  const awaitingEndDate = useRef<boolean>(false);
   const [hours, setHours] = useState<string>(
     initialStartDate.getHours().toString().padStart(2, '0')
   );
@@ -68,6 +70,8 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   const calendarRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const calendarInstance = useRef<Calendar | null>(null);
+  const isRangeRef = useRef<boolean>(isRange);
+  const startDateRef = useRef<Date>(startDate);
 
   // For time input changes - using a shorter debounce
   const timeInputDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -169,14 +173,28 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   );
 
   // Handle all-day toggle
-  const handleAllDayChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newIsAllDay = e.target.checked;
+  const handleAllDayToggle = useCallback(
+    (newIsAllDay: boolean) => {
       setIsAllDay(newIsAllDay);
       handleDataChange();
     },
     [handleDataChange]
   );
+
+  // Handle range toggle
+  const handleRangeToggle = useCallback(() => {
+    const newIsRange = !isRange;
+    setIsRange(newIsRange);
+    if (newIsRange) {
+      if (!endDate) {
+        awaitingEndDate.current = true;
+      }
+    } else {
+      setEndDate(null);
+      awaitingEndDate.current = false;
+    }
+    handleDataChange();
+  }, [isRange, endDate, handleDataChange]);
 
   // Handle time input changes with a short debounce
   const handleTimeInputChange = useCallback(
@@ -198,11 +216,14 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     []
   );
 
-  // Handle clearing the end date (convert to single-day task)
+  // Handle clearing the end date
   const handleClearEndDate = useCallback(() => {
     setEndDate(null);
+    if (isRange) {
+      awaitingEndDate.current = true;
+    }
     handleDataChange();
-  }, [handleDataChange]);
+  }, [isRange, handleDataChange]);
 
   // Cancel button handler - close the picker without saving
   const handleCancel = useCallback(() => {
@@ -236,6 +257,14 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
       setFinalPosition({ top: 0, left: 0 });
     }
   }, [position, isMobile]);
+
+  // Keep refs in sync with state for calendar callbacks
+  useEffect(() => {
+    isRangeRef.current = isRange;
+  }, [isRange]);
+  useEffect(() => {
+    startDateRef.current = startDate;
+  }, [startDate]);
 
   // Close modal when clicking outside
   useEffect(() => {
@@ -317,25 +346,18 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
           }
         },
         dateClick: info => {
+          // In Range mode, let `select` handle all clicks
+          if (isRangeRef.current) return;
+
           const clickedDate = new Date(info.dateStr);
           clickedDate.setHours(startDate.getHours());
           clickedDate.setMinutes(startDate.getMinutes());
 
-          // If clicked date is the same as start date and we have an end date, clear end date
-          if (
-            clickedDate.toDateString() === startDate.toDateString() &&
-            endDate
-          ) {
-            handleDateChange(startDate, null);
-          } else {
-            // Set as new start date
-            handleDateChange(clickedDate, null);
-          }
+          handleDateChange(clickedDate, null);
 
           updateSelectedDateHighlight();
         },
         select: info => {
-          // Handle date range selection
           const newStartDate = new Date(info.start);
 
           // For FullCalendar, the end date is exclusive but we want to display inclusive dates
@@ -343,21 +365,40 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
           const inclusiveEnd = new Date(exclusiveEnd);
           inclusiveEnd.setDate(inclusiveEnd.getDate() - 1);
 
-          // Set time components from current selection
           newStartDate.setHours(startDate.getHours());
           newStartDate.setMinutes(startDate.getMinutes());
 
-          // Only set end date if it's different from start date
-          let newEndDate = null;
-          if (newStartDate.toDateString() !== inclusiveEnd.toDateString()) {
-            newEndDate = inclusiveEnd;
+          const isSingleDayClick =
+            newStartDate.toDateString() === inclusiveEnd.toDateString();
+
+          if (isRangeRef.current) {
+            if (isSingleDayClick) {
+              if (awaitingEndDate.current) {
+                // Set as end date, auto-swap if before start
+                let finalStart = startDateRef.current;
+                let finalEnd = newStartDate;
+                if (newStartDate < finalStart) {
+                  finalEnd = finalStart;
+                  finalStart = newStartDate;
+                }
+                awaitingEndDate.current = false;
+                handleDateChange(finalStart, finalEnd);
+              } else {
+                // New start, clear end, await end again
+                awaitingEndDate.current = true;
+                handleDateChange(newStartDate, null);
+              }
+            } else {
+              // Drag selection sets both start and end
+              awaitingEndDate.current = false;
+              handleDateChange(newStartDate, inclusiveEnd);
+            }
+          } else {
+            // Non-range modes: set as start only
+            handleDateChange(newStartDate, null);
           }
 
-          handleDateChange(newStartDate, newEndDate);
-
-          // Don't unselect after selection (keep visual highlighting)
           calendar.unselect();
-
           updateSelectedDateHighlight();
         },
         datesSet: () => {
@@ -691,169 +732,178 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
   // Done button handler - save changes and close the picker
   const handleDone = useCallback(() => {
-    // Ensure any pending time input changes are saved
     if (timeInputDebounceTimerRef.current) {
       clearTimeout(timeInputDebounceTimerRef.current);
       timeInputDebounceTimerRef.current = null;
     }
 
-    // Get the final date values and send them to the parent
     const { startDate: resultStartDate, endDate: resultEndDate } =
       createResultDates();
 
-    // Pass wasMultiDay flag to help determine if we need to remove startDateProperty
-    // We only need to consider it as "was multi-day" if we're changing to single-day
     const isNowMultiDay = !!resultEndDate;
     const needsMultiDayConversion = wasMultiDay.current && !isNowMultiDay;
 
     onDone(resultStartDate, resultEndDate, isAllDay, needsMultiDayConversion);
   }, [createResultDates, isAllDay, onDone]);
 
-  // Modal title based on selection mode
-  const modalTitle = endDate ? 'Date range' : 'Select date';
+  const renderTimeInputs = (which: 'start' | 'end') => {
+    const isEnd = which === 'end';
+    const label = isEnd ? 'End' : isRange && isMultiDay ? 'Start' : undefined;
+
+    if (isMobile) {
+      return (
+        <div className="date-time-picker-time">
+          {label && (
+            <span className="date-time-picker-time-label">{label}</span>
+          )}
+          <Clock size={18} className="date-time-picker-time-icon" />
+          <div className="time-input-with-controls">
+            <select
+              value={isEnd ? endHours : hours}
+              onChange={e =>
+                isEnd
+                  ? handleEndSelectChange(e.target.value, setEndHours)
+                  : handleSelectChange(e.target.value, setHours)
+              }
+            >
+              {Array.from({ length: 24 }, (_, i) =>
+                i.toString().padStart(2, '0')
+              ).map(val => (
+                <option key={val} value={val}>
+                  {val}
+                </option>
+              ))}
+            </select>
+          </div>
+          <span className="date-time-picker-time-separator">:</span>
+          <div className="time-input-with-controls">
+            <select
+              value={isEnd ? endMinutes : minutes}
+              onChange={e =>
+                isEnd
+                  ? handleEndSelectChange(e.target.value, setEndMinutes)
+                  : handleSelectChange(e.target.value, setMinutes)
+              }
+            >
+              {Array.from({ length: 12 }, (_, i) =>
+                (i * 5).toString().padStart(2, '0')
+              ).map(val => (
+                <option key={val} value={val}>
+                  {val}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="date-time-picker-time">
+        {label && <span className="date-time-picker-time-label">{label}</span>}
+        <Clock size={18} className="date-time-picker-time-icon" />
+        <div className="time-input-with-controls">
+          <input
+            type="text"
+            inputMode="numeric"
+            className="date-time-picker-time-input"
+            value={isEnd ? endHours : hours}
+            onChange={isEnd ? handleEndHoursChange : handleHoursChange}
+            onFocus={isEnd ? handleEndHoursFocus : handleHoursFocus}
+            onBlur={isEnd ? handleEndHoursBlur : handleHoursBlur}
+            maxLength={2}
+            placeholder="00"
+          />
+        </div>
+        <span className="date-time-picker-time-separator">:</span>
+        <div className="time-input-with-controls">
+          <input
+            type="text"
+            inputMode="numeric"
+            className="date-time-picker-time-input"
+            value={isEnd ? endMinutes : minutes}
+            onChange={isEnd ? handleEndMinutesChange : handleMinutesChange}
+            onFocus={isEnd ? handleEndMinutesFocus : handleMinutesFocus}
+            onBlur={isEnd ? handleEndMinutesBlur : handleMinutesBlur}
+            maxLength={2}
+            placeholder="00"
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const renderControls = () => (
+    <div className="date-time-picker-controls">
+      <div className="date-time-picker-control-row">
+        <div className="date-time-picker-segment">
+          <button
+            className={`date-time-picker-segment-button${isAllDay ? ' active' : ''}`}
+            onClick={() => handleAllDayToggle(true)}
+          >
+            All day
+          </button>
+          <button
+            className={`date-time-picker-segment-button${!isAllDay ? ' active' : ''}`}
+            onClick={() => handleAllDayToggle(false)}
+          >
+            Time
+          </button>
+        </div>
+        <button
+          className={`date-time-picker-range-toggle${isRange ? ' active' : ''}`}
+          onClick={handleRangeToggle}
+        >
+          Range
+        </button>
+      </div>
+
+      {isRange && endDate && (
+        <div className="date-range-summary">
+          <div>
+            <strong>
+              {startDate.toLocaleDateString()} - {endDate.toLocaleDateString()}
+            </strong>
+          </div>
+          <button
+            className="date-range-clear"
+            onClick={handleClearEndDate}
+            title="Clear end date"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
+      {!isAllDay && (
+        <>
+          {renderTimeInputs('start')}
+          {isRange && isMultiDay && renderTimeInputs('end')}
+        </>
+      )}
+
+      <div className="date-time-picker-actions">
+        <button
+          className="date-time-picker-cancel-button"
+          onClick={handleCancel}
+        >
+          Cancel
+        </button>
+        <button className="date-time-picker-done-button" onClick={handleDone}>
+          Done
+        </button>
+      </div>
+    </div>
+  );
 
   // Render different container based on mobile or desktop
   return isMobile ? (
     <div className="mobile-modal-overlay">
       <div className="date-time-picker-modal" ref={modalRef}>
-        <div className="date-time-picker-header">
-          <div className="date-time-picker-title">{modalTitle}</div>
-          <div className="date-time-picker-header-buttons">
-            <button
-              className="date-time-picker-close-button"
-              onClick={handleCancel}
-              title="Cancel"
-            >
-              <X size={18} />
-            </button>
-          </div>
-        </div>
-
-        {endDate && (
-          <div className="date-range-summary">
-            <div>
-              <strong>
-                {startDate.toLocaleDateString()} -{' '}
-                {endDate.toLocaleDateString()}
-              </strong>
-            </div>
-            <button
-              className="date-range-clear"
-              onClick={handleClearEndDate}
-              title="Convert to single day"
-            >
-              Clear End Date
-            </button>
-          </div>
-        )}
-
         <div className="date-time-picker-calendar-container">
           <div className="date-time-picker-calendar" ref={calendarRef}></div>
         </div>
-
-        <div className="date-time-picker-time-container">
-          <div className="date-time-picker-all-day">
-            <label>
-              <input
-                type="checkbox"
-                checked={isAllDay}
-                onChange={handleAllDayChange}
-              />
-              All day
-            </label>
-          </div>
-
-          {!isAllDay && (
-            <>
-              <div className="date-time-picker-time">
-                {isMultiDay && (
-                  <span className="date-time-picker-time-label">Start</span>
-                )}
-                <Clock size={18} className="date-time-picker-time-icon" />
-                <div className="time-input-with-controls">
-                  <select
-                    value={hours}
-                    onChange={e => handleSelectChange(e.target.value, setHours)}
-                  >
-                    {Array.from({ length: 24 }, (_, i) =>
-                      i.toString().padStart(2, '0')
-                    ).map(val => (
-                      <option key={val} value={val}>
-                        {val}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <span className="date-time-picker-time-separator">:</span>
-                <div className="time-input-with-controls">
-                  <select
-                    value={minutes}
-                    onChange={e =>
-                      handleSelectChange(e.target.value, setMinutes)
-                    }
-                  >
-                    {Array.from({ length: 12 }, (_, i) =>
-                      (i * 5).toString().padStart(2, '0')
-                    ).map(val => (
-                      <option key={val} value={val}>
-                        {val}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {isMultiDay && (
-                <div className="date-time-picker-time">
-                  <span className="date-time-picker-time-label">End</span>
-                  <Clock size={18} className="date-time-picker-time-icon" />
-                  <div className="time-input-with-controls">
-                    <select
-                      value={endHours}
-                      onChange={e =>
-                        handleEndSelectChange(e.target.value, setEndHours)
-                      }
-                    >
-                      {Array.from({ length: 24 }, (_, i) =>
-                        i.toString().padStart(2, '0')
-                      ).map(val => (
-                        <option key={val} value={val}>
-                          {val}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <span className="date-time-picker-time-separator">:</span>
-                  <div className="time-input-with-controls">
-                    <select
-                      value={endMinutes}
-                      onChange={e =>
-                        handleEndSelectChange(e.target.value, setEndMinutes)
-                      }
-                    >
-                      {Array.from({ length: 12 }, (_, i) =>
-                        (i * 5).toString().padStart(2, '0')
-                      ).map(val => (
-                        <option key={val} value={val}>
-                          {val}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          <div className="date-time-picker-done-container">
-            <button
-              className="date-time-picker-done-button"
-              onClick={handleDone}
-            >
-              Done
-            </button>
-          </div>
-        </div>
+        {renderControls()}
       </div>
     </div>
   ) : (
@@ -865,130 +915,10 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
       }}
       ref={modalRef}
     >
-      <div className="date-time-picker-header">
-        <div className="date-time-picker-title">{modalTitle}</div>
-        <div className="date-time-picker-header-buttons">
-          <button
-            className="date-time-picker-close-button"
-            onClick={handleCancel}
-            title="Cancel"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      </div>
-
-      {endDate && (
-        <div className="date-range-summary">
-          <div>
-            <strong>
-              {startDate.toLocaleDateString()} - {endDate.toLocaleDateString()}
-            </strong>
-          </div>
-          <button
-            className="date-range-clear"
-            onClick={handleClearEndDate}
-            title="Convert to single day"
-          >
-            Clear End Date
-          </button>
-        </div>
-      )}
-
       <div className="date-time-picker-calendar-container">
         <div className="date-time-picker-calendar" ref={calendarRef}></div>
       </div>
-
-      <div className="date-time-picker-time-container">
-        <div className="date-time-picker-all-day">
-          <label>
-            <input
-              type="checkbox"
-              checked={isAllDay}
-              onChange={handleAllDayChange}
-            />
-            All day
-          </label>
-        </div>
-
-        {!isAllDay && (
-          <>
-            <div className="date-time-picker-time">
-              {isMultiDay && (
-                <span className="date-time-picker-time-label">Start</span>
-              )}
-              <Clock size={18} className="date-time-picker-time-icon" />
-              <div className="time-input-with-controls">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  className="date-time-picker-time-input"
-                  value={hours}
-                  onChange={handleHoursChange}
-                  onFocus={handleHoursFocus}
-                  onBlur={handleHoursBlur}
-                  maxLength={2}
-                  placeholder="00"
-                />
-              </div>
-              <span className="date-time-picker-time-separator">:</span>
-              <div className="time-input-with-controls">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  className="date-time-picker-time-input"
-                  value={minutes}
-                  onChange={handleMinutesChange}
-                  onFocus={handleMinutesFocus}
-                  onBlur={handleMinutesBlur}
-                  maxLength={2}
-                  placeholder="00"
-                />
-              </div>
-            </div>
-
-            {isMultiDay && (
-              <div className="date-time-picker-time">
-                <span className="date-time-picker-time-label">End</span>
-                <Clock size={18} className="date-time-picker-time-icon" />
-                <div className="time-input-with-controls">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    className="date-time-picker-time-input"
-                    value={endHours}
-                    onChange={handleEndHoursChange}
-                    onFocus={handleEndHoursFocus}
-                    onBlur={handleEndHoursBlur}
-                    maxLength={2}
-                    placeholder="00"
-                  />
-                </div>
-                <span className="date-time-picker-time-separator">:</span>
-                <div className="time-input-with-controls">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    className="date-time-picker-time-input"
-                    value={endMinutes}
-                    onChange={handleEndMinutesChange}
-                    onFocus={handleEndMinutesFocus}
-                    onBlur={handleEndMinutesBlur}
-                    maxLength={2}
-                    placeholder="00"
-                  />
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        <div className="date-time-picker-done-container">
-          <button className="date-time-picker-done-button" onClick={handleDone}>
-            Done
-          </button>
-        </div>
-      </div>
+      {renderControls()}
     </div>
   );
 };

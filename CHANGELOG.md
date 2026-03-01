@@ -27,6 +27,13 @@ and this project adheres to
   include `every day`, `every N days/weeks/months/years`, `every weekday`, and
   `every monday`..`every sunday`.
 
+### Changed
+
+- Redesigned date-time picker modal: replaced the header and "All day" checkbox
+  with a segmented control (All day / Time) and an independent Range toggle
+  button below the calendar. Cancel and Done buttons are now side-by-side at the
+  bottom. Modal width increased to 340px.
+
 ## [0.1.2]
 
 ### Added
