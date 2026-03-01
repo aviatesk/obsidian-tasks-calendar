@@ -21,7 +21,10 @@ import {
 import TasksCalendarPlugin from './main';
 import { ReactRenderer } from './frontend/ReactRoot';
 import React from 'react';
-import { CalendarFooter } from './frontend/CalendarFooter';
+import {
+  CalendarFooter,
+  CalendarFooterCallbacks,
+} from './frontend/CalendarFooter';
 import { TaskClickTooltip } from './frontend/TaskClickTooltip';
 import getTasksAsEvents from './backend/query';
 import openTask from './backend/open';
@@ -39,9 +42,8 @@ export class TasksCalendarItemView extends ItemView {
   private readonly logger = createLogger('ItemView');
   calendar: Calendar | null = null;
   private resizeObserver: ResizeObserver | null = null;
-  private taskPreviewRenderer: ReactRenderer | null = null;
   private tooltipRenderer: ReactRenderer | null = null;
-  private footerRenderer: ReactRenderer | null = null;
+  private calendarFooter: CalendarFooter | null = null;
   private settings: CalendarSettings = DEFAULT_CALENDAR_SETTINGS;
   private plugin: TasksCalendarPlugin;
   private footerEl: HTMLElement | null = null;
@@ -779,14 +781,9 @@ export class TasksCalendarItemView extends ItemView {
   async onClose() {
     this.closeActiveTooltip();
 
-    if (this.taskPreviewRenderer) {
-      this.taskPreviewRenderer.unmount();
-      this.taskPreviewRenderer = null;
-    }
-
-    if (this.footerRenderer) {
-      this.footerRenderer.unmount();
-      this.footerRenderer = null;
+    if (this.calendarFooter) {
+      this.calendarFooter.destroy();
+      this.calendarFooter = null;
     }
 
     if (this.calendar) {
@@ -815,74 +812,74 @@ export class TasksCalendarItemView extends ItemView {
   private renderFooter() {
     if (!this.footerEl) return;
 
-    if (!this.footerRenderer) {
-      this.footerRenderer = new ReactRenderer(this.footerEl);
+    const callbacks: CalendarFooterCallbacks = {
+      app: this.app,
+      getCalendarSettings: (calendarId: string) => {
+        return this.plugin.configManager.getCalendarSettings(calendarId);
+      },
+      getCalendarsList: () => {
+        return this.plugin.configManager.getCalendarsList();
+      },
+      activeCalendarId: this.settings.id,
+      onCalendarChange: async calendarId => {
+        await this.plugin.configManager.setActiveCalendarId(calendarId);
+
+        this.settings = this.plugin.configManager.getCalendarSettings();
+        if (this.calendar) {
+          this.calendar.changeView(this.settings.viewType);
+          this.calendar.refetchEvents();
+        }
+
+        this.renderFooter();
+      },
+      onCalendarAdd: async () => {
+        const newId = `calendar-${Date.now()}`;
+        const newCalendarSettings: CalendarSettings = {
+          ...DEFAULT_CALENDAR_SETTINGS,
+          id: newId,
+          name: `New Calendar ${this.plugin.configManager.getCalendarsList().length + 1}`,
+        };
+
+        await this.plugin.configManager.addCalendar(newCalendarSettings);
+        await this.plugin.configManager.setActiveCalendarId(newId);
+        this.settings = newCalendarSettings;
+
+        this.renderFooter();
+        if (this.calendar) {
+          this.calendar.refetchEvents();
+        }
+      },
+      onCalendarDelete: async calendarId => {
+        await this.plugin.configManager.deleteCalendar(calendarId);
+
+        this.settings = this.plugin.configManager.getCalendarSettings();
+
+        this.renderFooter();
+        if (this.calendar) {
+          this.calendar.refetchEvents();
+        }
+      },
+      onSettingsChange: async (settings: CalendarSettings) => {
+        this.settings = settings;
+        await this.plugin.configManager.saveCalendarSettings(settings);
+
+        if (this.calendar) {
+          this.calendar.refetchEvents();
+        }
+      },
+      onRefresh: async () => {
+        this.settings = this.plugin.configManager.getCalendarSettings();
+        if (this.calendar) {
+          this.calendar.refetchEvents();
+        }
+      },
+    };
+
+    if (this.calendarFooter) {
+      this.calendarFooter.render(callbacks);
+    } else {
+      this.calendarFooter = new CalendarFooter(this.footerEl, callbacks);
     }
-
-    this.footerRenderer.render(
-      React.createElement(CalendarFooter, {
-        app: this.app,
-        getCalendarSettings: (calendarId: string) => {
-          return this.plugin.configManager.getCalendarSettings(calendarId);
-        },
-        getCalendarsList: () => {
-          return this.plugin.configManager.getCalendarsList();
-        },
-        activeCalendarId: this.settings.id,
-        onCalendarChange: async calendarId => {
-          await this.plugin.configManager.setActiveCalendarId(calendarId);
-
-          this.settings = this.plugin.configManager.getCalendarSettings();
-          if (this.calendar) {
-            this.calendar.changeView(this.settings.viewType);
-            this.calendar.refetchEvents();
-          }
-
-          this.renderFooter();
-        },
-        onCalendarAdd: async () => {
-          const newId = `calendar-${Date.now()}`;
-          const newCalendarSettings: CalendarSettings = {
-            ...DEFAULT_CALENDAR_SETTINGS,
-            id: newId,
-            name: `New Calendar ${this.plugin.configManager.getCalendarsList().length + 1}`,
-          };
-
-          await this.plugin.configManager.addCalendar(newCalendarSettings);
-          await this.plugin.configManager.setActiveCalendarId(newId);
-          this.settings = newCalendarSettings;
-
-          this.renderFooter();
-          if (this.calendar) {
-            this.calendar.refetchEvents();
-          }
-        },
-        onCalendarDelete: async calendarId => {
-          await this.plugin.configManager.deleteCalendar(calendarId);
-
-          this.settings = this.plugin.configManager.getCalendarSettings();
-
-          this.renderFooter();
-          if (this.calendar) {
-            this.calendar.refetchEvents();
-          }
-        },
-        onSettingsChange: async (settings: CalendarSettings) => {
-          this.settings = settings;
-          await this.plugin.configManager.saveCalendarSettings(settings);
-
-          if (this.calendar) {
-            this.calendar.refetchEvents();
-          }
-        },
-        onRefresh: async () => {
-          this.settings = this.plugin.configManager.getCalendarSettings();
-          if (this.calendar) {
-            this.calendar.refetchEvents();
-          }
-        },
-      })
-    );
   }
 
   private showTaskCreationTooltip(
