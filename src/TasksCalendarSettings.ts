@@ -58,10 +58,13 @@ export interface CalendarSettings {
   newTaskFilePaths: string[]; // New setting for multiple task creation file paths
 }
 
+export type LogLevel = 'error' | 'warn' | 'log';
+
 export interface PluginSettings {
   activeCalendar: string;
   calendars: CalendarSettings[];
   autoOpenOnStartup: boolean;
+  logLevel: LogLevel;
 }
 
 export const VIEW_TYPE = 'tasks-calendar-view';
@@ -122,6 +125,7 @@ export const DEFAULT_PLUGIN_SETTINGS: PluginSettings = {
   activeCalendar: 'default',
   calendars: [DEFAULT_CALENDAR_SETTINGS],
   autoOpenOnStartup: true,
+  logLevel: 'warn',
 };
 
 export const AUTO_OPEN_DELAY = 300;

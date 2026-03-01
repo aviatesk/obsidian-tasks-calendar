@@ -10,7 +10,7 @@ import { SettingTab } from './TasksCalendarSettingsTab';
 import { TaskPropertySuggest } from './editor/TaskPropertySuggest';
 import { createDatePropertyExtension } from './editor/DatePropertyDecoration';
 import { createDatePropertyPostProcessor } from './editor/DatePropertyPostProcessor';
-import { createLogger } from './logging';
+import { createLogger, setLogLevel } from './logging';
 import { ConfigManager } from './ConfigManager';
 
 export default class TasksCalendarPlugin extends Plugin {
@@ -24,6 +24,11 @@ export default class TasksCalendarPlugin extends Plugin {
     this.configManager = await ConfigManager.initialize(
       () => this.loadData(),
       data => this.saveData(data)
+    );
+
+    setLogLevel(this.configManager.get('logLevel'));
+    this.configManager.subscribe('logLevel', (_key, value) =>
+      setLogLevel(value)
     );
 
     const dataviewApi = this.dataviewApi;

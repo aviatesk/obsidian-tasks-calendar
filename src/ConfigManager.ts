@@ -43,6 +43,7 @@ export class ConfigManager {
         activeCalendar: settings.activeCalendar,
         calendars: settings.calendars.map(toUserCalendarSettings),
         autoOpenOnStartup: settings.autoOpenOnStartup,
+        logLevel: settings.logLevel,
       };
       await saveData(dataToSave);
     };
@@ -65,6 +66,7 @@ export class ConfigManager {
       autoOpenOnStartup:
         loadedData.autoOpenOnStartup ??
         DEFAULT_PLUGIN_SETTINGS.autoOpenOnStartup,
+      logLevel: loadedData.logLevel ?? DEFAULT_PLUGIN_SETTINGS.logLevel,
     };
 
     return settings;

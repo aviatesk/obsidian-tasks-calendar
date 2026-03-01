@@ -21,6 +21,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Log level setting under **Settings → Advanced**. Defaults to Warning so only
+  warnings and errors appear in the developer console.
+
 ### Changed
 
 - Default `excludedStatuses` is now empty. New calendars show all tasks
