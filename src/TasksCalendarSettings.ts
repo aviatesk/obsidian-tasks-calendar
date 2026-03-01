@@ -107,11 +107,7 @@ export const DEFAULT_CALENDAR_SETTINGS: CalendarSettings = {
   dateProperty: 'due',
   startDateProperty: 'start',
   query: '""',
-  excludedStatuses: [
-    'x', // completed
-    'X', // completed
-    '-', // cancelled
-  ],
+  excludedStatuses: [],
   includedStatuses: [],
   excludedTags: [],
   includedTags: [],

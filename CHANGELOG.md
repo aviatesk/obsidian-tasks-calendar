@@ -21,6 +21,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Default `excludedStatuses` is now empty. New calendars show all tasks
+  including completed and cancelled ones. Existing calendars are unaffected.
+
 ## [0.1.3]
 
 ### Added
