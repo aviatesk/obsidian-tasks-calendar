@@ -8,10 +8,35 @@ and this project adheres to
 
 <!-- links start -->
 
+[0.1.2]:
+  https://github.com/aviatesk/obsidian-tasks-calendar/compare/0.1.1...0.1.2
 [0.1.1]:
   https://github.com/aviatesk/obsidian-tasks-calendar/compare/0.1.0...0.1.1
 
 <!-- links end -->
+
+## [0.1.2]
+
+### Added
+
+- Built-in default styling for cancelled (`-`) and done (`x`/`X`) task statuses
+  with strikethrough and muted colors
+- Active view highlighting in the views dropdown
+- Minified `main.js` output for smaller plugin size
+- Added strikethrough style to cancelled events
+
+### Changed
+
+- Redesigned settings modal list items as compact chips
+- Rewrote calendar settings modal with Obsidian native API
+
+### Fixed
+
+- Fixed null/empty `status` in frontmatter not showing the status section in
+  task tooltip
+- Fixed datetime picker calendar display on mobile
+- Fixed initial calendar rendering misalignment
+- Fixed popover positioning
 
 ## [0.1.1]
 

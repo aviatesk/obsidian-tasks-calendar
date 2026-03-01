@@ -23,6 +23,22 @@ jobs:
           npm install
           npm run build
 
+      - name: Extract changelog
+        id: changelog
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          # Extract the section for this version from CHANGELOG.md
+          # Matches from "## [tag]" until the next "## [" or end of file,
+          # excluding the header line itself
+          awk -v tag="$tag" '
+            BEGIN { found=0 }
+            /^## \[/ {
+              if (found) exit
+              if (index($0, "[" tag "]")) { found=1; next }
+            }
+            found { print }
+          ' CHANGELOG.md > release_notes.txt
+
       - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -32,4 +48,5 @@ jobs:
           gh release create "$tag" \
             --title="$tag" \
             --draft \
+            --notes-file release_notes.txt \
             main.js manifest.json styles.css
