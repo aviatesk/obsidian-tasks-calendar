@@ -82,7 +82,7 @@ export default class TasksCalendarPlugin extends Plugin {
   private async activateView() {
     const { workspace } = this.app;
     const leaves = workspace.getLeavesOfType(VIEW_TYPE);
-    let leaf: WorkspaceLeaf | null = null;
+    let leaf: WorkspaceLeaf | null;
     if (leaves.length > 0) {
       leaf = leaves[0];
     } else {

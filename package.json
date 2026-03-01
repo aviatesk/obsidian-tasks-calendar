@@ -24,17 +24,13 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
+    "@eslint/js": "^10.0.1",
     "@types/luxon": "^3.4.2",
     "@types/node": "^25.3.3",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.46.3",
     "@typescript-eslint/parser": "^8.46.3",
     "builtin-modules": "^5.0.0",
     "esbuild": "^0.27.3",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-unused-imports": "^4.3.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.3.1",
@@ -49,9 +45,6 @@
     "@fullcalendar/daygrid": "^6.1.10",
     "@fullcalendar/interaction": "^6.1.15",
     "@fullcalendar/list": "^6.1.15",
-    "@fullcalendar/timegrid": "^6.1.15",
-    "lucide-react": "^0.575.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "@fullcalendar/timegrid": "^6.1.15"
   }
 }

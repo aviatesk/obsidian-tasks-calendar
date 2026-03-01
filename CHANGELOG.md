@@ -19,6 +19,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Removed React dependency entirely; all UI components now use native
+  Obsidian/DOM APIs, resulting in a significantly smaller bundle
+
 ## [0.1.2]
 
 ### Added
