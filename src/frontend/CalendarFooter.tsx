@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { App } from 'obsidian';
 import { CalendarSettings } from '../TasksCalendarSettings';
 import {
@@ -34,27 +34,17 @@ export const CalendarFooter: React.FC<CalendarFooterProps> = ({
   onSettingsChange,
   onRefresh,
 }) => {
-  const [activeSettings, setActiveSettings] = useState<CalendarSettings | null>(
-    null
+  const activeSettings = useMemo(
+    () => getCalendarSettings(activeCalendarId),
+    [activeCalendarId, getCalendarSettings]
   );
   const calendarsList = getCalendarsList();
 
-  useEffect(() => {
-    const settings = getCalendarSettings(activeCalendarId);
-    setActiveSettings(settings);
-  }, [activeCalendarId, getCalendarSettings]);
-
-  const handleSettingsChange = (updatedSettings: CalendarSettings) => {
-    setActiveSettings(updatedSettings);
-    onSettingsChange(updatedSettings);
-  };
-
   const openSettingsModal = () => {
-    if (!activeSettings) return;
     new CalendarSettingsModal(
       app,
       activeSettings,
-      handleSettingsChange,
+      onSettingsChange,
       activeSettings.id !== 'default'
         ? () => onCalendarDelete(activeSettings.id)
         : undefined
