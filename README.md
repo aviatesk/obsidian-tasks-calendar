@@ -24,7 +24,6 @@ easy-to-manage interface.
 - Supports file property tasks (using frontmatter):
   ```yaml
   ---
-  ---
   due: YYYY-MM-DD
   start: YYYY-MM-DD # Optional for multi-day tasks
   status: ' ' # optional, empty string means this task is "Incomplete"
