@@ -7,7 +7,7 @@ calendar. By integrating with the
 automatically gathers tasks from your notes and presents them in a flexible,
 easy-to-manage interface.
 
-## Supported Task Formats
+## Supported task formats
 
 - Supports tasks defined with basic dates:
   ```
@@ -35,24 +35,24 @@ That's it. You are free to write your tasks wherever you want.
 
 ## Features
 
-- **Dynamic Task Aggregation**: Scans your vault for tasks regardless of
+- **Dynamic task aggregation**: Scans your vault for tasks regardless of
   location.
   - Customizable Dataview queries to filter target files
   - Filter tasks by status or tags
   - Supports multi-day tasks and events with specific times
 
-- **Interactive Calendar Interface**: Offers multiple views: Month, Week, 3
+- **Interactive calendar interface**: Offers multiple views: Month, Week, 3
   Days, Day, and List.
   - Drag & drop to update task dates
   - Intuitive tooltips and popovers for quick task edits
 
-- **Customization Options**: Configure calendar settings such as view type,
+- **Customization options**: Configure calendar settings such as view type,
   first day of the week, and date properties. Manage multiple calendars with
   individual settings.
 
 ## Preview
 
-### Calendar Views
+### Calendar views
 
 <div align="center">
   <table>
@@ -71,7 +71,7 @@ That's it. You are free to write your tasks wherever you want.
   </table>
 </div>
 
-### Task Management
+### Task management
 
 <div align="center">
   <table>
@@ -115,18 +115,18 @@ That's it. You are free to write your tasks wherever you want.
 
 ## Usage
 
-- **Opening the Calendar** Use the ribbon icon or the `Open Tasks Calendar`
+- **Opening the calendar** Use the ribbon icon or the `Open Tasks Calendar`
   command. The calendar view opens automatically on startup after a brief delay.
 
-- **Interacting with Tasks** Click a task to update its details, or drag & drop
+- **Interacting with tasks** Click a task to update its details, or drag & drop
   to adjust dates. The view refreshes automatically when tasks are updated in
   your vault.
 
-- **File Property Tasks** Add status and date properties to your frontmatter to
+- **File property tasks** Add status and date properties to your frontmatter to
   treat entire notes as tasks. The file name will display as the task title on
   the calendar.
 
-## Related Plugins
+## Related plugins
 
 ### Comparison with obsidian-full-calendar
 
@@ -140,7 +140,7 @@ is in how tasks are managed:
 | **Task Discovery** | Uses Dataview to scan and aggregate tasks                           | Relies on dedicated note properties      |
 | **Philosophy**     | Freedom to organize tasks in any note structure                     | Structured approach with dedicated notes |
 
-### Compatibility with Tasks Plugin
+### Compatibility with Tasks plugin
 
 Tasks Calendar works seamlessly with the
 [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin as both
@@ -152,7 +152,7 @@ share similar philosophies for task management:
 - Use Tasks Calendar for visual calendar representation and simple task
   management
 
-### Feature Parity Note
+### Feature parity note
 
 Tasks Calendar is not intended to be a direct replacement for
 obsidian-full-calendar. Certain obsidian-full-calendar features (like Google
