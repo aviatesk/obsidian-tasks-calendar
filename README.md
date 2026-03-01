@@ -102,16 +102,38 @@ That's it. You are free to write your tasks wherever you want.
   </table>
 </div>
 
+## Requirements
+
+- [Obsidian](https://obsidian.md/) v1.8.0+
+- [Dataview](https://blacksmithgu.github.io/obsidian-dataview/) plugin installed
+  and enabled
+
 ## Installation
 
-1. Ensure the [Dataview](https://blacksmithgu.github.io/obsidian-dataview/)
-   plugin is installed.
-2. Run `npm install && npm run build` to generate the `main.js` file.
-3. Copy `main.js`, `styles.css`, and `manifest.json` to:
-   ```
-   VaultFolder/.obsidian/plugins/tasks-calendar/
-   ```
-4. Enable the plugin via Obsidian’s settings.
+### 1. Install the plugin
+
+You can install Tasks Calendar either via
+
+- **BRAT:**
+  1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) from the
+     community plugins
+  2. Open BRAT settings and select **Add Beta plugin**
+  3. Enter `https://github.com/aviatesk/obsidian-tasks-calendar` and click **Add
+     Plugin**
+
+- **Manual installation** (requires Node.js 18+):
+  ```bash
+  git clone https://github.com/aviatesk/obsidian-tasks-calendar.git
+  cd obsidian-tasks-calendar
+  npm install
+  npm run build
+  cp main.js manifest.json styles.css /path/to/your/vault/.obsidian/plugins/tasks-calendar/
+  ```
+
+### 2. Enable the plugin
+
+1. Open Obsidian and go to **Settings → Community plugins**
+2. Enable **Tasks Calendar** from your installed plugins list
 
 ## Usage
 
