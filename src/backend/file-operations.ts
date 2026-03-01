@@ -70,6 +70,49 @@ export async function processFileLine(
 }
 
 /**
+ * Process a specific line in a file, optionally inserting a new line after it.
+ *
+ * The processor returns the updated line and an optional `insertAfter` string.
+ * When `insertAfter` is provided, it is spliced in immediately after the
+ * processed line within a single `vault.process()` call (atomic operation).
+ */
+export async function processFileLineWithInsert(
+  vault: Vault,
+  file: TFile,
+  line: number,
+  processor: (lineContent: string) => { updated: string; insertAfter?: string }
+): Promise<{ original: string; updated: string; changed: boolean }> {
+  let result = { original: '', updated: '', changed: false };
+
+  await vault.process(file, content => {
+    const lines = content.split('\n');
+
+    if (line < 0 || line >= lines.length) {
+      throw new FileOperationError(`Invalid line number: ${line}`);
+    }
+
+    result.original = lines[line];
+
+    const processed = processor(lines[line]);
+    result.updated = processed.updated;
+    result.changed =
+      result.original !== result.updated || processed.insertAfter !== undefined;
+
+    if (result.changed) {
+      lines[line] = result.updated;
+      if (processed.insertAfter !== undefined) {
+        lines.splice(line + 1, 0, processed.insertAfter);
+      }
+      return lines.join('\n');
+    }
+
+    return content;
+  });
+
+  return result;
+}
+
+/**
  * Appends content to a file, creating it if it doesn't exist
  *
  * @param vault Obsidian vault instance

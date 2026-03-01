@@ -31,6 +31,8 @@ import openTask from './backend/open';
 import updateTaskDates, {
   updateTaskStatus,
   updateTaskText,
+  updateTaskRecurrence,
+  UpdateStatusResult,
 } from './backend/update';
 import { calculateOptimalPosition } from './backend/position';
 import { createTask } from './backend/create';
@@ -172,6 +174,8 @@ export class TasksCalendarItemView extends ItemView {
         const tags = info.event.extendedProps.tags;
         const status = info.event.extendedProps.status;
         const isAllDay = info.event.allDay;
+        const recurrence = info.event.extendedProps.recurrence;
+        const isGhost = info.event.extendedProps.isGhost;
 
         if (filePath) {
           const tooltipEl = document.createElement('div');
@@ -201,6 +205,8 @@ export class TasksCalendarItemView extends ItemView {
               line: line,
               isAllDay: isAllDay,
               event: info.event,
+              recurrence: recurrence,
+              isGhost: isGhost,
             })
           );
         }
@@ -341,7 +347,11 @@ export class TasksCalendarItemView extends ItemView {
     line?: number;
     isAllDay: boolean;
     event?: EventApi;
+    recurrence?: string;
+    isGhost?: boolean;
   }) {
+    const isGhost = props.isGhost ?? false;
+
     return React.createElement(TaskClickTooltip, {
       taskText: props.taskText || 'Task details not available',
       cleanText: props.cleanText,
@@ -358,18 +368,36 @@ export class TasksCalendarItemView extends ItemView {
       status: props.status,
       line: props.line,
       isAllDay: props.isAllDay,
-      onUpdateDates: (newStartDate, newEndDate, isAllDay, wasMultiDay) => {
-        this.handleTaskDateUpdate(
+      recurrence: props.recurrence,
+      onUpdateDates: isGhost
+        ? undefined
+        : (
+            newStartDate: Date | null,
+            newEndDate: Date | null,
+            isAllDay: boolean,
+            wasMultiDay: boolean
+          ) => {
+            this.handleTaskDateUpdate(
+              props.event || ({} as EventApi),
+              newStartDate,
+              newEndDate,
+              isAllDay,
+              wasMultiDay,
+              props.filePath,
+              props.line
+            );
+          },
+      onUpdateRecurrence: (newPattern: string) => {
+        if (newPattern === (props.recurrence ?? '')) return;
+        this.handleTaskRecurrenceUpdate(
           props.event || ({} as EventApi),
-          newStartDate,
-          newEndDate,
-          isAllDay,
-          wasMultiDay,
+          newPattern,
           props.filePath,
           props.line
         );
       },
-      onUpdateStatus: newStatus => {
+      onUpdateStatus: (newStatus: string) => {
+        if (newStatus === props.status) return;
         this.handleTaskStatusUpdate(
           props.event || ({} as EventApi),
           newStatus,
@@ -377,7 +405,11 @@ export class TasksCalendarItemView extends ItemView {
           props.line
         );
       },
-      onUpdateText: (newText, originalText, taskText) => {
+      onUpdateText: (
+        newText: string,
+        originalText: string,
+        taskText: string
+      ) => {
         return this.handleTaskTextUpdate(
           props.event || ({} as EventApi),
           newText,
@@ -387,7 +419,7 @@ export class TasksCalendarItemView extends ItemView {
           props.line
         );
       },
-      onDeleteTask: (filePath, line) => {
+      onDeleteTask: (filePath: string, line?: number) => {
         return this.handleTaskDeletion(filePath, line);
       },
       onHoverLink: this.onHoverLink,
@@ -464,6 +496,34 @@ export class TasksCalendarItemView extends ItemView {
     }
   }
 
+  private async handleTaskRecurrenceUpdate(
+    _event: EventApi,
+    newPattern: string,
+    filePath: string,
+    line?: number
+  ): Promise<void> {
+    if (!filePath) {
+      new Notice('Unable to update task: missing file information');
+      return;
+    }
+
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!file || !(file instanceof TFile)) {
+      new Notice(`File not found: ${filePath}`);
+      return;
+    }
+
+    try {
+      await updateTaskRecurrence(this.app, file, line, newPattern);
+      new Notice(
+        newPattern ? 'Task recurrence updated' : 'Task recurrence removed'
+      );
+      this.calendar?.refetchEvents();
+    } catch (error) {
+      handleError(error, 'Failed to update task recurrence', this.logger);
+    }
+  }
+
   /**
    * Centralized method to handle task status updates
    */
@@ -485,9 +545,20 @@ export class TasksCalendarItemView extends ItemView {
     }
 
     try {
-      await updateTaskStatus(this.app, file, line, newStatus);
+      const statusResult: UpdateStatusResult = await updateTaskStatus(
+        this.app,
+        file,
+        line,
+        newStatus,
+        this.settings.dateProperty,
+        this.settings.startDateProperty
+      );
 
-      new Notice('Task status updated successfully');
+      if (statusResult.recurringTaskCreated) {
+        new Notice('Task completed — next recurrence created');
+      } else {
+        new Notice('Task status updated successfully');
+      }
 
       if (this.tooltipRenderer && this.activeTooltipEl) {
         this.tooltipRenderer.render(
