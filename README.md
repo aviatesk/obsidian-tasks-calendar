@@ -51,6 +51,13 @@ That's it. You are free to write your tasks wherever you want.
   - Drag & drop to update task dates
   - Intuitive tooltips and popovers for quick task edits
 
+- **Editor helpers**: Assists writing and editing task properties directly in
+  your notes.
+  - Autocomplete for property names and recurrence patterns when typing `[` on a
+    task line
+  - Click any date inline field to open a date picker (works in both live
+    preview and reading view)
+
 - **Customization options**: Configure calendar settings such as view type,
   first day of the week, and date properties. Manage multiple calendars with
   individual settings.
@@ -145,13 +152,26 @@ You can install Tasks Calendar either via
 - **Opening the calendar** Use the ribbon icon or the `Open Tasks Calendar`
   command. The calendar view opens automatically on startup after a brief delay.
 
-- **Interacting with tasks** Click a task to update its details, or drag & drop
-  to adjust dates. The view refreshes automatically when tasks are updated in
-  your vault.
+- **Writing tasks** Add a Dataview inline field `[due:: YYYY-MM-DD]` to any
+  checklist item to make it appear on the calendar. Use `[start:: YYYY-MM-DD]`
+  together with `[due:: YYYY-MM-DD]` for multi-day tasks, or append a time like
+  `[due:: YYYY-MM-DDTHH:mm]` for timed events. Tasks can live anywhere in your
+  vault — the plugin uses Dataview to discover them automatically.
+
+- **Interacting with tasks** Click a task on the calendar to view its details,
+  or drag & drop to adjust dates. The view refreshes automatically when tasks
+  are updated in your vault.
 
 - **File property tasks** Add status and date properties to your frontmatter to
   treat entire notes as tasks. The file name will display as the task title on
   the calendar.
+
+- **Editor helpers** On a task line, type `[` to trigger autocomplete for
+  property names (`due`, `start`, `created`, `completion`, `cancelled`,
+  `recurrence`). Date properties are pre-filled with today's date; recurrence
+  values offer pattern suggestions like `every week`. Clicking a date inline
+  field (e.g., `[due:: 2026-03-01]`) in either live preview or reading view
+  opens a date picker to update the value in place.
 
 - **Recurring tasks** Add a `[recurrence:: <pattern>]` property to any task.
   When the task is marked as completed, a new incomplete task is automatically

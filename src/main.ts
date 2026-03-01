@@ -8,6 +8,8 @@ import {
 import { TasksCalendarItemView } from './TasksCalendarItemView';
 import { SettingTab } from './TasksCalendarSettingsTab';
 import { TaskPropertySuggest } from './editor/TaskPropertySuggest';
+import { createDatePropertyExtension } from './editor/DatePropertyDecoration';
+import { createDatePropertyPostProcessor } from './editor/DatePropertyPostProcessor';
 import { createLogger } from './logging';
 import { ConfigManager } from './ConfigManager';
 
@@ -52,6 +54,13 @@ export default class TasksCalendarPlugin extends Plugin {
 
     this.registerEditorSuggest(
       new TaskPropertySuggest(this.app, this.configManager)
+    );
+
+    this.registerEditorExtension(
+      createDatePropertyExtension(this.app, this.configManager)
+    );
+    this.registerMarkdownPostProcessor(
+      createDatePropertyPostProcessor(this.app, this.configManager)
     );
 
     this.app.workspace.onLayoutReady(() => {
