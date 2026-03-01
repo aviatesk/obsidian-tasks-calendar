@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Check } from 'lucide-react';
-import { DROPDOWN_STATUS_OPTIONS, getStatusIcon } from '../backend/status';
+import { DROPDOWN_STATUS_OPTIONS } from '../backend/status';
+import { getStatusIcon } from './statusIcon';
 import { calculateOptimalPosition } from '../backend/position';
 import { Platform } from 'obsidian';
 

@@ -1,13 +1,3 @@
-import {
-  Circle,
-  CircleChevronRight,
-  CircleSlash,
-  CircleMinus,
-  CircleAlert,
-  CircleHelp,
-  CircleCheck,
-} from 'lucide-react';
-
 /**
  * Interface defining a task status option
  */
@@ -72,26 +62,3 @@ export function formatStatus(status?: string): string {
 
   return status;
 }
-
-// Add a new function to get the appropriate icon component for a status
-export const getStatusIcon = (status: string | null | undefined) => {
-  switch ((status ?? '').trim().toLowerCase()) {
-    case '':
-    case ' ':
-      return Circle; // Todo/Not started
-    case 'x':
-      return CircleCheck; // Complete/Done
-    case '/':
-      return CircleSlash; // In Progress
-    case '-':
-      return CircleMinus; // Cancelled
-    case '>':
-      return CircleChevronRight; // Forwarded/Deferred
-    case '!':
-      return CircleAlert; // Important/Urgent
-    case '?':
-      return CircleHelp; // Question/Maybe
-    default:
-      return Circle; // Default icon
-  }
-};

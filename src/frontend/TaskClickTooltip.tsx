@@ -15,7 +15,8 @@ import {
 } from 'lucide-react';
 import { DateTimePickerModal } from './DateTimePickerModal';
 import { StatusPickerDropdown } from './StatusPickerDropdown';
-import { formatStatus, getStatusIcon } from '../backend/status';
+import { formatStatus } from '../backend/status';
+import { getStatusIcon } from './statusIcon';
 import { Platform } from 'obsidian';
 import { DEFAULT_CALENDAR_SETTINGS } from 'src/TasksCalendarSettings';
 import { createLogger } from '../logging';
