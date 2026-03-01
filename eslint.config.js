@@ -2,8 +2,6 @@ import js from '@eslint/js';
 import typescript from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
 import unusedImports from 'eslint-plugin-unused-imports';
-import react from 'eslint-plugin-react';
-import reactHooks from 'eslint-plugin-react-hooks';
 
 export default [
   js.configs.recommended,
@@ -13,13 +11,12 @@ export default [
   },
 
   {
-    files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx', '**/*.mjs'],
+    files: ['**/*.ts', '**/*.js', '**/*.mjs'],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
-        ecmaFeatures: { jsx: true },
       },
       globals: {
         console: 'readonly',
@@ -39,11 +36,6 @@ export default [
     plugins: {
       '@typescript-eslint': typescript,
       'unused-imports': unusedImports,
-      react: react,
-      'react-hooks': reactHooks,
-    },
-    settings: {
-      react: { version: 'detect' },
     },
     rules: {
       // TypeScript rules
@@ -62,10 +54,6 @@ export default [
 
       // Disable some recommended rules that conflict with TypeScript
       'no-undef': 'off',
-
-      // React rules
-      'react/react-in-jsx-scope': 'off',
-      ...reactHooks.configs.recommended.rules,
     },
   },
 ];

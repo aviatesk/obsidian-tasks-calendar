@@ -1,31 +1,21 @@
-import {
-  Circle,
-  CircleChevronRight,
-  CircleSlash,
-  CircleMinus,
-  CircleAlert,
-  CircleHelp,
-  CircleCheck,
-} from 'lucide-react';
-
-export function getStatusIcon(status: string | null | undefined) {
+export function getStatusIcon(status: string | null | undefined): string {
   switch ((status ?? '').trim().toLowerCase()) {
     case '':
     case ' ':
-      return Circle;
+      return 'circle';
     case 'x':
-      return CircleCheck;
+      return 'circle-check';
     case '/':
-      return CircleSlash;
+      return 'circle-slash';
     case '-':
-      return CircleMinus;
+      return 'circle-minus';
     case '>':
-      return CircleChevronRight;
+      return 'circle-chevron-right';
     case '!':
-      return CircleAlert;
+      return 'circle-alert';
     case '?':
-      return CircleHelp;
+      return 'circle-help';
     default:
-      return Circle;
+      return 'circle';
   }
 }

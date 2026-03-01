@@ -19,13 +19,14 @@ import {
   FIRST_DAY,
 } from './TasksCalendarSettings';
 import TasksCalendarPlugin from './main';
-import { ReactRenderer } from './frontend/ReactRoot';
-import React from 'react';
 import {
   CalendarFooter,
   CalendarFooterCallbacks,
 } from './frontend/CalendarFooter';
-import { TaskClickTooltip } from './frontend/TaskClickTooltip';
+import {
+  TaskClickTooltip,
+  TaskClickTooltipProps,
+} from './frontend/TaskClickTooltip';
 import getTasksAsEvents from './backend/query';
 import openTask from './backend/open';
 import updateTaskDates, {
@@ -42,7 +43,7 @@ export class TasksCalendarItemView extends ItemView {
   private readonly logger = createLogger('ItemView');
   calendar: Calendar | null = null;
   private resizeObserver: ResizeObserver | null = null;
-  private tooltipRenderer: ReactRenderer | null = null;
+  private activeTooltip: TaskClickTooltip | null = null;
   private calendarFooter: CalendarFooter | null = null;
   private settings: CalendarSettings = DEFAULT_CALENDAR_SETTINGS;
   private plugin: TasksCalendarPlugin;
@@ -91,12 +92,12 @@ export class TasksCalendarItemView extends ItemView {
   };
 
   private onHoverLink = (
-    event: React.MouseEvent,
+    event: MouseEvent,
     hoverFilePath: string,
-    hoverLine: number
+    hoverLine?: number
   ) => {
     this.app.workspace.trigger('hover-link', {
-      event: event.nativeEvent,
+      event: event,
       source: HOVER_LINK_SOURCE,
       targetEl: event.currentTarget as HTMLElement,
       hoverParent: {
@@ -186,10 +187,9 @@ export class TasksCalendarItemView extends ItemView {
             tooltipPosition = this.calculateTooltipPosition(info.el, tooltipEl);
           }
 
-          this.tooltipRenderer = new ReactRenderer(tooltipEl);
-
-          this.tooltipRenderer.render(
-            this.createTaskTooltipElement({
+          this.activeTooltip = new TaskClickTooltip(
+            tooltipEl,
+            this.buildTaskTooltipProps({
               taskText: taskText || 'Task details not available',
               cleanText: cleanText,
               filePath: filePath,
@@ -329,7 +329,7 @@ export class TasksCalendarItemView extends ItemView {
     return calculateOptimalPosition(eventEl, tooltipEl, 10);
   }
 
-  private createTaskTooltipElement(props: {
+  private buildTaskTooltipProps(params: {
     taskText: string;
     cleanText: string;
     filePath: string;
@@ -341,57 +341,57 @@ export class TasksCalendarItemView extends ItemView {
     line?: number;
     isAllDay: boolean;
     event?: EventApi;
-  }) {
-    return React.createElement(TaskClickTooltip, {
-      taskText: props.taskText || 'Task details not available',
-      cleanText: props.cleanText,
-      filePath: props.filePath,
-      position: props.position,
+  }): TaskClickTooltipProps {
+    return {
+      taskText: params.taskText || 'Task details not available',
+      cleanText: params.cleanText,
+      filePath: params.filePath,
+      position: params.position,
       onClose: () => this.closeActiveTooltip(),
       onOpenFile: () => {
-        openTask(this.app, props.filePath, props.line);
+        openTask(this.app, params.filePath, params.line);
         this.closeActiveTooltip();
       },
-      startDate: props.startDate,
-      endDate: props.endDate,
-      tags: props.tags,
-      status: props.status,
-      line: props.line,
-      isAllDay: props.isAllDay,
+      startDate: params.startDate,
+      endDate: params.endDate,
+      tags: params.tags,
+      status: params.status,
+      line: params.line,
+      isAllDay: params.isAllDay,
       onUpdateDates: (newStartDate, newEndDate, isAllDay, wasMultiDay) => {
         this.handleTaskDateUpdate(
-          props.event || ({} as EventApi),
+          params.event || ({} as EventApi),
           newStartDate,
           newEndDate,
           isAllDay,
           wasMultiDay,
-          props.filePath,
-          props.line
+          params.filePath,
+          params.line
         );
       },
       onUpdateStatus: newStatus => {
         this.handleTaskStatusUpdate(
-          props.event || ({} as EventApi),
+          params.event || ({} as EventApi),
           newStatus,
-          props.filePath,
-          props.line
+          params.filePath,
+          params.line
         );
       },
       onUpdateText: (newText, originalText, taskText) => {
         return this.handleTaskTextUpdate(
-          props.event || ({} as EventApi),
+          params.event || ({} as EventApi),
           newText,
           originalText,
           taskText,
-          props.filePath,
-          props.line
+          params.filePath,
+          params.line
         );
       },
       onDeleteTask: (filePath, line) => {
         return this.handleTaskDeletion(filePath, line);
       },
       onHoverLink: this.onHoverLink,
-    });
+    };
   }
 
   /**
@@ -436,9 +436,13 @@ export class TasksCalendarItemView extends ItemView {
 
       new Notice('Task date updated successfully');
 
-      if (this.tooltipRenderer && this.activeTooltipEl) {
-        this.tooltipRenderer.render(
-          this.createTaskTooltipElement({
+      if (this.activeTooltipEl) {
+        if (this.activeTooltip) {
+          this.activeTooltip.destroy();
+        }
+        this.activeTooltip = new TaskClickTooltip(
+          this.activeTooltipEl,
+          this.buildTaskTooltipProps({
             taskText:
               event.extendedProps.taskText || 'Task details not available',
             cleanText: event.extendedProps.cleanText || event.title,
@@ -489,9 +493,13 @@ export class TasksCalendarItemView extends ItemView {
 
       new Notice('Task status updated successfully');
 
-      if (this.tooltipRenderer && this.activeTooltipEl) {
-        this.tooltipRenderer.render(
-          this.createTaskTooltipElement({
+      if (this.activeTooltipEl) {
+        if (this.activeTooltip) {
+          this.activeTooltip.destroy();
+        }
+        this.activeTooltip = new TaskClickTooltip(
+          this.activeTooltipEl,
+          this.buildTaskTooltipProps({
             taskText:
               event.extendedProps.taskText || 'Task details not available',
             cleanText: event.extendedProps.cleanText || event.title,
@@ -551,7 +559,7 @@ export class TasksCalendarItemView extends ItemView {
       if (newFilePath) {
         new Notice('Task text updated successfully');
 
-        if (this.tooltipRenderer && this.activeTooltipEl) {
+        if (this.activeTooltipEl) {
           const updatedEvent = { ...event };
           updatedEvent.title = newText;
           updatedEvent.extendedProps = {
@@ -559,8 +567,12 @@ export class TasksCalendarItemView extends ItemView {
             cleanText: newText,
           };
 
-          this.tooltipRenderer.render(
-            this.createTaskTooltipElement({
+          if (this.activeTooltip) {
+            this.activeTooltip.destroy();
+          }
+          this.activeTooltip = new TaskClickTooltip(
+            this.activeTooltipEl,
+            this.buildTaskTooltipProps({
               taskText: taskText.replace(originalText, newText),
               cleanText: newText,
               filePath: newFilePath,
@@ -729,9 +741,9 @@ export class TasksCalendarItemView extends ItemView {
   }
 
   private closeActiveTooltip() {
-    if (this.tooltipRenderer) {
-      this.tooltipRenderer.unmount();
-      this.tooltipRenderer = null;
+    if (this.activeTooltip) {
+      this.activeTooltip.destroy();
+      this.activeTooltip = null;
     }
 
     if (this.activeTooltipEl) {
@@ -919,50 +931,35 @@ export class TasksCalendarItemView extends ItemView {
       }
     }
 
-    this.tooltipRenderer = new ReactRenderer(tooltipEl);
-
-    this.tooltipRenderer.render(
-      React.createElement(TaskClickTooltip, {
-        taskText: '',
-        cleanText: '',
-        filePath: defaultPath,
-        position: tooltipPosition,
-        onClose: () => this.closeActiveTooltip(),
-        onOpenFile: () => {},
-        startDate: date.toISOString(),
-        endDate: undefined,
-        tags: [],
-        line: 0,
-        isAllDay: isAllDay,
-        status: ' ',
-        isCreateMode: true,
-        selectedDate: date,
-        availableDestinations: availableDestinations,
-        onCreateTask: (
+    this.activeTooltip = new TaskClickTooltip(tooltipEl, {
+      taskText: '',
+      cleanText: '',
+      filePath: defaultPath,
+      position: tooltipPosition,
+      onClose: () => this.closeActiveTooltip(),
+      onOpenFile: () => {},
+      startDate: date.toISOString(),
+      endDate: undefined,
+      tags: [],
+      line: 0,
+      isAllDay: isAllDay,
+      status: ' ',
+      isCreateMode: true,
+      selectedDate: date,
+      availableDestinations: availableDestinations,
+      onCreateTask: (text, startDate, endDate, isAllDay, status, targetPath) =>
+        this.handleTaskCreation(
           text,
           startDate,
           endDate,
           isAllDay,
           status,
           targetPath
-        ) =>
-          this.handleTaskCreation(
-            text,
-            startDate,
-            endDate,
-            isAllDay,
-            status,
-            targetPath
-          ),
-        onUpdateDates: (..._) => {
-          return Promise.resolve(true);
-        },
-        onUpdateStatus: _ => {
-          return Promise.resolve();
-        },
-        onHoverLink: this.onHoverLink,
-        onUpdateText: () => Promise.resolve(false),
-      })
-    );
+        ),
+      onUpdateDates: () => {},
+      onUpdateStatus: () => {},
+      onHoverLink: this.onHoverLink,
+      onUpdateText: () => Promise.resolve(false),
+    });
   }
 }
