@@ -9,7 +9,9 @@ and this project adheres to
 <!-- links start -->
 
 [Unreleased]:
-  https://github.com/aviatesk/obsidian-tasks-calendar/compare/0.1.3...HEAD
+  https://github.com/aviatesk/obsidian-tasks-calendar/compare/0.1.4...HEAD
+[0.1.4]:
+  https://github.com/aviatesk/obsidian-tasks-calendar/compare/0.1.3...0.1.4
 [0.1.3]:
   https://github.com/aviatesk/obsidian-tasks-calendar/compare/0.1.2...0.1.3
 [0.1.2]:
@@ -20,6 +22,8 @@ and this project adheres to
 <!-- links end -->
 
 ## [Unreleased]
+
+## [0.1.4]
 
 ### Added
 

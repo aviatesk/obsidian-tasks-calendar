@@ -1,7 +1,7 @@
 {
   "id": "tasks-calendar",
   "name": "Tasks Calendar",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "minAppVersion": "1.8.0",
   "description": "Visualize tasks on an interactive calendar powered by FullCalendar and Dataview.",
   "author": "Shuhei Kadowaki",
