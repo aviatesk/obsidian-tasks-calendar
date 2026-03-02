@@ -25,6 +25,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Addressed Obsidian plugin guideline compliance issues flagged by
+  [`eslint-plugin-obsidian`](https://github.com/obsidianmd/eslint-plugin):
+  eliminated `any` types, fixed floating promises, enforced sentence case in UI
+  text, and replaced direct style manipulation with CSS classes.
+
 ## [0.1.5]
 
 ### Changed

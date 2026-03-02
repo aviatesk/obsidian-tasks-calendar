@@ -1,4 +1,7 @@
 import { App, MarkdownPreviewView, MarkdownView, Platform } from 'obsidian';
+import { createLogger } from '../logging';
+
+const logger = createLogger('open');
 
 export default function openTask(app: App, filePath: string, line?: number) {
   const leaves = app.workspace.getLeavesOfType('markdown');
@@ -11,15 +14,30 @@ export default function openTask(app: App, filePath: string, line?: number) {
   });
 
   if (existingLeaf) {
-    return app.workspace.revealLeaf(existingLeaf).then(() => {
-      handleLineNavigation(app, line, existingLeaf.view as MarkdownView);
-      app.workspace.setActiveLeaf(existingLeaf);
-    });
+    void app.workspace
+      .revealLeaf(existingLeaf)
+      .then(() => {
+        handleLineNavigation(app, line, existingLeaf.view as MarkdownView);
+        app.workspace.setActiveLeaf(existingLeaf);
+      })
+      .catch(error => {
+        logger.error(
+          `Failed to reveal leaf: ${error instanceof Error ? error.message : String(error)}`
+        );
+      });
+    return;
   }
 
-  app.workspace.openLinkText(filePath, '', true).then(async () => {
-    handleLineNavigation(app, line);
-  });
+  void app.workspace
+    .openLinkText(filePath, '', true)
+    .then(() => {
+      handleLineNavigation(app, line);
+    })
+    .catch(error => {
+      logger.error(
+        `Failed to open file: ${error instanceof Error ? error.message : String(error)}`
+      );
+    });
 }
 
 function handleLineNavigation(

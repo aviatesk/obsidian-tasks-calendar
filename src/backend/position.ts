@@ -13,8 +13,7 @@ export function calculateOptimalPosition(
   const viewportHeight = window.innerHeight;
 
   // Measure modal size after adding to DOM but before making visible
-  modalEl.style.visibility = 'hidden';
-  modalEl.style.display = 'block';
+  modalEl.addClass('tasks-calendar-measuring');
 
   // Get the closest container element (for calendar boundaries)
   const containerEl = targetEl.closest('.tasks-calendar-container');
@@ -69,7 +68,7 @@ export function calculateOptimalPosition(
     // Without this, there could be a flash of content in the wrong position
     modalEl.style.left = `${left}px`;
     modalEl.style.top = `${top}px`;
-    modalEl.style.visibility = 'visible';
+    modalEl.removeClass('tasks-calendar-measuring');
   }, 50);
 
   // Return initial position which will be updated by setTimeout

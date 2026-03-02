@@ -3,6 +3,17 @@
   --tasks-calendar-control-height-mobile: 1.75em;
 }
 
+.tasks-calendar-measuring {
+  visibility: hidden;
+  display: block;
+}
+
+.tasks-calendar-temp-source {
+  position: absolute;
+  width: 100px;
+  height: 20px;
+}
+
 .tasks-calendar-container {
   height: 100%;
   min-height: 300px;

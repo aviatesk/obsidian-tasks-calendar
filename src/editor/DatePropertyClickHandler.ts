@@ -49,7 +49,7 @@ export function openDatePropertyPicker(params: {
       isAllDay,
       position,
       onClose: cleanup,
-      onDone: async (
+      onDone: (
         startDate: Date,
         _endDate: Date | null,
         doneIsAllDay: boolean
@@ -64,20 +64,18 @@ export function openDatePropertyPicker(params: {
           return;
         }
 
-        try {
-          await processFileLine(
-            app.vault,
-            file,
-            lineNumber,
-            (lineContent: string) => {
-              const parsed = parseTask(lineContent);
-              const updated = setTaskProperty(parsed, propertyName, newValue);
-              return reconstructTask(updated);
-            }
-          );
-        } catch (error) {
+        void processFileLine(
+          app.vault,
+          file,
+          lineNumber,
+          (lineContent: string) => {
+            const parsed = parseTask(lineContent);
+            const updated = setTaskProperty(parsed, propertyName, newValue);
+            return reconstructTask(updated);
+          }
+        ).catch(error => {
           handleError(error, 'Failed to update date property', logger);
-        }
+        });
       },
     })
   );

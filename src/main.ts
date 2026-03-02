@@ -59,7 +59,7 @@ export default class TasksCalendarPlugin extends Plugin {
 
     this.addCommand({
       id: 'open',
-      name: 'Open Tasks Calendar',
+      name: 'Open calendar',
       callback: () => this.activateView(),
     });
 
@@ -82,8 +82,8 @@ export default class TasksCalendarPlugin extends Plugin {
     );
 
     this.app.workspace.onLayoutReady(() => {
-      this.addRibbonIcon('lucide-calendar-check', 'Tasks Calendar', () => {
-        this.activateView();
+      this.addRibbonIcon('lucide-calendar-check', 'Tasks calendar', () => {
+        void this.activateView();
       });
 
       this.registerEvent(
@@ -101,7 +101,9 @@ export default class TasksCalendarPlugin extends Plugin {
       );
 
       if (this.configManager.get('autoOpenOnStartup')) {
-        setTimeout(() => this.activateView(), AUTO_OPEN_DELAY);
+        setTimeout(() => {
+          void this.activateView();
+        }, AUTO_OPEN_DELAY);
       }
     });
   }
@@ -130,7 +132,7 @@ export default class TasksCalendarPlugin extends Plugin {
       }
     }
     if (leaf) {
-      workspace.revealLeaf(leaf);
+      await workspace.revealLeaf(leaf);
     }
   }
 }

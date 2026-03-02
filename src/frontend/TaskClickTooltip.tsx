@@ -552,7 +552,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           </button>
           <button
             className="task-click-tooltip-delete-confirm-button"
-            onClick={handleDeleteConfirm}
+            onClick={() => void handleDeleteConfirm()}
             disabled={isDeleting}
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
@@ -598,7 +598,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
             <button
               ref={saveButtonRef}
               className="task-click-tooltip-save-button"
-              onClick={handleTextSave}
+              onClick={() => void handleTextSave()}
               disabled={isSaving || (isCreateMode && !editedText.trim())}
               title={isCreateMode ? 'Create task' : 'Save changes'}
             >

@@ -6,7 +6,7 @@ import {
   TFile,
   Platform,
 } from 'obsidian';
-import { Calendar, EventApi } from '@fullcalendar/core';
+import { Calendar, EventApi, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
@@ -62,7 +62,7 @@ export class TasksCalendarItemView extends ItemView {
   }
 
   getDisplayText(): string {
-    return 'Tasks Calendar';
+    return 'Tasks calendar';
   }
 
   getIcon(): string {
@@ -141,8 +141,8 @@ export class TasksCalendarItemView extends ItemView {
       },
       editable: true,
       dayMaxEvents: true,
-      events: (fetchInfo, successCallback, failureCallback) => {
-        this.fetchCalendarEvents(fetchInfo, successCallback, failureCallback);
+      events: (_fetchInfo, successCallback, failureCallback) => {
+        this.fetchCalendarEvents(successCallback, failureCallback);
       },
       eventOrder: (a: EventApi, b: EventApi) => {
         return a.extendedProps.priority - b.extendedProps.priority > 0 ? -1 : 1;
@@ -155,11 +155,11 @@ export class TasksCalendarItemView extends ItemView {
       },
       eventDrop: info => {
         if (info.event && info.oldEvent)
-          this.handleTaskDateChange(info.event, info.oldEvent);
+          void this.handleTaskDateChange(info.event, info.oldEvent);
       },
       eventResize: info => {
         if (info.event && info.oldEvent)
-          this.handleTaskDateChange(info.event, info.oldEvent);
+          void this.handleTaskDateChange(info.event, info.oldEvent);
       },
       eventClick: info => {
         this.closeActiveTooltip();
@@ -264,7 +264,9 @@ export class TasksCalendarItemView extends ItemView {
                   this.calendar.changeView(view.value);
                   dropdown!.classList.remove('show');
                   this.settings.viewType = view.value;
-                  this.plugin.configManager.saveCalendarSettings(this.settings);
+                  void this.plugin.configManager.saveCalendarSettings(
+                    this.settings
+                  );
                 }
               });
             });
@@ -359,7 +361,7 @@ export class TasksCalendarItemView extends ItemView {
       position: props.position,
       onClose: () => this.closeActiveTooltip(),
       onOpenFile: () => {
-        openTask(this.app, props.filePath, props.line);
+        void openTask(this.app, props.filePath, props.line);
         this.closeActiveTooltip();
       },
       startDate: props.startDate,
@@ -377,7 +379,7 @@ export class TasksCalendarItemView extends ItemView {
             isAllDay: boolean,
             wasMultiDay: boolean
           ) => {
-            this.handleTaskDateUpdate(
+            void this.handleTaskDateUpdate(
               props.event || ({} as EventApi),
               newStartDate,
               newEndDate,
@@ -389,7 +391,7 @@ export class TasksCalendarItemView extends ItemView {
           },
       onUpdateRecurrence: (newPattern: string) => {
         if (newPattern === (props.recurrence ?? '')) return;
-        this.handleTaskRecurrenceUpdate(
+        void this.handleTaskRecurrenceUpdate(
           props.event || ({} as EventApi),
           newPattern,
           props.filePath,
@@ -398,7 +400,7 @@ export class TasksCalendarItemView extends ItemView {
       },
       onUpdateStatus: (newStatus: string) => {
         if (newStatus === props.status) return;
-        this.handleTaskStatusUpdate(
+        void this.handleTaskStatusUpdate(
           props.event || ({} as EventApi),
           newStatus,
           props.filePath,
@@ -825,16 +827,15 @@ export class TasksCalendarItemView extends ItemView {
     }
   }
 
-  private async fetchCalendarEvents(
-    _: any,
-    successCallback: any,
-    failureCallback: any
+  private fetchCalendarEvents(
+    successCallback: (events: EventInput[]) => void,
+    failureCallback: (error: Error) => void
   ) {
     const dataviewApi = this.plugin.dataviewApi;
     if (!dataviewApi) {
       this.logger.warn('Dataview plugin not available');
       new Notice(
-        'Dataview plugin is not available, Tasks Calendar may not work correctly.'
+        'Dataview plugin is not available. Tasks calendar may not work correctly.'
       );
       return failureCallback(new Error('Dataview plugin is not available'));
     }
@@ -906,8 +907,8 @@ export class TasksCalendarItemView extends ItemView {
         return this.plugin.configManager.getCalendarsList();
       },
       activeCalendarId: this.settings.id,
-      onCalendarChange: async calendarId => {
-        await this.plugin.configManager.setActiveCalendarId(calendarId);
+      onCalendarChange: calendarId => {
+        void this.plugin.configManager.setActiveCalendarId(calendarId);
 
         this.settings = this.plugin.configManager.getCalendarSettings();
         if (this.calendar) {
@@ -917,7 +918,7 @@ export class TasksCalendarItemView extends ItemView {
 
         this.renderFooter();
       },
-      onCalendarAdd: async () => {
+      onCalendarAdd: () => {
         const newId = `calendar-${Date.now()}`;
         const newCalendarSettings: CalendarSettings = {
           ...DEFAULT_CALENDAR_SETTINGS,
@@ -925,8 +926,8 @@ export class TasksCalendarItemView extends ItemView {
           name: `New Calendar ${this.plugin.configManager.getCalendarsList().length + 1}`,
         };
 
-        await this.plugin.configManager.addCalendar(newCalendarSettings);
-        await this.plugin.configManager.setActiveCalendarId(newId);
+        void this.plugin.configManager.addCalendar(newCalendarSettings);
+        void this.plugin.configManager.setActiveCalendarId(newId);
         this.settings = newCalendarSettings;
 
         this.renderFooter();
@@ -934,8 +935,8 @@ export class TasksCalendarItemView extends ItemView {
           this.calendar.refetchEvents();
         }
       },
-      onCalendarDelete: async calendarId => {
-        await this.plugin.configManager.deleteCalendar(calendarId);
+      onCalendarDelete: calendarId => {
+        void this.plugin.configManager.deleteCalendar(calendarId);
 
         this.settings = this.plugin.configManager.getCalendarSettings();
 
@@ -944,15 +945,15 @@ export class TasksCalendarItemView extends ItemView {
           this.calendar.refetchEvents();
         }
       },
-      onSettingsChange: async (settings: CalendarSettings) => {
+      onSettingsChange: (settings: CalendarSettings) => {
         this.settings = settings;
-        await this.plugin.configManager.saveCalendarSettings(settings);
+        void this.plugin.configManager.saveCalendarSettings(settings);
 
         if (this.calendar) {
           this.calendar.refetchEvents();
         }
       },
-      onRefresh: async () => {
+      onRefresh: () => {
         this.settings = this.plugin.configManager.getCalendarSettings();
         if (this.calendar) {
           this.calendar.refetchEvents();
@@ -1039,12 +1040,8 @@ export class TasksCalendarItemView extends ItemView {
             status,
             targetPath
           ),
-        onUpdateDates: (..._) => {
-          return Promise.resolve(true);
-        },
-        onUpdateStatus: _ => {
-          return Promise.resolve();
-        },
+        onUpdateDates: () => {},
+        onUpdateStatus: () => {},
         onHoverLink: this.onHoverLink,
         onUpdateText: () => Promise.resolve(false),
       })

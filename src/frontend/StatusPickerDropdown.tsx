@@ -25,13 +25,11 @@ export const StatusPickerDropdown: React.FC<StatusPickerDropdownProps> = ({
   useEffect(() => {
     // Calculate optimal position after the component mounts only for desktop
     if (modalRef.current && !isMobile) {
-      // Create a temporary element to represent the source of the click
-      const sourceEl = document.createElement('div');
-      sourceEl.style.position = 'absolute';
+      const sourceEl = createEl('div', {
+        cls: 'tasks-calendar-temp-source',
+      });
       sourceEl.style.left = `${position.left}px`;
-      sourceEl.style.top = `${position.top - 5}px`; // 5px offset to represent the original element
-      sourceEl.style.width = '100px'; // Approximate width
-      sourceEl.style.height = '20px'; // Approximate height
+      sourceEl.style.top = `${position.top - 5}px`;
       document.body.appendChild(sourceEl);
 
       // Calculate optimal position

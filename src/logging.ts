@@ -23,7 +23,7 @@ export function createLogger(componentName: string): Logger {
   return {
     log: (msg: string) => {
       if (LOG_LEVEL_PRIORITY[currentLevel] >= LOG_LEVEL_PRIORITY['log'])
-        console.log(`${prefix} ${msg}`);
+        console.debug(`${prefix} ${msg}`);
     },
     warn: (msg: string) => {
       if (LOG_LEVEL_PRIORITY[currentLevel] >= LOG_LEVEL_PRIORITY['warn'])

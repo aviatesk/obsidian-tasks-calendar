@@ -17,7 +17,7 @@ export class SettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName('Auto-open on startup')
       .setDesc(
-        'Automatically open the Tasks Calendar view when Obsidian starts'
+        'Automatically open the tasks calendar view when Obsidian starts'
       )
       .addToggle(toggle =>
         toggle

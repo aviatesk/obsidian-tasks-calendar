@@ -21,9 +21,11 @@ export interface ExtendedProps {
   isGhost?: boolean;
 }
 
-// Helper function to check if a value is a DateTime object
-const isDateTime = (value: any): boolean =>
-  value && value.isLuxonDateTime && value.isValid;
+const isDateTime = (value: unknown): boolean => {
+  if (!value || typeof value !== 'object') return false;
+  const obj = value as Record<string, unknown>;
+  return obj.isLuxonDateTime === true && obj.isValid === true;
+};
 
 const ONE_DAY_DIFF = Duration.fromObject({ days: 1 });
 
@@ -46,11 +48,14 @@ function calculateEventPriority(startDate: DateTime) {
   return Math.max(0, Math.min(1, 1 - timeAsDecimal / 24));
 }
 
-// XXX this is unnecessary if we switch to the new datecore package
-function getPageDate(frontMatter: any, dateProperty: string) {
+function getPageDate(
+  frontMatter: Record<string, unknown> | null | undefined,
+  dateProperty: string
+) {
   if (!frontMatter) return undefined;
-  if (!frontMatter[dateProperty]) return undefined;
-  return DateTime.fromISO(frontMatter[dateProperty]);
+  const value = frontMatter[dateProperty];
+  if (!value) return undefined;
+  return DateTime.fromISO(String(value));
 }
 
 function sourceFilter(
@@ -224,7 +229,7 @@ function maybeCreateGhostEvent(
     startDate.hour !== 0 || startDate.minute !== 0 || startDate.second !== 0;
   const isoStr = hasTime
     ? startDate.toFormat("yyyy-MM-dd'T'HH:mm")
-    : startDate.toISODate()!;
+    : (startDate.toISODate() ?? startDate.toFormat('yyyy-MM-dd'));
   const nextDateStr = calculateNextDate(isoStr, rule);
   const nextDate = DateTime.fromISO(nextDateStr);
   if (!nextDate.isValid) return null;

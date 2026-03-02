@@ -237,12 +237,11 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   // Position calculation
   useEffect(() => {
     if (modalRef.current && !isMobile) {
-      const sourceEl = document.createElement('div');
-      sourceEl.style.position = 'absolute';
+      const sourceEl = createEl('div', {
+        cls: 'tasks-calendar-temp-source',
+      });
       sourceEl.style.left = `${position.left}px`;
       sourceEl.style.top = `${position.top - 5}px`;
-      sourceEl.style.width = '100px';
-      sourceEl.style.height = '20px';
       document.body.appendChild(sourceEl);
 
       const optimalPosition = calculateOptimalPosition(
@@ -425,8 +424,8 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
         calendar.destroy();
       };
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally run only on mount
+  }, []);
 
   // Function to highlight the selected date range
   const updateSelectedDateHighlight = useCallback(() => {

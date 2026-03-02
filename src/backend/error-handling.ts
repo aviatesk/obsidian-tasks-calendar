@@ -36,7 +36,9 @@ export default function handleError(
     logger.warn(`${context}: ${error.message}`);
     new Notice(`${context}: ${error.message}`);
   } else {
-    logger.error(`${context}: ${error}`);
+    logger.error(
+      `${context}: ${error instanceof Error ? error.message : String(error)}`
+    );
     new Notice(
       `${context}. An unexpected error occurred. Check the console for details.`
     );

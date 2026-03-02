@@ -97,7 +97,7 @@ export class TaskPropertySuggest extends EditorSuggest<TaskPropertySuggestion> {
     const datePropertyNames = getDatePropertyNames(this.configManager);
     const propertyNames = [...datePropertyNames, 'recurrence'];
     const unique = [...new Set(propertyNames)];
-    const today = DateTime.now().toISODate()!;
+    const today = DateTime.now().toISODate();
 
     return unique
       .filter(name => name.toLowerCase().includes(query))

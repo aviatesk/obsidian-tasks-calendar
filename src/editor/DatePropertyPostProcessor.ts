@@ -162,8 +162,9 @@ function attachPlainTextHandlers(
     const { node, index, fullMatch, key, value, lineNumber } = resolved[i];
     if (lineNumber === null) continue;
 
-    const before = node.textContent!.slice(0, index);
-    const after = node.textContent!.slice(index + fullMatch.length);
+    const text = node.textContent ?? '';
+    const before = text.slice(0, index);
+    const after = text.slice(index + fullMatch.length);
 
     const span = document.createElement('span');
     span.classList.add(CLICKABLE_CLASS);

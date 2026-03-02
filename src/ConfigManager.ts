@@ -1,5 +1,6 @@
 import type {
   PluginSettings,
+  LogLevel,
   CalendarSettings,
   UserCalendarSettings,
 } from './TasksCalendarSettings';
@@ -17,12 +18,13 @@ export type ConfigChangeListener<K extends keyof PluginSettings> = (
   oldValue: PluginSettings[K]
 ) => void;
 
+type UntypedListener = (...args: unknown[]) => void;
+
 export class ConfigManager {
   private readonly logger: Logger = createLogger('ConfigManager');
   private settings: PluginSettings;
   private saveCallback: (settings: PluginSettings) => Promise<void>;
-  private changeListeners: Map<string, Set<ConfigChangeListener<any>>> =
-    new Map();
+  private changeListeners: Map<string, Set<UntypedListener>> = new Map();
 
   private constructor(
     initialSettings: PluginSettings,
@@ -33,8 +35,8 @@ export class ConfigManager {
   }
 
   static async initialize(
-    loadData: () => Promise<any>,
-    saveData: (data: any) => Promise<void>
+    loadData: () => Promise<unknown>,
+    saveData: (data: unknown) => Promise<void>
   ): Promise<ConfigManager> {
     const loadedData = await loadData();
     const settings = ConfigManager.migrateSettings(loadedData);
@@ -50,26 +52,46 @@ export class ConfigManager {
     return new ConfigManager(settings, saveCallback);
   }
 
-  private static migrateSettings(loadedData: any | undefined): PluginSettings {
-    if (!loadedData) {
+  private static isLogLevel(value: unknown): value is LogLevel {
+    return value === 'error' || value === 'warn' || value === 'log';
+  }
+
+  private static isCalendarEntry(
+    value: unknown
+  ): value is UserCalendarSettings {
+    if (!value || typeof value !== 'object') return false;
+    const obj = value as Record<string, unknown>;
+    return typeof obj.id === 'string' && typeof obj.name === 'string';
+  }
+
+  private static migrateSettings(loadedData: unknown): PluginSettings {
+    if (!loadedData || typeof loadedData !== 'object') {
       return { ...DEFAULT_PLUGIN_SETTINGS };
     }
 
-    const settings: PluginSettings = {
-      activeCalendar:
-        loadedData.activeCalendar ?? DEFAULT_PLUGIN_SETTINGS.activeCalendar,
-      calendars: loadedData.calendars
-        ? loadedData.calendars.map((cal: UserCalendarSettings) =>
-            toCalendarSettings(cal)
-          )
-        : DEFAULT_PLUGIN_SETTINGS.calendars,
-      autoOpenOnStartup:
-        loadedData.autoOpenOnStartup ??
-        DEFAULT_PLUGIN_SETTINGS.autoOpenOnStartup,
-      logLevel: loadedData.logLevel ?? DEFAULT_PLUGIN_SETTINGS.logLevel,
-    };
+    const data = loadedData as Record<string, unknown>;
 
-    return settings;
+    const activeCalendar =
+      typeof data.activeCalendar === 'string'
+        ? data.activeCalendar
+        : DEFAULT_PLUGIN_SETTINGS.activeCalendar;
+
+    const calendars = Array.isArray(data.calendars)
+      ? data.calendars
+          .filter(ConfigManager.isCalendarEntry)
+          .map(toCalendarSettings)
+      : DEFAULT_PLUGIN_SETTINGS.calendars;
+
+    const autoOpenOnStartup =
+      typeof data.autoOpenOnStartup === 'boolean'
+        ? data.autoOpenOnStartup
+        : DEFAULT_PLUGIN_SETTINGS.autoOpenOnStartup;
+
+    const logLevel = ConfigManager.isLogLevel(data.logLevel)
+      ? data.logLevel
+      : DEFAULT_PLUGIN_SETTINGS.logLevel;
+
+    return { activeCalendar, calendars, autoOpenOnStartup, logLevel };
   }
 
   get<K extends keyof PluginSettings>(key: K): PluginSettings[K] {
@@ -98,8 +120,8 @@ export class ConfigManager {
     for (const [key, value] of Object.entries(changes)) {
       const k = key as keyof PluginSettings;
       if (this.settings[k] !== value) {
-        (oldValues as any)[k] = this.settings[k];
-        (this.settings as any)[k] = value;
+        (oldValues as unknown as Record<string, unknown>)[k] = this.settings[k];
+        (this.settings as unknown as Record<string, unknown>)[k] = value;
         hasChanges = true;
       }
     }
@@ -126,12 +148,12 @@ export class ConfigManager {
     if (!this.changeListeners.has(keyStr)) {
       this.changeListeners.set(keyStr, new Set());
     }
-    this.changeListeners.get(keyStr)!.add(listener);
+    this.changeListeners.get(keyStr)!.add(listener as UntypedListener);
 
     return () => {
       const listeners = this.changeListeners.get(keyStr);
       if (listeners) {
-        listeners.delete(listener);
+        listeners.delete(listener as UntypedListener);
         if (listeners.size === 0) {
           this.changeListeners.delete(keyStr);
         }
@@ -146,7 +168,8 @@ export class ConfigManager {
   ): void {
     const listeners = this.changeListeners.get(String(key));
     if (listeners) {
-      listeners.forEach(listener => {
+      listeners.forEach(fn => {
+        const listener = fn as ConfigChangeListener<K>;
         try {
           listener(key, value, oldValue);
         } catch (err) {

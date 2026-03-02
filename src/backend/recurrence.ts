@@ -86,7 +86,9 @@ export function calculateNextDate(
     next = dt.plus({ [rule.unit + 's']: rule.interval });
   }
 
-  return hasTime ? next.toFormat("yyyy-MM-dd'T'HH:mm") : next.toISODate()!;
+  return hasTime
+    ? next.toFormat("yyyy-MM-dd'T'HH:mm")
+    : (next.toISODate() ?? next.toFormat('yyyy-MM-dd'));
 }
 
 const STATUS_PROPERTIES = ['completion', 'cancelled', 'deferred'];
@@ -123,7 +125,7 @@ export function buildRecurringTaskLine(
       const hasTime = startDate.includes('T');
       const formatted = hasTime
         ? newStart.toFormat("yyyy-MM-dd'T'HH:mm")
-        : newStart.toISODate()!;
+        : (newStart.toISODate() ?? newStart.toFormat('yyyy-MM-dd'));
       newTask = setTaskProperty(newTask, startDateProperty, formatted);
     }
   }
@@ -172,7 +174,7 @@ export function buildRecurringFrontmatter(
       const hasTime = startDate.includes('T');
       newFm[startDateProperty] = hasTime
         ? newStart.toFormat("yyyy-MM-dd'T'HH:mm")
-        : newStart.toISODate()!;
+        : (newStart.toISODate() ?? newStart.toFormat('yyyy-MM-dd'));
     }
   }
 
