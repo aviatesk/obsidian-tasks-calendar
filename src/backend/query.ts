@@ -54,8 +54,8 @@ function getPageDate(
 ) {
   if (!frontMatter) return undefined;
   const value = frontMatter[dateProperty];
-  if (!value) return undefined;
-  return DateTime.fromISO(String(value));
+  if (typeof value !== 'string') return undefined;
+  return DateTime.fromISO(value);
 }
 
 function sourceFilter(
@@ -267,10 +267,7 @@ export default function getTasksAsEvents(
     if (page && sourceFilter(page, settings, true)) {
       const event = createEvent(page, settings, true);
       events.push(event);
-      const ghost = maybeCreateGhostEvent(
-        event,
-        event.extendedProps as ExtendedProps
-      );
+      const ghost = maybeCreateGhostEvent(event, event.extendedProps);
       if (ghost) events.push(ghost);
     }
     if (page && page.file.tasks) {
@@ -279,10 +276,7 @@ export default function getTasksAsEvents(
         .forEach(task => {
           const event = createEvent(task, settings, false);
           events.push(event);
-          const ghost = maybeCreateGhostEvent(
-            event,
-            event.extendedProps as ExtendedProps
-          );
+          const ghost = maybeCreateGhostEvent(event, event.extendedProps);
           if (ghost) events.push(ghost);
         });
     }

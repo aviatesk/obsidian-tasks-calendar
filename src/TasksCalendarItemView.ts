@@ -70,6 +70,7 @@ export class TasksCalendarItemView extends ItemView {
   }
 
   async onOpen() {
+    await super.onOpen();
     const container = this.containerEl.children[1] as HTMLElement;
     container.empty();
     container.addClass('tasks-calendar-container');
@@ -253,7 +254,7 @@ export class TasksCalendarItemView extends ItemView {
             ];
 
             views.forEach(view => {
-              const option = dropdown!.createDiv({
+              const option = dropdown.createDiv({
                 cls:
                   'view-option' +
                   (view.value === currentView ? ' is-active' : ''),
@@ -262,7 +263,7 @@ export class TasksCalendarItemView extends ItemView {
               option.addEventListener('click', () => {
                 if (this.calendar) {
                   this.calendar.changeView(view.value);
-                  dropdown!.classList.remove('show');
+                  dropdown.classList.remove('show');
                   this.settings.viewType = view.value;
                   void this.plugin.configManager.saveCalendarSettings(
                     this.settings
@@ -865,6 +866,7 @@ export class TasksCalendarItemView extends ItemView {
   }
 
   async onClose() {
+    await super.onClose();
     this.closeActiveTooltip();
 
     if (this.calendarFooter) {

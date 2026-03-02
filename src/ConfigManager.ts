@@ -57,6 +57,7 @@ export class ConfigManager {
   }
 
   private static isCalendarEntry(
+    this: void,
     value: unknown
   ): value is UserCalendarSettings {
     if (!value || typeof value !== 'object') return false;
