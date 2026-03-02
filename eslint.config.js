@@ -12,6 +12,7 @@ export default [
     ignores: ['node_modules/**', 'main.js'],
   },
 
+  // Base config for all JS/TS files
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx', '**/*.mjs'],
     languageOptions: {
@@ -66,6 +67,24 @@ export default [
       // React rules
       'react/react-in-jsx-scope': 'off',
       ...reactHooks.configs.recommended.rules,
+    },
+  },
+
+  // Type-checked rules for plugin source (requires parserOptions.project)
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    languageOptions: {
+      parserOptions: {
+        project: './tsconfig.json',
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/require-await': 'error',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'error',
+      '@typescript-eslint/no-base-to-string': 'error',
+      '@typescript-eslint/unbound-method': 'error',
     },
   },
 ];
