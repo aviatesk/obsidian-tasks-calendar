@@ -25,6 +25,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- External calendar source support: overlay events from local ICS files on the
+  calendar. Configure per-calendar in the settings modal with file path, color,
+  and opacity. Supports standard ICS `VEVENT` entries (all-day and timed events,
+  UTC and timezone-aware datetimes). External events are read-only and visually
+  distinguished by configurable color and opacity. The calendar auto-refreshes
+  when a configured ICS file changes in the vault.
+
 ### Changed
 
 - Addressed Obsidian plugin guideline compliance issues flagged by

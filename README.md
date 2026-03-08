@@ -58,6 +58,10 @@ That's it. You are free to write your tasks wherever you want.
   - Click any date inline field to open a date picker (works in both live
     preview and reading view)
 
+- **External calendar sources**: Overlay events from local ICS files onto the
+  calendar. Configure file path, color, and opacity per source. Events
+  auto-refresh when the ICS file changes in the vault.
+
 - **Customization options**: Configure calendar settings such as view type,
   first day of the week, and date properties. Manage multiple calendars with
   individual settings.
@@ -190,6 +194,16 @@ You can install Tasks Calendar either via
   completed task. For file property tasks, the completed file is renamed to
   `<name> (completed <date>).md` and a new file with the original name is
   created with the updated due date.
+
+- **External calendar sources** You can overlay events from local ICS files onto
+  the calendar. Open a calendar's settings modal and scroll to the "External
+  calendar sources" section. Add an `.ics` file path from your vault, choose a
+  color and opacity, and the events will appear as read-only overlays. The
+  calendar automatically refreshes when a configured ICS file changes.
+
+  The ICS parser supports standard `VEVENT` entries including all-day events,
+  timed events with UTC or timezone-aware datetimes, and RFC 5545 line
+  unfolding.
 
 ## Related plugins
 

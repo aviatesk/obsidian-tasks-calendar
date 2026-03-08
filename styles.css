@@ -400,6 +400,29 @@
   filter: none;
 }
 
+.tasks-calendar-container .fc-event.tasks-calendar-event-external {
+  cursor: default;
+  pointer-events: none;
+}
+
+.tasks-calendar-external-source-swatch {
+  display: inline-block;
+  width: 0.75em;
+  height: 0.75em;
+  border-radius: 50%;
+  margin-right: 0.3em;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.tasks-calendar-external-source-color-input {
+  width: 2em;
+  height: 2em;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+}
+
 .workspace-tab-header[data-type='tasks-calendar-view']
   .workspace-tab-header-inner-icon {
   opacity: 0.9;

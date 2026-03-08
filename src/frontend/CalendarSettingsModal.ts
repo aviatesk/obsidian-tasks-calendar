@@ -2,6 +2,7 @@ import { App, Modal, Setting } from 'obsidian';
 import {
   CalendarSettings,
   DEFAULT_CALENDAR_SETTINGS,
+  ExternalSource,
 } from '../TasksCalendarSettings';
 import { normalizeTag } from '../backend/tag';
 import { ConfirmModal } from './ConfirmModal';
@@ -47,6 +48,7 @@ export class CalendarSettingsModal extends Modal {
     contentEl.empty();
     this.buildBasicSection(contentEl);
     this.buildFilterSection(contentEl);
+    this.buildExternalSourcesSection(contentEl);
     this.buildDangerSection(contentEl);
   }
 
@@ -201,6 +203,121 @@ export class CalendarSettingsModal extends Modal {
             this.buildContent();
           })
       );
+  }
+
+  private buildExternalSourcesSection(el: HTMLElement): void {
+    const DEFAULT_COLOR = '#3788d8';
+    const DEFAULT_OPACITY = 1;
+
+    new Setting(el)
+      .setName('External calendar sources')
+      .setDesc('ICS files from the vault to overlay on the calendar.')
+      .setHeading();
+
+    const sources = this.settings.externalSources;
+
+    for (const source of sources) {
+      const sourceSetting = new Setting(el);
+
+      const swatch = sourceSetting.nameEl.createSpan({
+        cls: 'tasks-calendar-external-source-swatch',
+      });
+      swatch.style.backgroundColor = source.color;
+      swatch.style.opacity = String(source.opacity);
+      sourceSetting.nameEl.appendText(source.path);
+
+      const colorInput = sourceSetting.controlEl.createEl('input', {
+        type: 'color',
+        value: source.color,
+      });
+      colorInput.addClass('tasks-calendar-external-source-color-input');
+      colorInput.addEventListener('input', () => {
+        this.updateExternalSource(source.path, { color: colorInput.value });
+      });
+
+      sourceSetting.addSlider(slider =>
+        slider
+          .setLimits(0.1, 1.0, 0.1)
+          .setValue(source.opacity)
+          .setDynamicTooltip()
+          .onChange(value => {
+            this.updateExternalSource(source.path, { opacity: value });
+          })
+      );
+
+      sourceSetting.addExtraButton(btn =>
+        btn
+          .setIcon('x')
+          .setTooltip('Remove')
+          .onClick(() => {
+            this.update(
+              'externalSources',
+              sources.filter(s => s.path !== source.path)
+            );
+            this.buildContent();
+          })
+      );
+    }
+
+    let newPath = '';
+    let newColor = DEFAULT_COLOR;
+
+    const addSource = () => {
+      const trimmed = newPath.trim();
+      if (trimmed && !sources.some(s => s.path === trimmed)) {
+        const newSource: ExternalSource = {
+          path: trimmed,
+          color: newColor,
+          opacity: DEFAULT_OPACITY,
+        };
+        this.update('externalSources', [...sources, newSource]);
+        this.buildContent();
+      }
+    };
+
+    const setting = new Setting(el);
+    setting
+      .addSearch(search => {
+        search.setPlaceholder('Add .ics file path...').onChange(value => {
+          newPath = value;
+        });
+        search.inputEl.addEventListener('keydown', (e: KeyboardEvent) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            addSource();
+          }
+        });
+        new PathSuggest(
+          this.app,
+          search.inputEl,
+          value => {
+            newPath = value;
+            addSource();
+          },
+          p => p.endsWith('.ics')
+        );
+      })
+      .addButton(btn => btn.setButtonText('Add').onClick(addSource));
+
+    const colorInput = setting.controlEl.createEl('input', {
+      type: 'color',
+      value: DEFAULT_COLOR,
+    });
+    colorInput.addClass('tasks-calendar-external-source-color-input');
+    colorInput.addEventListener('input', () => {
+      newColor = colorInput.value;
+    });
+    setting.controlEl.insertBefore(colorInput, setting.controlEl.firstChild);
+  }
+
+  private updateExternalSource(
+    path: string,
+    changes: Partial<Omit<ExternalSource, 'path'>>
+  ): void {
+    const sources = this.settings.externalSources.map(s =>
+      s.path === path ? { ...s, ...changes } : s
+    );
+    this.update('externalSources', sources);
   }
 
   private buildFilterSection(el: HTMLElement): void {
