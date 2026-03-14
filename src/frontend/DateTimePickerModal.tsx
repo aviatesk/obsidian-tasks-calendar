@@ -296,9 +296,27 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
         initialView: 'dayGridMonth',
         initialDate: startDate,
         headerToolbar: {
-          left: 'prev',
+          left: 'prev,next',
           center: 'title',
-          right: 'next',
+          right: 'selectedDateButton,todayButton',
+        },
+        customButtons: {
+          todayButton: {
+            text: '📅',
+            hint: 'Go to today',
+            click: () => {
+              calendar.today();
+              updateSelectedDateHighlight();
+            },
+          },
+          selectedDateButton: {
+            text: '📌',
+            hint: 'Go to selected date',
+            click: () => {
+              calendar.gotoDate(startDateRef.current);
+              updateSelectedDateHighlight();
+            },
+          },
         },
         height: 'auto',
         contentHeight: 'auto',
@@ -441,10 +459,6 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
       el.classList.remove('fc-day-selected-end');
       el.classList.remove('fc-day-in-range');
     });
-
-    // Remove today highlighting to avoid confusion
-    const todayCells = calendarRef.current.querySelectorAll('.fc-day-today');
-    todayCells.forEach(el => el.classList.remove('fc-day-today'));
 
     // Function to format date for selection
     const formatDateForSelector = (date: Date) => {

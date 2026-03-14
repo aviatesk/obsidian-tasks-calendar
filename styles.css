@@ -965,7 +965,19 @@
 }
 
 .date-time-picker-calendar .fc-daygrid-day.fc-day-today {
-  background-color: transparent;
+  background-color: var(--background-modifier-hover);
+}
+
+.date-time-picker-calendar .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  background-color: var(--text-accent);
+  color: var(--text-on-accent);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px;
 }
 
 .date-time-picker-calendar .fc-daygrid-day-number {
@@ -1618,8 +1630,9 @@
 
 .date-time-picker-calendar .fc-day-selected-start .fc-daygrid-day-number,
 .date-time-picker-calendar .fc-day-selected-end .fc-daygrid-day-number {
-  background-color: var(--text-accent);
-  color: var(--text-on-accent);
+  background-color: transparent;
+  color: var(--text-accent);
+  border: 2px solid var(--text-accent);
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -1627,6 +1640,7 @@
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  margin: 2px;
 }
 
 .date-range-clear {
