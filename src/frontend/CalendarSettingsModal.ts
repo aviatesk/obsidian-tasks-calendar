@@ -211,6 +211,7 @@ export class CalendarSettingsModal extends Modal {
 
     new Setting(el)
       .setName('External calendar sources')
+      // eslint-disable-next-line obsidianmd/ui/sentence-case -- ICS is a standard acronym
       .setDesc('ICS files from the vault to overlay on the calendar.')
       .setHeading();
 
