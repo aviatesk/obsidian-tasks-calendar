@@ -236,12 +236,17 @@ Follow these message format conventions:
 
 ### Versioning & releases
 
-- Bump `version` in `manifest.json` (SemVer) and update `versions.json` to map
-  plugin version → minimum app version.
-- Create a GitHub release whose tag exactly matches `manifest.json`'s `version`.
-  Do not use a leading `v`.
-- Attach `manifest.json`, `main.js`, and `styles.css` (if present) to the
-  release as individual assets.
+- Bump `version` in `manifest.json` and `package.json` (SemVer) and update
+  `versions.json` to map plugin version → minimum app version.
+- Update `CHANGELOG.md`: move the Unreleased section contents into a new version
+  section and update the comparison links.
+- Create a release commit (e.g., `release: X.Y.Z`) and tag it with the version
+  number. The tag must exactly match `manifest.json`'s `version`. Do not use a
+  leading `v`.
+- Push the commit and tag. The `release.yml` GitHub Actions workflow
+  automatically builds the plugin, extracts the changelog, and creates the
+  GitHub release with `manifest.json`, `main.js`, and `styles.css` attached. Do
+  not manually run `gh release create`.
 - After the initial release, follow the process to add/update your plugin in the
   community catalog as required.
 
