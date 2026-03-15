@@ -1,11 +1,11 @@
-import { Platform } from 'obsidian';
+import { type App, Modal, Platform } from 'obsidian';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { Clock } from 'lucide-react';
 import { FIRST_DAY } from 'src/TasksCalendarSettings';
-import { calculateOptimalPosition } from '../backend/position';
+import { ReactRenderer } from './ReactRoot';
 
 interface DateTimePickerModalProps {
   initialStartDate: Date;
@@ -18,7 +18,6 @@ interface DateTimePickerModalProps {
     isAllDay: boolean,
     wasMultiDay: boolean
   ) => void;
-  position: { top: number; left: number };
 }
 
 export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
@@ -27,7 +26,6 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   isAllDay: initialIsAllDay,
   onClose,
   onDone,
-  position,
 }) => {
   // Track whether this was initially a multi-day event
   const wasMultiDay = useRef<boolean>(!!initialEndDate);
@@ -68,7 +66,6 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
   // Refs
   const calendarRef = useRef<HTMLDivElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
   const calendarInstance = useRef<Calendar | null>(null);
   const isRangeRef = useRef<boolean>(isRange);
   const startDateRef = useRef<Date>(startDate);
@@ -82,10 +79,6 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   const [endHoursInputFocused, setEndHoursInputFocused] = useState(false);
   const [endMinutesInputFocused, setEndMinutesInputFocused] = useState(false);
 
-  // Position state
-  const [finalPosition, setFinalPosition] = useState(position);
-
-  // Determine if on mobile or desktop
   const isMobile = Platform.isMobile;
 
   // Create result dates from current state
@@ -224,29 +217,6 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     onClose();
   }, [onClose]);
 
-  // Position calculation
-  useEffect(() => {
-    if (modalRef.current && !isMobile) {
-      const sourceEl = createEl('div', {
-        cls: 'tasks-calendar-temp-source',
-      });
-      sourceEl.style.left = `${position.left}px`;
-      sourceEl.style.top = `${position.top - 5}px`;
-      document.body.appendChild(sourceEl);
-
-      const optimalPosition = calculateOptimalPosition(
-        sourceEl,
-        modalRef.current,
-        10
-      );
-      setFinalPosition(optimalPosition);
-
-      document.body.removeChild(sourceEl);
-    } else if (isMobile) {
-      setFinalPosition({ top: 0, left: 0 });
-    }
-  }, [position, isMobile]);
-
   // Keep refs in sync with state for calendar callbacks
   useEffect(() => {
     isRangeRef.current = isRange;
@@ -255,28 +225,14 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     startDateRef.current = startDate;
   }, [startDate]);
 
-  // Close modal when clicking outside
+  // Clean up pending timeouts on unmount
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        modalRef.current &&
-        !modalRef.current.contains(event.target as Node)
-      ) {
-        // Handle close without saving
-        handleCancel();
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-
-      // Clean up any pending timeout when component unmounts
       if (timeInputDebounceTimerRef.current) {
         clearTimeout(timeInputDebounceTimerRef.current);
       }
     };
-  }, [handleCancel]);
+  }, []);
 
   // Initialize calendar
   useEffect(() => {
@@ -899,25 +855,8 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     </div>
   );
 
-  // Render different container based on mobile or desktop
-  return isMobile ? (
-    <div className="mobile-modal-overlay">
-      <div className="date-time-picker-modal" ref={modalRef}>
-        <div className="date-time-picker-calendar-container">
-          <div className="date-time-picker-calendar" ref={calendarRef}></div>
-        </div>
-        {renderControls()}
-      </div>
-    </div>
-  ) : (
-    <div
-      className="date-time-picker-modal"
-      style={{
-        top: `${finalPosition.top}px`,
-        left: `${finalPosition.left}px`,
-      }}
-      ref={modalRef}
-    >
+  return (
+    <div className="date-time-picker-modal">
       <div className="date-time-picker-calendar-container">
         <div className="date-time-picker-calendar" ref={calendarRef}></div>
       </div>
@@ -925,3 +864,55 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     </div>
   );
 };
+
+interface DateTimePickerNativeModalProps {
+  title?: string;
+  initialStartDate: Date;
+  initialEndDate?: Date | null;
+  isAllDay: boolean;
+  onDone: (
+    startDate: Date,
+    endDate: Date | null,
+    isAllDay: boolean,
+    wasMultiDay: boolean
+  ) => void;
+}
+
+export class DateTimePickerNativeModal extends Modal {
+  private renderer: ReactRenderer | null = null;
+  private readonly props: DateTimePickerNativeModalProps;
+
+  constructor(app: App, props: DateTimePickerNativeModalProps) {
+    super(app);
+    this.props = props;
+    this.modalEl.addClass('tasks-calendar-datetime-picker-modal');
+    if (props.title) this.setTitle(props.title);
+  }
+
+  onOpen(): void {
+    this.renderer = new ReactRenderer(this.contentEl);
+    this.renderer.render(
+      React.createElement(DateTimePickerModal, {
+        initialStartDate: this.props.initialStartDate,
+        initialEndDate: this.props.initialEndDate,
+        isAllDay: this.props.isAllDay,
+        onClose: () => this.close(),
+        onDone: (
+          startDate: Date,
+          endDate: Date | null,
+          isAllDay: boolean,
+          wasMultiDay: boolean
+        ) => {
+          this.props.onDone(startDate, endDate, isAllDay, wasMultiDay);
+          this.close();
+        },
+      })
+    );
+  }
+
+  onClose(): void {
+    this.renderer?.unmount();
+    this.renderer = null;
+    this.contentEl.empty();
+  }
+}

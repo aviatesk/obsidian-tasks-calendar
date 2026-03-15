@@ -1,7 +1,5 @@
-import React from 'react';
 import { type App, TFile } from 'obsidian';
-import { DateTimePickerModal } from '../frontend/DateTimePickerModal';
-import { ReactRenderer } from '../frontend/ReactRoot';
+import { DateTimePickerNativeModal } from '../frontend/DateTimePickerModal';
 import { formatDateForTask } from '../backend/date';
 import { processFileLine } from '../backend/file-operations';
 import {
@@ -36,7 +34,6 @@ export function openDatePropertyPicker(params: {
 }): void {
   const {
     app,
-    targetEl,
     currentValue,
     filePath,
     lineNumber,
@@ -75,78 +72,56 @@ export function openDatePropertyPicker(params: {
       : new Date(isAllDay ? currentValue + 'T00:00:00' : currentValue);
     const initialEndDate = hasRange ? endDate : null;
 
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const renderer = new ReactRenderer(container);
+    new DateTimePickerNativeModal(app, {
+      title: parsed.content || undefined,
+      initialStartDate,
+      initialEndDate,
+      isAllDay,
+      onDone: (
+        newStartDate: Date,
+        newEndDate: Date | null,
+        doneIsAllDay: boolean
+      ) => {
+        void processFileLine(
+          app.vault,
+          file,
+          lineNumber,
+          (lineContent: string) => {
+            const task = parseTask(lineContent);
 
-    const cleanup = () => {
-      renderer.unmount();
-      container.remove();
-    };
-
-    const rect = targetEl.getBoundingClientRect();
-    const position = { top: rect.bottom + 5, left: rect.left };
-
-    renderer.render(
-      React.createElement(DateTimePickerModal, {
-        initialStartDate,
-        initialEndDate,
-        isAllDay,
-        position,
-        onClose: cleanup,
-        onDone: (
-          newStartDate: Date,
-          newEndDate: Date | null,
-          doneIsAllDay: boolean
-        ) => {
-          cleanup();
-
-          void processFileLine(
-            app.vault,
-            file,
-            lineNumber,
-            (lineContent: string) => {
-              const task = parseTask(lineContent);
-
-              if (newEndDate) {
-                const formattedStart = formatDateForTask(
-                  newStartDate,
-                  doneIsAllDay,
-                  false
-                );
-                const formattedEnd = formatDateForTask(
-                  newEndDate,
-                  doneIsAllDay,
-                  true
-                );
-                let updated = setTaskProperty(
-                  task,
-                  startDateProperty,
-                  formattedStart
-                );
-                updated = setTaskProperty(
-                  updated,
-                  endDateProperty,
-                  formattedEnd
-                );
-                return reconstructTask(updated);
-              }
-
-              // Single date: remove start property if it existed, set only end
-              let updated = removeTaskProperty(task, startDateProperty);
-              const newValue = formatDateForTask(
+            if (newEndDate) {
+              const formattedStart = formatDateForTask(
                 newStartDate,
                 doneIsAllDay,
                 false
               );
-              updated = setTaskProperty(updated, endDateProperty, newValue);
+              const formattedEnd = formatDateForTask(
+                newEndDate,
+                doneIsAllDay,
+                true
+              );
+              let updated = setTaskProperty(
+                task,
+                startDateProperty,
+                formattedStart
+              );
+              updated = setTaskProperty(updated, endDateProperty, formattedEnd);
               return reconstructTask(updated);
             }
-          ).catch(error => {
-            handleError(error, 'Failed to update date property', logger);
-          });
-        },
-      })
-    );
+
+            let updated = removeTaskProperty(task, startDateProperty);
+            const newValue = formatDateForTask(
+              newStartDate,
+              doneIsAllDay,
+              false
+            );
+            updated = setTaskProperty(updated, endDateProperty, newValue);
+            return reconstructTask(updated);
+          }
+        ).catch(error => {
+          handleError(error, 'Failed to update date property', logger);
+        });
+      },
+    }).open();
   });
 }
