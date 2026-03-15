@@ -88,10 +88,6 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   // Determine if on mobile or desktop
   const isMobile = Platform.isMobile;
 
-  // Derived state for multi-day events
-  const isMultiDay =
-    endDate && endDate.toDateString() !== startDate.toDateString();
-
   // Create result dates from current state
   const createResultDates = useCallback(() => {
     const resultStartDate = new Date(startDate);
@@ -111,33 +107,27 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
     let resultEndDate: Date | null = null;
 
-    if (endDate) {
+    // Use endDate if set, or fall back to startDate for same-day time ranges
+    const effectiveEndDate =
+      endDate ?? (isRange && !isAllDay ? startDate : null);
+
+    if (effectiveEndDate) {
       // For all-day events, the end date needs to be adjusted:
       // - Display: Inclusive end date (last day of event)
       // - Storage: Exclusive end date (day after last day of event)
       if (isAllDay) {
-        // Create exclusive end date by adding one day to the inclusive end date
-        resultEndDate = new Date(endDate);
+        resultEndDate = new Date(effectiveEndDate);
         resultEndDate.setDate(resultEndDate.getDate() + 1);
         resultEndDate.setHours(0);
         resultEndDate.setMinutes(0);
         resultEndDate.setSeconds(0);
         resultEndDate.setMilliseconds(0);
       } else {
-        resultEndDate = new Date(endDate);
-
-        if (isMultiDay) {
-          // For multi-day events, use specified end time
-          const parsedHours = parseInt(endHours, 10);
-          const parsedMinutes = parseInt(endMinutes, 10);
-
-          resultEndDate.setHours(isNaN(parsedHours) ? 0 : parsedHours);
-          resultEndDate.setMinutes(isNaN(parsedMinutes) ? 0 : parsedMinutes);
-        } else {
-          // For single-day events, use the same time as start date
-          resultEndDate.setHours(resultStartDate.getHours());
-          resultEndDate.setMinutes(resultStartDate.getMinutes());
-        }
+        resultEndDate = new Date(effectiveEndDate);
+        const parsedHours = parseInt(endHours, 10);
+        const parsedMinutes = parseInt(endMinutes, 10);
+        resultEndDate.setHours(isNaN(parsedHours) ? 0 : parsedHours);
+        resultEndDate.setMinutes(isNaN(parsedMinutes) ? 0 : parsedMinutes);
       }
     }
 
@@ -146,11 +136,11 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     startDate,
     endDate,
     isAllDay,
+    isRange,
     hours,
     minutes,
     endHours,
     endMinutes,
-    isMultiDay,
   ]);
 
   // Handlers for automatic updates while interacting
@@ -761,7 +751,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
 
   const renderTimeInputs = (which: 'start' | 'end') => {
     const isEnd = which === 'end';
-    const label = isEnd ? 'End' : isRange && isMultiDay ? 'Start' : undefined;
+    const label = isEnd ? 'End' : isRange ? 'Start' : undefined;
 
     if (isMobile) {
       return (
@@ -891,7 +881,7 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
       {!isAllDay && (
         <>
           {renderTimeInputs('start')}
-          {isRange && isMultiDay && renderTimeInputs('end')}
+          {isRange && renderTimeInputs('end')}
         </>
       )}
 

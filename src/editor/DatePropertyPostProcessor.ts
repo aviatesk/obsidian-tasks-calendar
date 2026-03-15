@@ -70,7 +70,9 @@ function attachDataviewHandlers(
   section: SectionLines,
   ctx: MarkdownPostProcessorContext,
   app: App,
-  datePropertyNames: Set<string>
+  datePropertyNames: Set<string>,
+  startDateProperty: string,
+  endDateProperty: string
 ): boolean {
   const matchProperty = createPropertyMatcher(section);
   let attached = false;
@@ -104,6 +106,8 @@ function attachDataviewHandlers(
         propertyName: key,
         filePath: ctx.sourcePath,
         lineNumber,
+        startDateProperty,
+        endDateProperty,
       });
     });
     attached = true;
@@ -116,7 +120,9 @@ function attachPlainTextHandlers(
   section: SectionLines,
   ctx: MarkdownPostProcessorContext,
   app: App,
-  datePropertyNames: Set<string>
+  datePropertyNames: Set<string>,
+  startDateProperty: string,
+  endDateProperty: string
 ): boolean {
   const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
   const textMatches: {
@@ -180,6 +186,8 @@ function attachPlainTextHandlers(
         propertyName: key,
         filePath: ctx.sourcePath,
         lineNumber,
+        startDateProperty,
+        endDateProperty,
       });
     });
 
@@ -198,7 +206,9 @@ function tryAttach(
   section: SectionLines,
   ctx: MarkdownPostProcessorContext,
   app: App,
-  datePropertyNames: Set<string>
+  datePropertyNames: Set<string>,
+  startDateProperty: string,
+  endDateProperty: string
 ): boolean {
   const dvFields = Array.from(
     el.querySelectorAll<HTMLElement>('.dataview.inline-field')
@@ -209,10 +219,20 @@ function tryAttach(
       section,
       ctx,
       app,
-      datePropertyNames
+      datePropertyNames,
+      startDateProperty,
+      endDateProperty
     );
   }
-  return attachPlainTextHandlers(el, section, ctx, app, datePropertyNames);
+  return attachPlainTextHandlers(
+    el,
+    section,
+    ctx,
+    app,
+    datePropertyNames,
+    startDateProperty,
+    endDateProperty
+  );
 }
 
 function sectionHasDateProperties(
@@ -232,11 +252,25 @@ export function createDatePropertyPostProcessor(
   configManager: ConfigManager
 ): MarkdownPostProcessor {
   return (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
+    const calSettings = configManager.getCalendarSettings();
     const datePropertyNames = getDatePropertyNames(configManager);
     const section = getSectionLines(el, ctx);
     if (!section) return;
 
-    if (tryAttach(el, section, ctx, app, datePropertyNames)) return;
+    const { startDateProperty, dateProperty: endDateProperty } = calSettings;
+
+    if (
+      tryAttach(
+        el,
+        section,
+        ctx,
+        app,
+        datePropertyNames,
+        startDateProperty,
+        endDateProperty
+      )
+    )
+      return;
 
     // Only observe for deferred Dataview rendering if the section
     // source actually contains date property inline fields
@@ -244,7 +278,15 @@ export function createDatePropertyPostProcessor(
 
     const observer = new MutationObserver(() => {
       observer.disconnect();
-      tryAttach(el, section, ctx, app, datePropertyNames);
+      tryAttach(
+        el,
+        section,
+        ctx,
+        app,
+        datePropertyNames,
+        startDateProperty,
+        endDateProperty
+      );
     });
     observer.observe(el, { childList: true, subtree: true });
   };

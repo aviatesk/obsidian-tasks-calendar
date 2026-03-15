@@ -98,6 +98,7 @@ export function createDatePropertyExtension(
           const pos = view.posAtDOM(clickable);
           const lineNumber = view.state.doc.lineAt(pos).number - 1;
 
+          const calSettings = configManager.getCalendarSettings();
           openDatePropertyPicker({
             app,
             targetEl: clickable as HTMLElement,
@@ -105,6 +106,8 @@ export function createDatePropertyExtension(
             propertyName,
             filePath: markdownView.file.path,
             lineNumber,
+            startDateProperty: calSettings.startDateProperty,
+            endDateProperty: calSettings.dateProperty,
           });
 
           return true;

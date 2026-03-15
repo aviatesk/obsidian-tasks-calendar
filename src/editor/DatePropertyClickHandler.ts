@@ -4,13 +4,25 @@ import { DateTimePickerModal } from '../frontend/DateTimePickerModal';
 import { ReactRenderer } from '../frontend/ReactRoot';
 import { formatDateForTask } from '../backend/date';
 import { processFileLine } from '../backend/file-operations';
-import { parseTask, setTaskProperty, reconstructTask } from '../backend/parse';
+import {
+  parseTask,
+  getTaskProperty,
+  setTaskProperty,
+  removeTaskProperty,
+  reconstructTask,
+} from '../backend/parse';
 import handleError from '../backend/error-handling';
 import { createLogger } from '../logging';
 
 const logger = createLogger('DatePropertyClickHandler');
 
 const DATE_VALUE_PATTERN = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/;
+
+function parseDateValue(value: string): Date | null {
+  if (!DATE_VALUE_PATTERN.test(value)) return null;
+  const isAllDay = !value.includes('T');
+  return new Date(isAllDay ? value + 'T00:00:00' : value);
+}
 
 export function openDatePropertyPicker(params: {
   app: App;
@@ -19,64 +31,122 @@ export function openDatePropertyPicker(params: {
   propertyName: string;
   filePath: string;
   lineNumber: number;
+  startDateProperty: string;
+  endDateProperty: string;
 }): void {
-  const { app, targetEl, currentValue, propertyName, filePath, lineNumber } =
-    params;
+  const {
+    app,
+    targetEl,
+    currentValue,
+    filePath,
+    lineNumber,
+    startDateProperty,
+    endDateProperty,
+  } = params;
 
   if (!DATE_VALUE_PATTERN.test(currentValue)) return;
 
-  const isAllDay = !currentValue.includes('T');
-  const initialDate = new Date(
-    isAllDay ? currentValue + 'T00:00:00' : currentValue
-  );
+  const file = app.vault.getAbstractFileByPath(filePath);
+  if (!(file instanceof TFile)) return;
 
-  const container = document.createElement('div');
-  document.body.appendChild(container);
-  const renderer = new ReactRenderer(container);
+  void app.vault.cachedRead(file).then(content => {
+    const lines = content.split('\n');
+    if (lineNumber < 0 || lineNumber >= lines.length) return;
 
-  const cleanup = () => {
-    renderer.unmount();
-    container.remove();
-  };
+    let parsed;
+    try {
+      parsed = parseTask(lines[lineNumber]);
+    } catch {
+      return;
+    }
 
-  const rect = targetEl.getBoundingClientRect();
-  const position = { top: rect.bottom + 5, left: rect.left };
+    const startValue = getTaskProperty(parsed, startDateProperty);
+    const endValue = getTaskProperty(parsed, endDateProperty);
 
-  renderer.render(
-    React.createElement(DateTimePickerModal, {
-      initialStartDate: initialDate,
-      initialEndDate: null,
-      isAllDay,
-      position,
-      onClose: cleanup,
-      onDone: (
-        startDate: Date,
-        _endDate: Date | null,
-        doneIsAllDay: boolean
-      ) => {
-        cleanup();
+    const startDate = startValue ? parseDateValue(startValue) : null;
+    const endDate = endValue ? parseDateValue(endValue) : null;
 
-        const newValue = formatDateForTask(startDate, doneIsAllDay, false);
+    const hasRange = startDate && endDate;
+    const isAllDay = hasRange
+      ? !startValue!.includes('T')
+      : !currentValue.includes('T');
+    const initialStartDate = hasRange
+      ? startDate
+      : new Date(isAllDay ? currentValue + 'T00:00:00' : currentValue);
+    const initialEndDate = hasRange ? endDate : null;
 
-        const file = app.vault.getAbstractFileByPath(filePath);
-        if (!(file instanceof TFile)) {
-          logger.warn(`File not found: ${filePath}`);
-          return;
-        }
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const renderer = new ReactRenderer(container);
 
-        void processFileLine(
-          app.vault,
-          file,
-          lineNumber,
-          (lineContent: string) => {
-            const parsed = parseTask(lineContent);
-            const updated = setTaskProperty(parsed, propertyName, newValue);
-            return reconstructTask(updated);
-          }
-        ).catch(error => {
-          handleError(error, 'Failed to update date property', logger);
-        });
-      },
-    })
-  );
+    const cleanup = () => {
+      renderer.unmount();
+      container.remove();
+    };
+
+    const rect = targetEl.getBoundingClientRect();
+    const position = { top: rect.bottom + 5, left: rect.left };
+
+    renderer.render(
+      React.createElement(DateTimePickerModal, {
+        initialStartDate,
+        initialEndDate,
+        isAllDay,
+        position,
+        onClose: cleanup,
+        onDone: (
+          newStartDate: Date,
+          newEndDate: Date | null,
+          doneIsAllDay: boolean
+        ) => {
+          cleanup();
+
+          void processFileLine(
+            app.vault,
+            file,
+            lineNumber,
+            (lineContent: string) => {
+              const task = parseTask(lineContent);
+
+              if (newEndDate) {
+                const formattedStart = formatDateForTask(
+                  newStartDate,
+                  doneIsAllDay,
+                  false
+                );
+                const formattedEnd = formatDateForTask(
+                  newEndDate,
+                  doneIsAllDay,
+                  true
+                );
+                let updated = setTaskProperty(
+                  task,
+                  startDateProperty,
+                  formattedStart
+                );
+                updated = setTaskProperty(
+                  updated,
+                  endDateProperty,
+                  formattedEnd
+                );
+                return reconstructTask(updated);
+              }
+
+              // Single date: remove start property if it existed, set only end
+              let updated = removeTaskProperty(task, startDateProperty);
+              const newValue = formatDateForTask(
+                newStartDate,
+                doneIsAllDay,
+                false
+              );
+              updated = setTaskProperty(updated, endDateProperty, newValue);
+              return reconstructTask(updated);
+            }
+          ).catch(error => {
+            handleError(error, 'Failed to update date property', logger);
+          });
+        },
+      })
+    );
+  });
 }
