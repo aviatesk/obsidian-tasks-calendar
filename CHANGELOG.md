@@ -36,10 +36,20 @@ and this project adheres to
 
 ### Changed
 
+- Migrated all custom-positioned tooltips and modals to native Obsidian `Modal`.
+  This eliminates manual positioning logic, mobile overlay hacks, and fragile
+  z-index management. Task tooltip, date-time picker, and status picker now use
+  Obsidian's built-in modal infrastructure for consistent behavior across
+  desktop and mobile.
 - Addressed Obsidian plugin guideline compliance issues flagged by
   [`eslint-plugin-obsidian`](https://github.com/obsidianmd/eslint-plugin):
   eliminated `any` types, fixed floating promises, enforced sentence case in UI
   text, and replaced direct style manipulation with CSS classes.
+
+### Fixed
+
+- Removed dead CSS rules left over from the old tooltip/modal positioning
+  system.
 
 ## [0.1.5]
 

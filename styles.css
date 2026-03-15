@@ -3,17 +3,6 @@
   --tasks-calendar-control-height-mobile: 1.75em;
 }
 
-.tasks-calendar-measuring {
-  visibility: hidden;
-  display: block;
-}
-
-.tasks-calendar-temp-source {
-  position: absolute;
-  width: 100px;
-  height: 20px;
-}
-
 .tasks-calendar-container {
   height: 100%;
   min-height: 300px;
@@ -125,7 +114,7 @@
 
 .tasks-calendar-container .fc-col-header-cell {
   background-color: var(--background-secondary);
-  color: var (--text-normal);
+  color: var(--text-normal);
 }
 
 .tasks-calendar-container .fc-daygrid-day-frame {
@@ -148,8 +137,6 @@
 .is-mobile .tasks-calendar-container .fc-more-popover {
   position: absolute !important;
 }
-
-/* Header with title and close button */
 
 /* Close button positioning and styling */
 .tasks-calendar-container .fc-more-popover .fc-popover-close {
@@ -644,31 +631,6 @@
   border-width: 5px;
 }
 
-.calendar-actions {
-  display: flex;
-  gap: 5px;
-}
-
-.calendar-action-button {
-  background-color: var(--background-secondary);
-  color: var (--text-normal);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 0;
-}
-
-.calendar-action-button:hover {
-  background-color: var(--background-modifier-hover);
-  color: var(--text-accent);
-}
-
 .fc-list-day-side-text {
   float: right;
   padding-right: 0px;
@@ -679,126 +641,34 @@
   padding-right: 45px;
 }
 
-/* New task click tooltip styles */
-.task-click-tooltip-container {
-  position: absolute;
-  /* z-index: 9999; */
-  pointer-events: auto;
-}
-
+/* Task click tooltip content styles */
 .task-click-tooltip {
-  background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  font-size: 0.9em;
-  width: 340px;
-  max-width: 90vw;
-  max-height: 420px;
-  overflow-y: auto;
   color: var(--text-normal);
-  animation: fadeIn 0.2s ease;
-}
-
-.task-click-tooltip-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid var (--background-modifier-border);
-  background-color: var(--background-secondary);
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
-}
-
-.task-click-tooltip-file-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  overflow: hidden;
-}
-
-.task-click-tooltip-icon {
-  color: var(--text-accent);
-  flex-shrink: 0;
-}
-
-.task-click-tooltip-file {
-  font-weight: 600;
-  font-size: 0.95em;
-  color: var(--text-accent);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.task-click-tooltip-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.task-click-tooltip-open-button,
-.task-click-tooltip-close-button,
-.task-click-tooltip-delete-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.2em;
-  padding: 6px !important;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
-}
-
-.task-click-tooltip-open-button:hover,
-.task-click-tooltip-close-button:hover {
-  color: var(--text-accent);
-  background-color: var(--background-modifier-hover);
-}
-.task-click-tooltip-delete-button:hover {
-  color: var(--text-error);
-  background-color: var(--background-modifier-hover);
 }
 
 .task-click-tooltip-content {
-  padding: 16px;
-  max-height: 320px;
+  padding: 12px 16px;
+  max-height: 400px;
   overflow-y: auto;
 }
 
 /* Enhanced task click tooltip styles */
-.task-click-tooltip-main-text {
-  font-family: var(--font-text);
-  white-space: pre-wrap;
-  word-break: break-word;
-  line-height: 1.6;
-  margin-bottom: 20px;
-  font-size: 1.05em;
-  color: var(--text-normal);
-  padding: 0 4px;
-}
 
 .task-click-tooltip-info {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  font-size: 0.85em;
+  gap: 8px;
+  font-size: 0.9em;
   color: var(--text-muted);
   border-top: 1px solid var(--background-modifier-border);
-  padding-top: 16px;
-  margin-top: 4px;
+  padding: 12px 16px 0;
+  margin: 4px -16px 0;
 }
 
 .task-click-tooltip-info-item {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 8px;
   padding: 0 4px;
 }
 
@@ -808,10 +678,10 @@
   margin-top: 2px;
 }
 .task-click-tooltip-icon-small.task-click-tooltip-icon-info {
-  margin-top: 8px;
+  margin-top: 4px;
 }
 .is-mobile .task-click-tooltip-icon-small.task-click-tooltip-icon-info {
-  margin-top: 10px;
+  margin-top: 6px;
 }
 
 .task-click-tooltip-info-text {
@@ -897,25 +767,8 @@
   }
 }
 
-/* DateTimePicker Modal styling */
+/* DateTimePicker content styling */
 .date-time-picker-modal {
-  position: fixed;
-  z-index: 10000;
-  background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  width: 340px;
-  max-width: 90vw;
-  animation: fadeIn 0.2s ease;
-  overflow: hidden;
-}
-
-.is-mobile .date-time-picker-modal {
-  width: 340px;
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
@@ -934,7 +787,7 @@
 
 .date-time-picker-calendar .fc {
   background-color: var(--background-primary);
-  font-size: 0.85em;
+  font-size: 0.9em;
   height: auto !important;
   width: 100% !important;
 }
@@ -1022,7 +875,7 @@
   border-top: 1px solid var(--background-modifier-border);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .date-time-picker-control-row {
@@ -1038,11 +891,11 @@
 }
 
 .date-time-picker-segment-button {
-  padding: 4px 12px;
+  padding: 5px 14px;
   border: 1px solid var(--background-modifier-border);
   background: transparent;
   color: var(--text-muted);
-  font-size: 0.8em;
+  font-size: 0.85em;
   cursor: pointer;
   transition:
     background-color 0.15s ease,
@@ -1070,12 +923,12 @@
 
 /* Range toggle button */
 .date-time-picker-range-toggle {
-  padding: 4px 12px;
+  padding: 5px 14px;
   border: 1px solid var(--background-modifier-border);
   border-radius: 6px;
   background: transparent;
   color: var(--text-muted);
-  font-size: 0.8em;
+  font-size: 0.85em;
   cursor: pointer;
   transition:
     background-color 0.15s ease,
@@ -1131,73 +984,10 @@
   color: var(--text-accent);
 }
 
-/* Animation for the tooltip */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Status picker styling */
-.status-picker-modal {
-  position: fixed;
-  z-index: 10000;
-  background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  width: 220px;
-  animation: fadeIn 0.2s ease;
-  overflow: hidden;
-}
-
-.status-picker-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 14px;
-  background-color: var(--background-secondary);
-  border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.status-picker-title {
-  font-weight: 600;
-  font-size: 0.95em;
-  color: var(--text-accent);
-}
-
-.status-picker-header-buttons {
-  display: flex;
-  gap: 6px;
-}
-
-.status-picker-close-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
-}
-
-.status-picker-close-button:hover {
-  color: var(--text-accent);
-  background-color: var(--background-modifier-hover);
-}
+/* Status picker content styles (rendered inside native Modal) */
 
 .status-picker-content {
-  padding: 8px;
+  padding: 4px;
   max-height: 300px;
   overflow-y: auto;
 }
@@ -1279,67 +1069,30 @@
   background-color: var(--background-modifier-hover);
 }
 
-.task-click-tooltip-status-value {
-  font-weight: 500;
-  color: var(--text-normal);
+/* Native modal overrides */
+.tasks-calendar-datetime-picker-modal .modal-content,
+.tasks-calendar-task-tooltip-modal .modal-content,
+.tasks-calendar-status-picker-modal .modal-content {
+  padding: 0;
 }
 
-/* Mobile-specific modal styling */
-.is-mobile .mobile-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 9000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 0.2s ease;
+.tasks-calendar-datetime-picker-modal {
+  width: 420px;
+  max-width: 90vw;
 }
 
-/* Center modals on mobile */
-.is-mobile .date-time-picker-modal,
-.is-mobile .status-picker-modal,
-.is-mobile .task-click-tooltip {
-  position: relative !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 90% !important;
-  max-width: 400px !important;
-  margin: 0 auto !important;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3) !important;
-  animation: zoomIn 0.3s ease !important;
+.tasks-calendar-datetime-picker-modal .modal-content {
+  padding-top: 8px;
 }
 
-.is-mobile .task-click-tooltip {
-  max-height: 85vh;
-  overflow-y: auto;
+.tasks-calendar-task-tooltip-modal {
+  width: 460px;
+  max-width: 90vw;
 }
 
-/* Add a modern zoom animation for mobile modals */
-@keyframes zoomIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* Additional mobile styling improvements */
-.is-mobile .task-click-tooltip-header,
-.is-mobile .status-picker-header {
-  padding: 16px;
-  border-bottom: 1px solid var(--background-modifier-border);
-  background-color: var(--background-secondary-alt);
-}
-
-.is-mobile .task-click-tooltip-content {
-  padding: 16px;
+.tasks-calendar-status-picker-modal {
+  width: 380px;
+  max-width: 90vw;
 }
 
 /* Increase touch target sizes on mobile */
@@ -1406,7 +1159,7 @@
 .task-click-tooltip-main-text-container {
   position: relative;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   width: 100%;
 }
 
@@ -1414,7 +1167,8 @@
   font-family: var(--font-text);
   white-space: pre-wrap;
   word-break: break-word;
-  line-height: 1.6;
+  line-height: 1.5;
+  margin-bottom: 8px;
   font-size: 1.05em;
   color: var(--text-normal);
   padding: 4px 8px;
@@ -1434,13 +1188,12 @@
   color: var(--text-muted);
   cursor: pointer;
   opacity: 0;
-  padding: 6px;
+  padding: 6px 0;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-left: 8px;
-  margin-top: 2px;
   transition: all 0.2s ease;
   flex-shrink: 0;
 }
@@ -1459,8 +1212,8 @@
 .task-click-tooltip-edit-container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 8px;
   width: 100%;
 }
 
@@ -1609,8 +1362,8 @@
   flex: 1;
   border: none;
   border-radius: 6px;
-  padding: 6px 0;
-  font-size: 0.85em;
+  padding: 8px 0;
+  font-size: 0.9em;
   font-weight: 500;
   cursor: pointer;
   transition:
@@ -1685,10 +1438,10 @@
 
 /* Delete confirmation styles */
 .task-click-tooltip-delete-confirm {
-  padding: 12px 0;
+  padding: 8px 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .task-click-tooltip-delete-message {
@@ -1778,7 +1531,7 @@
 
 .task-click-tooltip-inline-dropdown {
   background-color: var(--background-secondary);
-  color: var (--text-accent);
+  color: var(--text-accent);
   border: 1px solid var(--background-modifier-border);
   border-radius: 4px;
   padding: 2px 6px;
@@ -1808,4 +1561,191 @@
   text-decoration: underline;
   text-decoration-color: var(--text-accent);
   text-underline-offset: 2px;
+}
+
+/* Hover preview above modals (only when a modal is open) */
+.modal-container ~ .popover.hover-popover {
+  z-index: 10000 !important;
+}
+
+/* Title line in tooltip */
+.task-click-tooltip-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.task-click-tooltip-title-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 0.95em;
+  color: var(--text-accent);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.task-click-tooltip-title-text span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.task-click-tooltip-title-icon {
+  flex-shrink: 0;
+  color: var(--text-accent);
+}
+
+/* Action icons on the title line */
+.task-click-tooltip-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.task-click-tooltip-title-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.task-click-tooltip-title-action:hover {
+  color: var(--text-accent);
+  background-color: var(--background-modifier-hover);
+}
+
+.task-click-tooltip-title-action-delete:hover {
+  color: var(--text-error);
+}
+
+.task-click-tooltip-title-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Mobile adjustments for tooltip */
+.is-mobile .task-click-tooltip-title {
+  padding: 28px 16px 10px;
+}
+
+.is-mobile .task-click-tooltip-title-text {
+  font-size: 1em;
+}
+
+.is-mobile .task-click-tooltip-title-actions {
+  gap: 8px;
+}
+
+.is-mobile .task-click-tooltip-title-action {
+  background: transparent !important;
+  padding: 6px !important;
+}
+
+.is-mobile .task-click-tooltip-content {
+  padding: 14px 16px;
+}
+
+.is-mobile .task-click-tooltip-info {
+  gap: 12px;
+  font-size: 0.95em;
+  padding: 14px 16px 0;
+}
+
+.is-mobile .task-click-tooltip-info-item {
+  padding: 0;
+}
+
+/* Mobile adjustments for datetime picker */
+.is-mobile .tasks-calendar-datetime-picker-modal {
+  padding-top: 28px;
+}
+
+.is-mobile .date-time-picker-calendar .fc-daygrid-day {
+  height: 48px !important;
+}
+
+.is-mobile .date-time-picker-calendar .fc-daygrid-day-frame {
+  min-height: 0 !important;
+}
+
+.is-mobile .date-time-picker-calendar .fc-daygrid-day-events {
+  display: none;
+}
+
+.is-mobile .date-time-picker-calendar .fc-daygrid-day-number {
+  font-size: 0.8em;
+  padding: 1px;
+}
+
+.is-mobile .date-time-picker-calendar .fc-col-header-cell {
+  padding: 2px 0;
+  font-size: 0.75em;
+}
+
+.is-mobile .date-time-picker-calendar .fc-toolbar-title {
+  font-size: 0.85em;
+}
+
+.is-mobile .date-time-picker-calendar .fc-button {
+  font-size: 0.75em;
+  padding: 2px 5px;
+}
+
+.is-mobile
+  .date-time-picker-calendar
+  .fc-daygrid-day.fc-day-today
+  .fc-daygrid-day-number {
+  width: 20px;
+  height: 20px;
+  margin: 1px;
+}
+
+.is-mobile .tasks-calendar-datetime-picker-modal .date-time-picker-controls {
+  padding: 6px 10px !important;
+  gap: 4px !important;
+}
+
+.is-mobile
+  .tasks-calendar-datetime-picker-modal
+  .date-time-picker-segment-button {
+  padding: 2px 8px !important;
+  font-size: 0.75em !important;
+}
+
+.is-mobile
+  .tasks-calendar-datetime-picker-modal
+  .date-time-picker-range-toggle {
+  padding: 2px 8px !important;
+  font-size: 0.75em !important;
+}
+
+.is-mobile .tasks-calendar-datetime-picker-modal .date-time-picker-time-input {
+  width: 28px !important;
+  padding: 2px 4px !important;
+  font-size: 0.75em !important;
+}
+
+.is-mobile .tasks-calendar-datetime-picker-modal .date-time-picker-time-icon {
+  transform: scale(0.8);
+}
+
+.is-mobile
+  .tasks-calendar-datetime-picker-modal
+  .date-time-picker-cancel-button,
+.is-mobile .tasks-calendar-datetime-picker-modal .date-time-picker-done-button {
+  padding: 2px 0 !important;
+  font-size: 0.75em !important;
 }
