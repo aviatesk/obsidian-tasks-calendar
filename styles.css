@@ -403,6 +403,7 @@
 .tasks-calendar-container .fc-event.tasks-calendar-event-external {
   cursor: default;
   pointer-events: none;
+  border: none !important;
 }
 
 .tasks-calendar-external-source-swatch {

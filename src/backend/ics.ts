@@ -139,8 +139,8 @@ function buildEvent(
     end,
     allDay,
     backgroundColor: source.color,
-    borderColor: source.color,
     textColor: 'var(--text-on-accent)',
+    display: 'auto',
     classNames: ['tasks-calendar-event-external'],
     editable: false,
     extendedProps: {
