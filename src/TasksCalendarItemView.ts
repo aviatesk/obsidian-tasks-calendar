@@ -38,6 +38,7 @@ import { calculateOptimalPosition } from './backend/position';
 import { createTask } from './backend/create';
 import { deleteTask } from './backend/delete';
 import handleError from './backend/error-handling';
+import { parseIcsEvents } from './backend/ics';
 import { createLogger } from './logging';
 
 export class TasksCalendarItemView extends ItemView {
@@ -153,6 +154,12 @@ export class TasksCalendarItemView extends ItemView {
         hour: '2-digit',
         minute: '2-digit',
         hour12: false,
+      },
+      eventDidMount: info => {
+        const opacity = info.event.extendedProps.opacity as number | undefined;
+        if (opacity !== undefined) {
+          info.el.style.opacity = String(opacity);
+        }
       },
       eventDrop: info => {
         if (info.event && info.oldEvent)
@@ -327,6 +334,17 @@ export class TasksCalendarItemView extends ItemView {
             this.calendar.updateSize();
           }
         }, 100);
+      })
+    );
+
+    this.registerEvent(
+      this.app.vault.on('modify', file => {
+        if (
+          this.settings.externalSources.some(s => s.path === file.path) &&
+          this.calendar
+        ) {
+          this.calendar.refetchEvents();
+        }
       })
     );
   }
@@ -832,22 +850,58 @@ export class TasksCalendarItemView extends ItemView {
     successCallback: (events: EventInput[]) => void,
     failureCallback: (error: Error) => void
   ) {
-    const dataviewApi = this.plugin.dataviewApi;
-    if (!dataviewApi) {
-      this.logger.warn('Dataview plugin not available');
-      new Notice(
-        'Dataview plugin is not available. Tasks calendar may not work correctly.'
+    void (async () => {
+      const dataviewApi = this.plugin.dataviewApi;
+      if (!dataviewApi) {
+        this.logger.warn('Dataview plugin not available');
+        new Notice(
+          'Dataview plugin is not available. Tasks calendar may not work correctly.'
+        );
+        failureCallback(new Error('Dataview plugin is not available'));
+        return;
+      }
+      let taskEvents: EventInput[];
+      try {
+        taskEvents = getTasksAsEvents(dataviewApi, this.settings);
+      } catch (error) {
+        this.logger.warn(`Failed to fetch task events: ${error}`);
+        failureCallback(
+          error instanceof Error ? error : new Error(String(error))
+        );
+        return;
+      }
+      const externalEvents = await this.fetchExternalEvents();
+      this.logger.log(
+        `Fetched ${taskEvents.length} task events, ${externalEvents.length} external events`
       );
-      return failureCallback(new Error('Dataview plugin is not available'));
+      successCallback([...taskEvents, ...externalEvents]);
+    })();
+  }
+
+  private async fetchExternalEvents(): Promise<EventInput[]> {
+    const sources = this.settings.externalSources;
+    if (sources.length === 0) return [];
+
+    const results: EventInput[] = [];
+    for (const source of sources) {
+      const file = this.app.vault.getAbstractFileByPath(source.path);
+      if (!(file instanceof TFile)) {
+        this.logger.warn(`External source file not found: ${source.path}`);
+        continue;
+      }
+      let content: string;
+      try {
+        content = await this.app.vault.read(file);
+      } catch (error) {
+        this.logger.warn(
+          `Failed to read external source ${source.path}: ${error}`
+        );
+        continue;
+      }
+      const events = parseIcsEvents(content, source);
+      results.push(...events);
     }
-    try {
-      const events = getTasksAsEvents(dataviewApi, this.settings);
-      this.logger.log(`Fetched ${events.length} events`);
-      successCallback(events);
-    } catch (error) {
-      this.logger.warn(`Failed to fetch events: ${error}`);
-      failureCallback(error);
-    }
+    return results;
   }
 
   private setupResizeObserver(calendarEl: HTMLElement) {

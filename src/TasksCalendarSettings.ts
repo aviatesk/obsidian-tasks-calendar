@@ -20,6 +20,12 @@ interface EventPropsMap {
   [key: string]: EventProps;
 }
 
+export interface ExternalSource {
+  path: string;
+  color: string;
+  opacity: number;
+}
+
 /**
  * Represents the minimal calendar settings stored in data.json
  * All properties except id and name are optional
@@ -37,6 +43,7 @@ export interface UserCalendarSettings {
   includedTags?: string[]; // included tags, empty array means including every task
   eventPropsMap?: EventPropsMap; // event info map
   newTaskFilePaths?: string[]; // New setting for multiple task creation file paths
+  externalSources?: ExternalSource[]; // external calendar sources (e.g. ICS files)
 }
 
 /**
@@ -56,6 +63,7 @@ export interface CalendarSettings {
   includedTags: string[]; // included tags, empty array means including every task
   eventPropsMap: EventPropsMap; // event info map
   newTaskFilePaths: string[]; // New setting for multiple task creation file paths
+  externalSources: ExternalSource[]; // external calendar sources (e.g. ICS files)
 }
 
 export type LogLevel = 'error' | 'warn' | 'log';
@@ -119,6 +127,7 @@ export const DEFAULT_CALENDAR_SETTINGS: CalendarSettings = {
     // 'x': { textColor: 'var(--text-faint)', backgroundColor: 'var(--background-secondary)', display: 'block', priority: -1 },
   },
   newTaskFilePaths: ['Tasks.md'], // Default file path for new tasks
+  externalSources: [],
 };
 
 export const DEFAULT_PLUGIN_SETTINGS: PluginSettings = {
@@ -192,6 +201,11 @@ export function toUserCalendarSettings(
     JSON.stringify(DEFAULT_CALENDAR_SETTINGS.eventPropsMap)
   )
     userSettings.eventPropsMap = settings.eventPropsMap;
+  if (
+    JSON.stringify(settings.externalSources) !==
+    JSON.stringify(DEFAULT_CALENDAR_SETTINGS.externalSources)
+  )
+    userSettings.externalSources = settings.externalSources;
 
   return userSettings;
 }
