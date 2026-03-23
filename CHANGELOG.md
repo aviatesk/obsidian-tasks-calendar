@@ -27,6 +27,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Today's date badge and selected date badge in the date picker wrapping
+  two-digit numbers (10-31) onto two lines
+
 ## [0.1.6]
 
 ### Added
