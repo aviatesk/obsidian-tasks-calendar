@@ -88,11 +88,12 @@
   background-color: var(--text-accent);
   color: var(--text-on-accent);
   border-radius: 50%;
-  width: 24px;
+  min-width: 24px;
   height: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
   margin: 2px;
   cursor: pointer;
 }
@@ -849,11 +850,12 @@
   background-color: var(--text-accent);
   color: var(--text-on-accent);
   border-radius: 50%;
-  width: 24px;
+  min-width: 24px;
   height: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
   margin: 2px;
 }
 
@@ -1411,11 +1413,12 @@
   color: var(--text-accent);
   border: 2px solid var(--text-accent);
   border-radius: 50%;
-  width: 24px;
+  min-width: 24px;
   height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
   font-weight: bold;
   margin: 2px;
 }
@@ -1708,7 +1711,7 @@
   .date-time-picker-calendar
   .fc-daygrid-day.fc-day-today
   .fc-daygrid-day-number {
-  width: 20px;
+  min-width: 20px;
   height: 20px;
   margin: 1px;
 }
