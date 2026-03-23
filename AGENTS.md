@@ -236,8 +236,10 @@ Follow these message format conventions:
 
 ### Versioning & releases
 
-- Bump `version` in `manifest.json` and `package.json` (SemVer) and update
-  `versions.json` to map plugin version → minimum app version.
+- Bump `version` in `manifest.json` and `package.json` (SemVer).
+- Only update `versions.json` when `minAppVersion` in `manifest.json` changes.
+  Do not add an entry when the minimum app version stays the same — the existing
+  entry already covers all subsequent versions.
 - Update `CHANGELOG.md`: move the Unreleased section contents into a new version
   section and update the comparison links.
 - Create a release commit (e.g., `release: X.Y.Z`) and tag it with the version
