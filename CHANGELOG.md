@@ -29,6 +29,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Inline date picker for non-range properties (`created`, `completion`, etc.)
+  now correctly edits only the clicked field instead of always modifying
+  `start`/`due`
+
 ## [0.1.7]
 
 ### Fixed
