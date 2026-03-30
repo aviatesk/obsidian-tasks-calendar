@@ -24,6 +24,7 @@ import updateTaskDates, {
   updateTaskStatus,
   updateTaskText,
   updateTaskRecurrence,
+  updateTaskProperty,
   UpdateStatusResult,
 } from './backend/update';
 import { createTask } from './backend/create';
@@ -372,6 +373,16 @@ export class TasksCalendarItemView extends ItemView {
           props.line
         );
       },
+      onUpdateProperty: isGhost
+        ? undefined
+        : (propertyName: string, newValue: string) => {
+            void this.handleTaskPropertyUpdate(
+              propertyName,
+              newValue,
+              props.filePath,
+              props.line
+            );
+          },
       onUpdateStatus: (newStatus: string) => {
         void this.handleTaskStatusUpdate(newStatus, props.filePath, props.line);
       },
@@ -465,6 +476,34 @@ export class TasksCalendarItemView extends ItemView {
       this.calendar?.refetchEvents();
     } catch (error) {
       handleError(error, 'Failed to update task recurrence', this.logger);
+    }
+  }
+
+  private async handleTaskPropertyUpdate(
+    propertyName: string,
+    newValue: string,
+    filePath: string,
+    line?: number
+  ): Promise<void> {
+    if (!filePath) {
+      this.logger.warn('Unable to update task: missing file information');
+      new Notice('Unable to update task: missing file information');
+      return;
+    }
+
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!file || !(file instanceof TFile)) {
+      this.logger.warn(`File not found: ${filePath}`);
+      new Notice(`File not found: ${filePath}`);
+      return;
+    }
+
+    try {
+      await updateTaskProperty(this.app, file, line, propertyName, newValue);
+      new Notice(`Task ${propertyName} updated`);
+      this.calendar?.refetchEvents();
+    } catch (error) {
+      handleError(error, `Failed to update task ${propertyName}`, this.logger);
     }
   }
 

@@ -51,6 +51,7 @@ export interface TaskClickTooltipProps {
   onDeleteTask?: (filePath: string, line?: number) => Promise<boolean>;
   recurrence?: string;
   onUpdateRecurrence?: (newPattern: string) => void;
+  onUpdateProperty?: (propertyName: string, newValue: string) => void;
   isCreateMode?: boolean;
   selectedDate?: Date;
   onCreateTask?: (
@@ -84,6 +85,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   onDeleteTask,
   recurrence,
   onUpdateRecurrence,
+  onUpdateProperty,
   isCreateMode = false,
   selectedDate,
   onCreateTask,
@@ -127,6 +129,11 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   const [selectedDestination, setSelectedDestination] = useState<string>(
     filePath || availableDestinations[0]
   );
+
+  const [createdValue, setCreatedValue] = useState<string | null>(() => {
+    const match = taskText.match(/\[created::\s*(\d{4}-\d{2}-\d{2})\]/);
+    return match ? match[1] : null;
+  });
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {
@@ -327,11 +334,33 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     );
   };
 
-  const formatCreatedDisplay = () => {
-    const match = taskText.match(/\[created::\s*(\d{4}-\d{2}-\d{2})\]/);
-    if (!match) return null;
+  const handleCreatedClick = (e: React.MouseEvent) => {
+    if (!onUpdateProperty || !createdValue) return;
 
-    const createdDate = new Date(match[1] + 'T00:00:00');
+    const createdDate = new Date(createdValue + 'T00:00:00');
+    if (isNaN(createdDate.getTime())) return;
+
+    new DateTimePickerNativeModal(app, {
+      title: cleanText || undefined,
+      initialStartDate: createdDate,
+      initialEndDate: null,
+      isAllDay: true,
+      onDone: (newDate: Date) => {
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        const formatted = `${newDate.getFullYear()}-${pad(newDate.getMonth() + 1)}-${pad(newDate.getDate())}`;
+        setCreatedValue(formatted);
+        onUpdateProperty('created', formatted);
+      },
+    }).open();
+
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const formatCreatedDisplay = () => {
+    if (!createdValue) return null;
+
+    const createdDate = new Date(createdValue + 'T00:00:00');
     if (isNaN(createdDate.getTime())) return null;
 
     const today = new Date();
@@ -352,10 +381,17 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           ? '1 day ago'
           : `${diffDays} days ago`;
 
+    const clickable = !!onUpdateProperty;
+
     return (
       <div className="task-click-tooltip-info-item">
         <CalendarClock size={18} className="task-click-tooltip-icon-small" />
-        <span className="task-click-tooltip-info-text">
+        <span
+          className={`task-click-tooltip-info-text${clickable ? ' task-click-tooltip-date-text' : ''}`}
+          onClick={clickable ? handleCreatedClick : undefined}
+          style={clickable ? { cursor: 'pointer' } : undefined}
+          title={clickable ? 'Click to edit created date' : undefined}
+        >
           {formattedDate} ({daysLabel})
         </span>
       </div>

@@ -245,6 +245,31 @@ export async function updateTaskRecurrence(
   });
 }
 
+export async function updateTaskProperty(
+  app: App,
+  file: TFile,
+  line: number | undefined,
+  propertyName: string,
+  newValue: string
+): Promise<void> {
+  if (line === undefined) {
+    await app.fileManager.processFrontMatter(file, frontmatter => {
+      frontmatter[propertyName] = newValue;
+    });
+    return;
+  }
+
+  await processFileLine(app.vault, file, line, taskLine => {
+    const parsedTask = parseTask(taskLine);
+    const updatedTask = setTaskProperty(
+      cloneTask(parsedTask),
+      propertyName,
+      newValue
+    );
+    return reconstructTask(updatedTask);
+  });
+}
+
 /**
  * Updates task dates in a file.
  *
