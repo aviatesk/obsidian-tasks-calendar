@@ -29,6 +29,11 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Task tooltip now shows the `created` date with elapsed days when the task has
+  a `[created:: YYYY-MM-DD]` property
+
 ### Fixed
 
 - Inline date picker for non-range properties (`created`, `completion`, etc.)

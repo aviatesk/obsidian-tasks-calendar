@@ -3,6 +3,7 @@ import {
   FileText,
   Pencil,
   Calendar,
+  CalendarClock,
   Tag,
   Info,
   Check,
@@ -326,6 +327,41 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     );
   };
 
+  const formatCreatedDisplay = () => {
+    const match = taskText.match(/\[created::\s*(\d{4}-\d{2}-\d{2})\]/);
+    if (!match) return null;
+
+    const createdDate = new Date(match[1] + 'T00:00:00');
+    if (isNaN(createdDate.getTime())) return null;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffMs = today.getTime() - createdDate.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    const formattedDate = createdDate.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+
+    const daysLabel =
+      diffDays === 0
+        ? 'today'
+        : diffDays === 1
+          ? '1 day ago'
+          : `${diffDays} days ago`;
+
+    return (
+      <div className="task-click-tooltip-info-item">
+        <CalendarClock size={18} className="task-click-tooltip-icon-small" />
+        <span className="task-click-tooltip-info-text">
+          {formattedDate} ({daysLabel})
+        </span>
+      </div>
+    );
+  };
+
   const formatTagsDisplay = () => {
     if (!tags || tags.length === 0) return null;
 
@@ -612,6 +648,8 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
           {formatDateDisplay()}
 
           {formatRecurrenceDisplay()}
+
+          {formatCreatedDisplay()}
 
           {formatTagsDisplay()}
 
