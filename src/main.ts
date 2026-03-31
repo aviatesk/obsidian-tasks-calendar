@@ -7,7 +7,10 @@ import {
 } from './TasksCalendarSettings';
 import { TasksCalendarItemView } from './TasksCalendarItemView';
 import { SettingTab } from './TasksCalendarSettingsTab';
-import { TaskPropertySuggest } from './editor/TaskPropertySuggest';
+import {
+  TaskPropertySuggest,
+  createBracketInputHandler,
+} from './editor/TaskPropertySuggest';
 import { createDatePropertyExtension } from './editor/DatePropertyDecoration';
 import { createDatePropertyPostProcessor } from './editor/DatePropertyPostProcessor';
 import { createLogger, setLogLevel } from './logging';
@@ -73,7 +76,7 @@ export default class TasksCalendarPlugin extends Plugin {
     this.registerEditorSuggest(
       new TaskPropertySuggest(this.app, this.configManager)
     );
-
+    this.registerEditorExtension(createBracketInputHandler());
     this.registerEditorExtension(
       createDatePropertyExtension(this.app, this.configManager)
     );

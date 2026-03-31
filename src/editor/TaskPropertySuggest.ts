@@ -7,6 +7,8 @@ import {
   type EditorSuggestTriggerInfo,
   type TFile,
 } from 'obsidian';
+import { type Extension } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
 import { DateTime } from 'luxon';
 import type { ConfigManager } from '../ConfigManager';
 import { getDatePropertyNames } from '../date-properties';
@@ -63,7 +65,10 @@ export class TaskPropertySuggest extends EditorSuggest<TaskPropertySuggestion> {
     if (recurrenceMatch) {
       this.triggerKind = 'recurrence-value';
       return {
-        start: { line: cursor.line, ch: cursor.ch - recurrenceMatch[1].length },
+        start: {
+          line: cursor.line,
+          ch: cursor.ch - recurrenceMatch[1].length,
+        },
         end: cursor,
         query: recurrenceMatch[1],
       };
@@ -145,4 +150,22 @@ export class TaskPropertySuggest extends EditorSuggest<TaskPropertySuggestion> {
       editor.setCursor({ line: start.line, ch: start.ch + replacement.length });
     }
   }
+}
+
+export function createBracketInputHandler(): Extension {
+  return EditorView.inputHandler.of((view, from, to, text) => {
+    if (text !== '[') return false;
+
+    const line = view.state.doc.lineAt(from);
+    if (!TASK_LINE_PATTERN.test(line.text)) return false;
+
+    const posInLine = from - line.from;
+    if (posInLine > 0 && line.text[posInLine - 1] === '[') return false;
+
+    view.dispatch({
+      changes: { from, to, insert: '[' },
+      selection: { anchor: from + 1 },
+    });
+    return true;
+  });
 }

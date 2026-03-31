@@ -31,6 +31,14 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Task property autocomplete (`[due]`, `[start]`, etc.) now reliably triggers
+  when typing `[` on a task line. Obsidian's built-in `[[` wikilink handler was
+  intercepting the `[` keystroke and preventing the suggest popup from
+  appearing. A CodeMirror input handler now bypasses this for task lines while
+  preserving normal `[[` wikilink behavior elsewhere.
+
 ## [0.1.8]
 
 ### Added
