@@ -1,6 +1,6 @@
 {
   "name": "obsidian-tasks-calendar",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Visualize tasks on an interactive calendar powered by FullCalendar and Dataview.",
   "main": "main.js",
   "type": "module",
