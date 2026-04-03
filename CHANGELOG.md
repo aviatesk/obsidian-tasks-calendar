@@ -33,6 +33,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- Calendar rendering misalignment after toggling the sidebar. The calendar now
+  listens to the workspace `resize` event (in addition to `layout-change`) so
+  that `updateSize()` is called when the sidebar is shown or hidden.
+
 ## [0.1.9]
 
 ### Fixed

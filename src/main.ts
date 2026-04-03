@@ -89,20 +89,6 @@ export default class TasksCalendarPlugin extends Plugin {
         void this.activateView();
       });
 
-      this.registerEvent(
-        this.app.workspace.on('layout-change', () => {
-          setTimeout(() => {
-            if (this.app.workspace.getLeavesOfType(VIEW_TYPE).length > 0) {
-              const view =
-                this.app.workspace.getLeavesOfType(VIEW_TYPE)[0].view;
-              if (view instanceof TasksCalendarItemView && view.calendar) {
-                view.calendar.updateSize();
-              }
-            }
-          }, 100);
-        })
-      );
-
       if (this.configManager.get('autoOpenOnStartup')) {
         setTimeout(() => {
           void this.activateView();

@@ -294,15 +294,15 @@ export class TasksCalendarItemView extends ItemView {
 
     this.setupResizeObserver(calendarEl);
 
-    this.registerEvent(
-      this.app.workspace.on('layout-change', () => {
-        setTimeout(() => {
-          if (this.calendar) {
-            this.calendar.updateSize();
-          }
-        }, 100);
-      })
-    );
+    const deferUpdateSize = () => {
+      setTimeout(() => {
+        if (this.calendar) {
+          this.calendar.updateSize();
+        }
+      }, 100);
+    };
+    this.registerEvent(this.app.workspace.on('resize', deferUpdateSize));
+    this.registerEvent(this.app.workspace.on('layout-change', deferUpdateSize));
 
     this.registerEvent(
       this.app.vault.on('modify', file => {
