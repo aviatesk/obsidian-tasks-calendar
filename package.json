@@ -49,7 +49,7 @@
     "@fullcalendar/core": "^6.1.10",
     "@fullcalendar/daygrid": "^6.1.10",
     "@fullcalendar/interaction": "^6.1.15",
-    "@fullcalendar/list": "^6.1.15",
+    "@fullcalendar/list": "^6.1.21",
     "@fullcalendar/timegrid": "^6.1.21",
     "lucide-react": "^1.17.0",
     "react": "^19.2.6",
