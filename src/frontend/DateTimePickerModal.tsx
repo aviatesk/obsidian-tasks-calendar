@@ -4,7 +4,7 @@ import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { Clock } from 'lucide-react';
-import { FIRST_DAY } from 'src/TasksCalendarSettings';
+import { FIRST_DAY } from '../TasksCalendarSettings';
 import { ReactRenderer } from './ReactRoot';
 
 interface DateTimePickerModalProps {
@@ -69,9 +69,12 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   const calendarInstance = useRef<Calendar | null>(null);
   const isRangeRef = useRef<boolean>(isRange);
   const startDateRef = useRef<Date>(startDate);
+  const endDateRef = useRef<Date | null>(endDate);
 
   // For time input changes - using a shorter debounce
-  const timeInputDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const timeInputDebounceTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
   // Input focus states
   const [hoursInputFocused, setHoursInputFocused] = useState(false);
@@ -224,6 +227,9 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
   useEffect(() => {
     startDateRef.current = startDate;
   }, [startDate]);
+  useEffect(() => {
+    endDateRef.current = endDate;
+  }, [endDate]);
 
   // Clean up pending timeouts on unmount
   useEffect(() => {
@@ -232,6 +238,69 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
         clearTimeout(timeInputDebounceTimerRef.current);
       }
     };
+  }, []);
+
+  // Function to highlight the selected date range. Reads from refs so the
+  // callback identity stays stable and can be safely captured by the calendar
+  // initialization effect, which only runs on mount.
+  const updateSelectedDateHighlight = useCallback(() => {
+    if (!calendarRef.current) return;
+
+    const currentStartDate = startDateRef.current;
+    const currentEndDate = endDateRef.current;
+
+    // Remove existing selections
+    const selectedCells = calendarRef.current.querySelectorAll(
+      '.fc-day-selected, .fc-day-selected-start, .fc-day-selected-end, .fc-day-in-range'
+    );
+    selectedCells.forEach(el => {
+      el.classList.remove('fc-day-selected');
+      el.classList.remove('fc-day-selected-start');
+      el.classList.remove('fc-day-selected-end');
+      el.classList.remove('fc-day-in-range');
+    });
+
+    const formatDateForSelector = (date: Date) => {
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    };
+
+    const startDateStr = formatDateForSelector(currentStartDate);
+    const startCell = calendarRef.current.querySelector(
+      `[data-date="${startDateStr}"]`
+    );
+    if (startCell) {
+      startCell.classList.add('fc-day-selected-start');
+      startCell.classList.add('fc-day-selected');
+    }
+
+    if (currentEndDate) {
+      const endDateStr = formatDateForSelector(currentEndDate);
+      const endCell = calendarRef.current.querySelector(
+        `[data-date="${endDateStr}"]`
+      );
+      if (endCell) {
+        endCell.classList.add('fc-day-selected-end');
+        endCell.classList.add('fc-day-selected');
+      }
+
+      if (currentStartDate < currentEndDate) {
+        const start = new Date(currentStartDate);
+        start.setDate(start.getDate() + 1);
+
+        const end = new Date(currentEndDate);
+
+        for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+          const dateStr = formatDateForSelector(d);
+          const dayCell = calendarRef.current.querySelector(
+            `[data-date="${dateStr}"]`
+          );
+          if (dayCell) {
+            dayCell.classList.add('fc-day-in-range');
+          }
+        }
+      }
+    }
   }, []);
 
   // Initialize calendar
@@ -390,69 +459,6 @@ export const DateTimePickerModal: React.FC<DateTimePickerModalProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally run only on mount
   }, []);
-
-  // Function to highlight the selected date range
-  const updateSelectedDateHighlight = useCallback(() => {
-    if (!calendarRef.current) return;
-
-    // Remove existing selections
-    const selectedCells = calendarRef.current.querySelectorAll(
-      '.fc-day-selected, .fc-day-selected-start, .fc-day-selected-end, .fc-day-in-range'
-    );
-    selectedCells.forEach(el => {
-      el.classList.remove('fc-day-selected');
-      el.classList.remove('fc-day-selected-start');
-      el.classList.remove('fc-day-selected-end');
-      el.classList.remove('fc-day-in-range');
-    });
-
-    // Function to format date for selection
-    const formatDateForSelector = (date: Date) => {
-      const pad = (n: number) => n.toString().padStart(2, '0');
-      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-    };
-
-    // Highlight start date
-    const startDateStr = formatDateForSelector(startDate);
-    const startCell = calendarRef.current.querySelector(
-      `[data-date="${startDateStr}"]`
-    );
-    if (startCell) {
-      startCell.classList.add('fc-day-selected-start');
-      startCell.classList.add('fc-day-selected');
-    }
-
-    // Highlight end date if exists
-    if (endDate) {
-      const endDateStr = formatDateForSelector(endDate);
-      const endCell = calendarRef.current.querySelector(
-        `[data-date="${endDateStr}"]`
-      );
-      if (endCell) {
-        endCell.classList.add('fc-day-selected-end');
-        endCell.classList.add('fc-day-selected');
-      }
-
-      // Highlight dates in between if this is a range
-      if (startDate < endDate) {
-        const start = new Date(startDate);
-        start.setDate(start.getDate() + 1); // Start from the day after start date
-
-        const end = new Date(endDate);
-
-        // Loop through dates between start and end
-        for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
-          const dateStr = formatDateForSelector(d);
-          const dayCell = calendarRef.current.querySelector(
-            `[data-date="${dateStr}"]`
-          );
-          if (dayCell) {
-            dayCell.classList.add('fc-day-in-range');
-          }
-        }
-      }
-    }
-  }, [startDate, endDate]);
 
   // Update highlight when dates change
   useEffect(() => {

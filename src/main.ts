@@ -18,11 +18,9 @@ import { ConfigManager } from './ConfigManager';
 
 function getDataviewApi(app: Plugin['app']): DataviewApi | undefined {
   const plugins = (app as unknown as Record<string, unknown>).plugins as
-    | Record<string, unknown>
-    | undefined;
+    Record<string, unknown> | undefined;
   const inner = plugins?.plugins as
-    | Record<string, { api?: DataviewApi }>
-    | undefined;
+    Record<string, { api?: DataviewApi }> | undefined;
   return inner?.dataview?.api;
 }
 

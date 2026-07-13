@@ -263,7 +263,8 @@ export default function getTasksAsEvents(
 
   const query = settings.query || DEFAULT_CALENDAR_SETTINGS.query;
 
-  dataviewApi.pages(query).forEach((page: SMarkdownPage) => {
+  dataviewApi.pages(query).forEach(rawPage => {
+    const page = rawPage as SMarkdownPage;
     if (page && sourceFilter(page, settings, true)) {
       const event = createEvent(page, settings, true);
       events.push(event);

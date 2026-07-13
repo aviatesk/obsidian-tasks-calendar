@@ -19,7 +19,7 @@ import { StatusPickerNativeModal } from './StatusPickerDropdown';
 import { formatStatus } from '../backend/status';
 import { getStatusIcon } from './statusIcon';
 import { type App, Modal, Platform } from 'obsidian';
-import { DEFAULT_CALENDAR_SETTINGS } from 'src/TasksCalendarSettings';
+import { DEFAULT_CALENDAR_SETTINGS } from '../TasksCalendarSettings';
 import { createLogger } from '../logging';
 
 export interface TaskClickTooltipProps {

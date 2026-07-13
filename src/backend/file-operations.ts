@@ -20,8 +20,9 @@ export async function ensureDirectory(
       }
     }
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     throw new FileOperationError(
-      `Failed to create directory ${currentPath}: ${error.message}`
+      `Failed to create directory ${currentPath}: ${message}`
     );
   }
 }

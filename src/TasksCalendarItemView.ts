@@ -42,7 +42,7 @@ export class TasksCalendarItemView extends ItemView {
   private settings: CalendarSettings = DEFAULT_CALENDAR_SETTINGS;
   private plugin: TasksCalendarPlugin;
   private footerEl: HTMLElement | null = null;
-  private closeDropdown: (event: MouseEvent) => void;
+  private closeDropdown: ((event: MouseEvent) => void) | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: TasksCalendarPlugin) {
     super(leaf);
@@ -88,7 +88,7 @@ export class TasksCalendarItemView extends ItemView {
   private onHoverLink = (
     event: React.MouseEvent,
     hoverFilePath: string,
-    hoverLine: number
+    hoverLine?: number
   ) => {
     this.app.workspace.trigger('hover-link', {
       event: event.nativeEvent,
@@ -131,9 +131,7 @@ export class TasksCalendarItemView extends ItemView {
       events: (_fetchInfo, successCallback, failureCallback) => {
         this.fetchCalendarEvents(successCallback, failureCallback);
       },
-      eventOrder: (a: EventApi, b: EventApi) => {
-        return a.extendedProps.priority - b.extendedProps.priority > 0 ? -1 : 1;
-      },
+      eventOrder: '-priority',
       firstDay: FIRST_DAY,
       eventTimeFormat: {
         hour: '2-digit',

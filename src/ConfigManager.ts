@@ -149,12 +149,12 @@ export class ConfigManager {
     if (!this.changeListeners.has(keyStr)) {
       this.changeListeners.set(keyStr, new Set());
     }
-    this.changeListeners.get(keyStr)!.add(listener as UntypedListener);
+    this.changeListeners.get(keyStr)!.add(listener);
 
     return () => {
       const listeners = this.changeListeners.get(keyStr);
       if (listeners) {
-        listeners.delete(listener as UntypedListener);
+        listeners.delete(listener);
         if (listeners.size === 0) {
           this.changeListeners.delete(keyStr);
         }

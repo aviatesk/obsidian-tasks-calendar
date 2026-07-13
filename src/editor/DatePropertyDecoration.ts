@@ -37,7 +37,7 @@ class DatePropertyDecorationPlugin implements PluginValue {
     const datePropertyNames = getDatePropertyNames(this.configManager);
 
     for (const { from, to } of view.visibleRanges) {
-      for (let pos = from; pos <= to; ) {
+      for (let pos = from; pos <= to;) {
         const line = view.state.doc.lineAt(pos);
         const lineText = line.text;
 

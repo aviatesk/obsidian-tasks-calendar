@@ -362,10 +362,7 @@ export class CalendarSettingsModal extends Modal {
     name: string,
     desc: string,
     field:
-      | 'excludedStatuses'
-      | 'includedStatuses'
-      | 'excludedTags'
-      | 'includedTags',
+      'excludedStatuses' | 'includedStatuses' | 'excludedTags' | 'includedTags',
     isTag: boolean
   ): void {
     new Setting(el).setName(name).setDesc(desc);
