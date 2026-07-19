@@ -51,7 +51,7 @@
     "@fullcalendar/interaction": "^6.1.21",
     "@fullcalendar/list": "^6.1.21",
     "@fullcalendar/timegrid": "^6.1.21",
-    "lucide-react": "^1.17.0",
+    "lucide-react": "^1.25.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.7"
   }
