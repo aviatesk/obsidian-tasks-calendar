@@ -38,7 +38,7 @@ and this project adheres to
 ### Changed
 
 - Upgraded build and type checking to TypeScript 7.0.2, while retaining
-  TypeScript 5.9 for ESLint compatibility.
+  TypeScript 6.0 for ESLint compatibility.
 
 ## [0.1.10]
 

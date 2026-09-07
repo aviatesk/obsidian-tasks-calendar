@@ -2,7 +2,6 @@ import js from '@eslint/js';
 import typescript from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
 import unusedImports from 'eslint-plugin-unused-imports';
-import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import obsidianmd from 'eslint-plugin-obsidianmd';
 
@@ -41,12 +40,8 @@ export default [
     plugins: {
       '@typescript-eslint': typescript,
       'unused-imports': unusedImports,
-      react: react,
       'react-hooks': reactHooks,
       obsidianmd: obsidianmd,
-    },
-    settings: {
-      react: { version: 'detect' },
     },
     rules: {
       // TypeScript rules
@@ -66,8 +61,7 @@ export default [
       // Disable some recommended rules that conflict with TypeScript
       'no-undef': 'off',
 
-      // React rules
-      'react/react-in-jsx-scope': 'off',
+      // React Hooks rules
       ...reactHooks.configs.recommended.rules,
 
       // Obsidian rules
