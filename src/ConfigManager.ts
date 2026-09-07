@@ -18,7 +18,7 @@ export type ConfigChangeListener<K extends keyof PluginSettings> = (
   oldValue: PluginSettings[K]
 ) => void;
 
-type UntypedListener = (...args: unknown[]) => void;
+type UntypedListener = ConfigChangeListener<never>;
 
 export class ConfigManager {
   private readonly logger: Logger = createLogger('ConfigManager');
