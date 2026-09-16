@@ -4,6 +4,19 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      react:
+        patterns:
+          - react
+          - react-dom
+          - '@types/react'
+          - '@types/react-dom'
+      fullcalendar:
+        patterns:
+          - '@fullcalendar/*'
+      typescript-eslint:
+        patterns:
+          - '@typescript-eslint/*'
   - package-ecosystem: github-actions
     directory: /
     schedule:
