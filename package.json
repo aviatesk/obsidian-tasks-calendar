@@ -38,7 +38,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-unused-imports": "^4.4.1",
     "husky": "^9.1.7",
-    "lint-staged": "^17.4.1",
+    "lint-staged": "^17.5.1",
     "obsidian": "latest",
     "obsidian-dataview": "^0.5.67",
     "prettier": "^3.9.6",
