@@ -41,7 +41,7 @@
     "lint-staged": "^17.5.1",
     "obsidian": "latest",
     "obsidian-dataview": "^0.5.67",
-    "prettier": "^3.9.6",
+    "prettier": "^3.9.7",
     "tslib": "^2.8.1",
     "typescript": "^6.0.3",
     "typescript-native": "npm:typescript@^7.0.2"
