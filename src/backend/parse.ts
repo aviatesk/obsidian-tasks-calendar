@@ -232,8 +232,49 @@ export function getTaskProperty(
 }
 
 /**
+ * Removes the segments selected by `shouldRemove`, and tidies up the spacing
+ * around each of them: the whitespace on both sides is reduced to the one in
+ * front, and neighbors that had no whitespace in between are kept apart.
+ */
+function removeSegments(
+  segments: TaskSegment[],
+  shouldRemove: (segment: TaskSegment, index: number) => boolean
+): TaskSegment[] {
+  const kept: TaskSegment[] = [];
+  let hasJustRemoved = false;
+
+  segments.forEach((segment, index) => {
+    if (shouldRemove(segment, index)) {
+      hasJustRemoved = true;
+      return;
+    }
+
+    if (hasJustRemoved) {
+      const previous = kept[kept.length - 1];
+      const followsWhitespace = !previous || /\s$/.test(previous.text);
+      if (followsWhitespace && segment.type === 'text') {
+        const text = segment.text.trimStart();
+        if (!text) return;
+        kept.push({ ...segment, text });
+        hasJustRemoved = false;
+        return;
+      }
+      if (!followsWhitespace && !/^\s/.test(segment.text)) {
+        kept.push({ type: 'text', text: ' ' });
+      }
+    }
+
+    kept.push(segment);
+    hasJustRemoved = false;
+  });
+
+  return kept;
+}
+
+/**
  * Sets a property on a task. An existing property is updated in place, and a
- * new one is added after everything else.
+ * new one is added after everything else. Further occurrences of an existing
+ * property are removed, so that the task ends up with the given value only.
  *
  * @param task The parsed task
  * @param key Property name
@@ -256,12 +297,12 @@ export function setTaskProperty(
     isPropertyNamed(segment, key)
   );
   if (index >= 0) {
-    return {
-      ...task,
-      segments: task.segments.map((segment, i) =>
-        i === index ? property : segment
-      ),
-    };
+    const segments = removeSegments(
+      task.segments,
+      (segment, i) => i > index && isPropertyNamed(segment, key)
+    );
+    segments[index] = property;
+    return { ...task, segments };
   }
 
   const lastSegment = task.segments[task.segments.length - 1];
@@ -280,25 +321,10 @@ export function setTaskProperty(
  * @returns Updated task
  */
 export function removeTaskProperty(task: ParsedTask, key: string): ParsedTask {
-  const segments: TaskSegment[] = [];
-  let hasJustRemoved = false;
-
-  for (const segment of task.segments) {
-    if (isPropertyNamed(segment, key)) {
-      hasJustRemoved = true;
-      continue;
-    }
-
-    // Avoid leaving the whitespace on both sides of the removed property
-    const previous = segments[segments.length - 1];
-    const followsWhitespace = !previous || /\s$/.test(previous.text);
-    if (hasJustRemoved && segment.type === 'text' && followsWhitespace) {
-      segments.push({ ...segment, text: segment.text.trimStart() });
-    } else {
-      segments.push(segment);
-    }
-    hasJustRemoved = false;
-  }
-
-  return { ...task, segments };
+  return {
+    ...task,
+    segments: removeSegments(task.segments, segment =>
+      isPropertyNamed(segment, key)
+    ),
+  };
 }
