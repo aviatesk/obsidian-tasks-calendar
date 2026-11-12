@@ -600,6 +600,9 @@ export class TasksCalendarItemView extends ItemView {
         new Notice('Task status updated successfully');
       }
 
+      if (statusResult.createdFilePath) {
+        this.expectReindex(statusResult.createdFilePath);
+      }
       this.refetchNowAndOnReindex(filePath);
     } catch (error) {
       this.handleTaskError(error, 'Failed to update task status', filePath);
@@ -662,7 +665,7 @@ export class TasksCalendarItemView extends ItemView {
     }
 
     try {
-      const success = await createTask(
+      const createdFilePath = await createTask(
         this.app,
         targetPath,
         taskText,
@@ -674,13 +677,9 @@ export class TasksCalendarItemView extends ItemView {
         this.settings.dateProperty
       );
 
-      if (success) {
-        this.refetchNowAndOnReindex(targetPath);
-        new Notice('Task created successfully');
-        return true;
-      }
-
-      return false;
+      this.refetchNowAndOnReindex(createdFilePath);
+      new Notice('Task created successfully');
+      return true;
     } catch (error) {
       handleError(error, 'Failed to create task', this.logger);
       return false;
@@ -799,7 +798,11 @@ export class TasksCalendarItemView extends ItemView {
    * fetched again as soon as Dataview has indexed the file.
    */
   private expectReindex(filePath: string) {
-    this.recentWrites.set(filePath, Date.now());
+    const now = Date.now();
+    for (const [path, writtenAt] of this.recentWrites) {
+      if (now - writtenAt > REINDEX_WAIT_MS) this.recentWrites.delete(path);
+    }
+    this.recentWrites.set(filePath, now);
   }
 
   private refetchNowAndOnReindex(filePath: string) {
@@ -900,6 +903,7 @@ export class TasksCalendarItemView extends ItemView {
   async onClose() {
     await super.onClose();
     this.closeActiveTooltip();
+    this.recentWrites.clear();
 
     if (this.calendarFooter) {
       this.calendarFooter.destroy();

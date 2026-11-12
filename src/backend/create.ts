@@ -8,6 +8,7 @@ import { TaskValidationError } from './error-handling';
  * - If target is a file, appends task to that file
  * - If target is a folder, creates a new note with task text as the name and adds frontmatter
  *
+ * @returns The path of the file the task was written to
  * @throws TaskValidationError if task validation fails
  * @throws FileOperationError if file operation fails
  */
@@ -21,7 +22,7 @@ export async function createTask(
   isAllDay: boolean,
   startDateProperty: string,
   dateProperty: string
-): Promise<boolean> {
+): Promise<string> {
   // Validate inputs
   if (!taskText.trim()) {
     throw new TaskValidationError('Task text cannot be empty');
@@ -72,7 +73,8 @@ export async function createTask(
     const existingFile = app.vault.getAbstractFileByPath(fullPath);
     if (existingFile instanceof TFile) {
       // If file exists, append the task to it
-      return await appendToFile(app.vault, fullPath, formattedTask);
+      await appendToFile(app.vault, fullPath, formattedTask);
+      return fullPath;
     } else {
       const file = await app.vault.create(fullPath, '');
       await app.fileManager.processFrontMatter(file, frontmatter => {
@@ -80,11 +82,12 @@ export async function createTask(
         if (startDateVal) frontmatter[startDateProperty] = startDateVal;
         frontmatter['status'] = ' ';
       });
-      return true;
+      return file.path;
     }
   } else {
     // Regular file path, just append the task
-    return await appendToFile(app.vault, targetPath, formattedTask);
+    await appendToFile(app.vault, targetPath, formattedTask);
+    return normalizePath(targetPath);
   }
 }
 

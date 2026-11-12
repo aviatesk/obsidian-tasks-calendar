@@ -24,6 +24,7 @@ import {
 
 export interface UpdateStatusResult {
   recurringTaskCreated: boolean;
+  createdFilePath?: string;
 }
 
 /**
@@ -139,6 +140,7 @@ async function updateFrontmatterTaskStatus(
   const newFilePath = `${parentPath}${newFileName}.${file.extension}`;
 
   const newFile = await app.vault.create(newFilePath, recurring.body);
+  result.createdFilePath = newFile.path;
   await app.fileManager.processFrontMatter(newFile, fm => {
     Object.assign(fm, recurring.frontmatter);
   });
