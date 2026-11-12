@@ -1,38 +1,103 @@
 import { TaskValidationError } from './error-handling';
 
+interface TextSegment {
+  type: 'text';
+  text: string;
+}
+
+interface TagSegment {
+  type: 'tag';
+  text: string;
+}
+
+interface PropertySegment {
+  type: 'property';
+  text: string;
+  name: string;
+  value: string;
+}
+
+type TaskSegment = TextSegment | TagSegment | PropertySegment;
+
 /**
  * Represents different parts of a parsed task
  */
 export interface ParsedTask {
   linePrefix: string; // Blockquote markers and whitespace before the list marker
-  checkboxPrefix: string; // The full prefix including list marker and checkbox
-  status: string; // The character in the checkbox
-  tagsBeforeContent: string[]; // Tags before content (#TODO, etc.)
-  propertiesBeforeContent: Map<string, string>; // Properties before content
-  content: string; // The main task text
-  tagsAfterContent: string[]; // Tags after content
-  propertiesAfterContent: Map<string, string>; // Properties after content
-  blockReference: string; // Block reference (^abc123)
   listMarker: string; // The type of list marker (-, *, +, 1., etc.)
+  status: string; // The character in the checkbox
+  content: string; // The main task text, i.e. the first run of plain text
+  segments: TaskSegment[]; // Everything between the checkbox and the block reference, in its original order
+  blockReference: string; // Block reference (^abc123)
 }
 
-// Define interfaces for element types
-interface TagElement {
-  type: 'tag';
-  start: number;
-  end: number;
-  tag: string;
+// The line prefix covers blockquote markers (for tasks inside blockquotes and
+// callouts) as well as indentation, including tab characters
+const CHECKBOX_PATTERN = /^((?:[ \t]*>)*[ \t]*)([-*+]|\d+\.)\s+\[(.)\]\s*/;
+const PROPERTY_PATTERN = /\[([^:]+)::\s*([^\]]*)\]/g;
+const TAG_PATTERN = /#[\w\p{L}/\-_]+/gu;
+const BLOCK_REFERENCE_PATTERN = /\s*(\^\w+)\s*$/;
+
+function isBlank(text: string): boolean {
+  return text.trim() === '';
 }
 
-interface PropertyElement {
-  type: 'property';
-  start: number;
-  end: number;
-  name: string;
-  value: string;
+function isPropertyNamed(
+  segment: TaskSegment,
+  name: string
+): segment is PropertySegment {
+  return segment.type === 'property' && segment.name === name;
 }
 
-type TaskElement = TagElement | PropertyElement;
+/**
+ * Splits the text of a task into its tags, properties, and the text around
+ * them. Joining the text of the segments yields the given text again.
+ */
+function splitIntoSegments(text: string): TaskSegment[] {
+  const properties = [...text.matchAll(PROPERTY_PATTERN)].map(match => ({
+    start: match.index,
+    segment: {
+      type: 'property' as const,
+      text: match[0],
+      name: match[1].trim(),
+      value: match[2].trim(),
+    },
+  }));
+  const tags = [...text.matchAll(TAG_PATTERN)]
+    .filter(
+      match =>
+        !properties.some(
+          ({ start, segment }) =>
+            match.index >= start && match.index < start + segment.text.length
+        )
+    )
+    .map(match => ({
+      start: match.index,
+      segment: { type: 'tag' as const, text: match[0] },
+    }));
+  const elements = [...properties, ...tags].sort((a, b) => a.start - b.start);
+
+  const segments: TaskSegment[] = [];
+  let position = 0;
+  for (const { start, segment } of elements) {
+    if (start > position) {
+      segments.push({ type: 'text', text: text.slice(position, start) });
+    }
+    segments.push(segment);
+    position = start + segment.text.length;
+  }
+  if (position < text.length) {
+    segments.push({ type: 'text', text: text.slice(position) });
+  }
+  return segments;
+}
+
+function findContentSegment(segments: TaskSegment[]): TextSegment | undefined {
+  return segments.find(
+    (segment): segment is TextSegment =>
+      segment.type === 'text' && !isBlank(segment.text)
+  );
+}
 
 /**
  * Parse a task line into its components
@@ -42,178 +107,39 @@ type TaskElement = TagElement | PropertyElement;
  * @throws TaskValidationError if parsing fails
  */
 export function parseTask(taskLine: string): ParsedTask {
-  // If this is null, the function might not be called with a task line
   if (!taskLine) {
     throw new TaskValidationError('Task line is empty or undefined');
   }
 
-  // Define regex patterns for different components
-  // The line prefix covers blockquote markers (for tasks inside blockquotes
-  // and callouts) as well as indentation, including tab characters
-  const checkboxPattern = /^((?:[ \t]*>)*[ \t]*)([-*+]|\d+\.)\s+\[(.)\]\s*/;
-  const propertyPattern = /\[([^:]+)::\s*([^\]]*)\]/g;
-  const tagPattern = /#[\w\p{L}/\-_]+/gu;
-  const blockRefPattern = /\s*(\^\w+)\s*$/;
-
-  // Start with default structure
-  const result: ParsedTask = {
-    linePrefix: '',
-    checkboxPrefix: '',
-    status: ' ', // Default to incomplete
-    tagsBeforeContent: [],
-    propertiesBeforeContent: new Map(),
-    content: '',
-    tagsAfterContent: [],
-    propertiesAfterContent: new Map(),
-    blockReference: '',
-    listMarker: '-', // Default list marker
-  };
-
-  // Extract checkbox prefix
-  const checkboxMatch = taskLine.match(checkboxPattern);
+  const checkboxMatch = taskLine.match(CHECKBOX_PATTERN);
   if (!checkboxMatch) {
-    // Not a task, fail parsing
     throw new TaskValidationError(
       "Invalid task format: Line must start with a list marker followed by '[ ]'"
     );
   }
 
-  result.linePrefix = checkboxMatch[1]; // Store the line prefix verbatim
-  result.listMarker = checkboxMatch[2]; // Extract the list marker type
-  result.status = checkboxMatch[3]; // Extract the status character
-  result.checkboxPrefix = checkboxMatch[0].substring(checkboxMatch[1].length); // Prefix without the line prefix
   let remainingText = taskLine.slice(checkboxMatch[0].length);
 
-  // Extract block reference from the end if present
-  const blockRefMatch = remainingText.match(blockRefPattern);
-  if (blockRefMatch) {
-    result.blockReference = blockRefMatch[1];
+  let blockReference = '';
+  const blockReferenceMatch = remainingText.match(BLOCK_REFERENCE_PATTERN);
+  if (blockReferenceMatch) {
+    blockReference = blockReferenceMatch[1];
     remainingText = remainingText.slice(
       0,
-      remainingText.length - blockRefMatch[0].length
+      remainingText.length - blockReferenceMatch[0].length
     );
   }
 
-  // Collect all property matches and their positions
-  const propertyMatches: {
-    start: number;
-    end: number;
-    name: string;
-    value: string;
-  }[] = [];
-  let match;
-  while ((match = propertyPattern.exec(remainingText)) !== null) {
-    propertyMatches.push({
-      start: match.index,
-      end: match.index + match[0].length,
-      name: match[1].trim(),
-      value: match[2].trim(),
-    });
-  }
+  const segments = splitIntoSegments(remainingText);
 
-  // Collect all tag matches and their positions
-  const tagMatches: { start: number; end: number; tag: string }[] = [];
-  while ((match = tagPattern.exec(remainingText)) !== null) {
-    // Skip tags inside property values
-    let insideProperty = false;
-    for (const prop of propertyMatches) {
-      if (match.index >= prop.start && match.index < prop.end) {
-        insideProperty = true;
-        break;
-      }
-    }
-
-    if (!insideProperty) {
-      tagMatches.push({
-        start: match.index,
-        end: match.index + match[0].length,
-        tag: match[0],
-      });
-    }
-  }
-
-  // Sort all properties and tags by position
-  const allElements: TaskElement[] = [
-    ...propertyMatches.map(p => ({ type: 'property' as const, ...p })),
-    ...tagMatches.map(t => ({ type: 'tag' as const, ...t })),
-  ].sort((a, b) => a.start - b.start);
-
-  // Find the first non-property, non-tag text segment that can be considered content
-  let contentStartIndex = 0;
-  let contentEndIndex = remainingText.length;
-  let foundContentStart = false;
-
-  // If there are no elements, the entire text is content
-  if (allElements.length === 0) {
-    result.content = remainingText.trim();
-    return result;
-  }
-
-  // Find text segments and determine content boundaries
-  let lastEndIndex = 0;
-  let beforeContentPhase = true;
-
-  for (let i = 0; i < allElements.length; i++) {
-    const element = allElements[i];
-
-    // Check if there's text before this element
-    if (element.start > lastEndIndex) {
-      const textSegment = remainingText
-        .substring(lastEndIndex, element.start)
-        .trim();
-      if (textSegment && !foundContentStart) {
-        // This is the first significant text segment - it's our content start
-        contentStartIndex = lastEndIndex;
-        foundContentStart = true;
-        beforeContentPhase = false;
-      }
-    }
-
-    // Process the element based on current phase
-    if (beforeContentPhase) {
-      if (element.type === 'tag') {
-        result.tagsBeforeContent.push(element.tag);
-      } else if (element.type === 'property') {
-        result.propertiesBeforeContent.set(element.name, element.value);
-      }
-    } else {
-      if (element.type === 'tag') {
-        result.tagsAfterContent.push(element.tag);
-      } else if (element.type === 'property') {
-        result.propertiesAfterContent.set(element.name, element.value);
-      }
-
-      // If we find an element after content started, update the content end boundary
-      if (foundContentStart && element.start > contentStartIndex) {
-        contentEndIndex = Math.min(contentEndIndex, element.start);
-      }
-    }
-
-    lastEndIndex = element.end;
-  }
-
-  // If no content was identified yet, but there's text after the last element
-  if (!foundContentStart && lastEndIndex < remainingText.length) {
-    const textSegment = remainingText.substring(lastEndIndex).trim();
-    if (textSegment) {
-      contentStartIndex = lastEndIndex;
-      contentEndIndex = remainingText.length;
-      foundContentStart = true;
-    }
-  }
-
-  // Extract the content using the identified boundaries
-  if (foundContentStart) {
-    result.content = remainingText
-      .substring(contentStartIndex, contentEndIndex)
-      .trim();
-  } else {
-    // Handle case where there's no clear content (just tags and properties)
-    // In this case, we'll use an empty content string
-    result.content = '';
-  }
-
-  return result;
+  return {
+    linePrefix: checkboxMatch[1],
+    listMarker: checkboxMatch[2],
+    status: checkboxMatch[3],
+    content: findContentSegment(segments)?.text.trim() ?? '',
+    segments,
+    blockReference,
+  };
 }
 
 /**
@@ -230,251 +156,52 @@ export function hasEmbeddedTags(text: string): boolean {
 }
 
 /**
- * Ensures text doesn't break tag formatting when combined with existing tags
- *
- * @param text The text content to sanitize
- * @returns Sanitized text with proper spacing
+ * Returns the runs of plain text of a task. A task has more than one of them
+ * when its text is interrupted by tags or properties.
  */
-export function sanitizeContentForTags(text: string): string {
-  if (!text) return text;
+export function getContentFragments(task: ParsedTask): string[] {
+  return task.segments
+    .filter(segment => segment.type === 'text' && !isBlank(segment.text))
+    .map(segment => segment.text.trim());
+}
 
-  // Add space after content if it ends with a character that might merge with a tag
-  if (/[^\s]$/.test(text)) {
-    return text + ' ';
-  }
+function replaceSegmentText(text: string, replacement: string): string {
+  const leadingWhitespace = /^\s*/.exec(text)?.[0] ?? '';
+  const trailingWhitespace = /\s*$/.exec(text)?.[0] ?? '';
+  if (!replacement) return leadingWhitespace || trailingWhitespace ? ' ' : '';
+  return leadingWhitespace + replacement + trailingWhitespace;
+}
 
-  return text;
+function appendWithSpace(text: string, appended: string): string {
+  return [text.trimEnd(), appended].filter(Boolean).join(' ');
 }
 
 /**
- * Finds potential content fragments scattered throughout a task line
- *
- * @param parsedTask The parsed task object
- * @param taskLine The full task line text
- * @returns Array of content fragments with their positions
- */
-export function findContentFragments(
-  parsedTask: ParsedTask,
-  taskLine: string
-): { text: string; start: number; end: number }[] {
-  const fragments: { text: string; start: number; end: number }[] = [];
-
-  // Remove the checkbox prefix for analysis
-  const checkboxLength = parsedTask.checkboxPrefix.length;
-  const lineWithoutCheckbox = taskLine.slice(checkboxLength);
-
-  // Skip if we already have a well-defined content
-  if (parsedTask.content && parsedTask.content.length > 0) {
-    const startPos = taskLine.indexOf(parsedTask.content, checkboxLength);
-    if (startPos > -1) {
-      fragments.push({
-        text: parsedTask.content,
-        start: startPos,
-        end: startPos + parsedTask.content.length,
-      });
-    }
-    return fragments;
-  }
-
-  // Create a mask of positions that are part of tags, properties, or block references
-  const maskedPositions = new Array(lineWithoutCheckbox.length).fill(false);
-
-  // Mark tag positions
-  [...parsedTask.tagsBeforeContent, ...parsedTask.tagsAfterContent].forEach(
-    tag => {
-      const tagIndex = lineWithoutCheckbox.indexOf(tag);
-      if (tagIndex >= 0) {
-        for (let i = tagIndex; i < tagIndex + tag.length; i++) {
-          maskedPositions[i] = true;
-        }
-      }
-    }
-  );
-
-  // Mark property positions
-  const allProperties = new Map([
-    ...parsedTask.propertiesBeforeContent.entries(),
-    ...parsedTask.propertiesAfterContent.entries(),
-  ]);
-
-  allProperties.forEach((value, name) => {
-    const propertyStr = `[${name}:: ${value}]`;
-    const propIndex = lineWithoutCheckbox.indexOf(propertyStr);
-    if (propIndex >= 0) {
-      for (let i = propIndex; i < propIndex + propertyStr.length; i++) {
-        maskedPositions[i] = true;
-      }
-    }
-  });
-
-  // Mark block reference positions
-  if (parsedTask.blockReference) {
-    const refIndex = lineWithoutCheckbox.indexOf(parsedTask.blockReference);
-    if (refIndex >= 0) {
-      for (
-        let i = refIndex;
-        i < refIndex + parsedTask.blockReference.length;
-        i++
-      ) {
-        maskedPositions[i] = true;
-      }
-    }
-  }
-
-  // Find continuous segments of unmarked positions (potential content)
-  let inFragment = false;
-  let fragmentStart = 0;
-
-  for (let i = 0; i < maskedPositions.length; i++) {
-    const isMarked = maskedPositions[i];
-
-    if (!isMarked && !inFragment) {
-      // Start of a new fragment
-      inFragment = true;
-      fragmentStart = i;
-    } else if ((isMarked || i === maskedPositions.length - 1) && inFragment) {
-      // End of a fragment
-      inFragment = false;
-      const fragmentEnd = isMarked ? i : i + 1;
-      const fragmentText = lineWithoutCheckbox
-        .substring(fragmentStart, fragmentEnd)
-        .trim();
-
-      if (fragmentText) {
-        fragments.push({
-          text: fragmentText,
-          start: fragmentStart + checkboxLength,
-          end: fragmentEnd + checkboxLength,
-        });
-      }
-    }
-  }
-
-  return fragments;
-}
-
-/**
- * Reconstructs a task string from parsed components
- * ensuring proper spacing and structure
+ * Reconstructs a task string from parsed components. Everything that has not
+ * been modified since the task was parsed is written back as it was.
  *
  * @param task The parsed task object
  * @returns A full task string
  */
 export function reconstructTask(task: ParsedTask): string {
-  let result = '';
+  const contentSegment = findContentSegment(task.segments);
 
-  result += task.linePrefix;
+  let body = task.segments
+    .map(segment =>
+      segment === contentSegment
+        ? replaceSegmentText(segment.text, task.content.trim())
+        : segment.text
+    )
+    .join('');
 
-  // Add checkbox with status, preserving the original list marker
-  if (task.listMarker) {
-    result += `${task.listMarker} [${task.status}] `;
-  } else {
-    // Fallback to the default marker if listMarker is somehow not set
-    result += `- [${task.status}] `;
+  if (!contentSegment && task.content.trim()) {
+    body = appendWithSpace(body, task.content.trim());
   }
-
-  // Add tags before content (with proper spacing)
-  if (task.tagsBeforeContent.length > 0) {
-    result += task.tagsBeforeContent.join(' ') + ' ';
-  }
-
-  // Add properties before content (with proper spacing)
-  if (task.propertiesBeforeContent.size > 0) {
-    const props = Array.from(task.propertiesBeforeContent.entries()).map(
-      ([name, value]) => `[${name}:: ${value}]`
-    );
-    result += props.join(' ') + ' ';
-  }
-
-  // Add main content (ensure it doesn't end with a character that could merge with a tag)
-  if (task.content && task.content.trim().length > 0) {
-    result += sanitizeContentForTags(task.content.trim());
-  }
-
-  // Add tags after content (with proper spacing)
-  if (task.tagsAfterContent.length > 0) {
-    if (task.content && !result.endsWith(' ')) {
-      result += ' ';
-    }
-    result += task.tagsAfterContent.join(' ');
-  }
-
-  // Add properties after content (with proper spacing)
-  if (task.propertiesAfterContent.size > 0) {
-    if (!result.endsWith(' ')) {
-      result += ' ';
-    }
-    const props = Array.from(task.propertiesAfterContent.entries()).map(
-      ([name, value]) => `[${name}:: ${value}]`
-    );
-    result += props.join(' ');
-  }
-
-  // Add block reference if present (with proper spacing)
   if (task.blockReference) {
-    if (!result.endsWith(' ')) {
-      result += ' ';
-    }
-    result += task.blockReference;
+    body = appendWithSpace(body, task.blockReference);
   }
 
-  // Clean up excessive spacing while preserving the line prefix verbatim
-  const nonPrefixPart = result.slice(task.linePrefix.length);
-  const cleanedNonPrefixPart = nonPrefixPart.replace(/ +/g, ' ').trim();
-
-  return task.linePrefix + cleanedNonPrefixPart;
-}
-
-/**
- * Checks if the parse task has split content (content that appears in multiple places)
- *
- * @param parsedTask The parsed task
- * @param taskLine The original task line
- * @returns True if content is split or ambiguous
- */
-export function hasSplitContent(
-  parsedTask: ParsedTask,
-  taskLine: string
-): boolean {
-  const fragments = findContentFragments(parsedTask, taskLine);
-  return fragments.length > 1;
-}
-
-/**
- * Detects potential issues that might make task editing unsafe
- *
- * @param parsedTask The parsed task
- * @param taskLine The original task line
- * @returns An object with issue detection results
- */
-export function detectTaskIssues(
-  parsedTask: ParsedTask,
-  taskLine: string
-): {
-  hasSplitContent: boolean;
-  hasInvalidProperties: boolean;
-  hasEmbeddedTags: boolean;
-  contentFragments: { text: string; start: number; end: number }[];
-} {
-  // Check for split content
-  const contentFragments = findContentFragments(parsedTask, taskLine);
-  const splitContent = contentFragments.length > 1;
-
-  // Check for properties that don't have proper format
-  const invalidProps = [
-    ...parsedTask.propertiesBeforeContent.entries(),
-    ...parsedTask.propertiesAfterContent.entries(),
-  ].some(([key, value]) => !key || key.includes(']') || value.includes(']'));
-
-  // Check for embedded tags in content
-  const embeddedTagsInContent = hasEmbeddedTags(parsedTask.content);
-
-  return {
-    hasSplitContent: splitContent,
-    hasInvalidProperties: invalidProps,
-    hasEmbeddedTags: embeddedTagsInContent,
-    contentFragments,
-  };
+  return `${task.linePrefix}${task.listMarker} [${task.status}] ${body.trim()}`.trimEnd();
 }
 
 /**
@@ -486,36 +213,8 @@ export function detectTaskIssues(
 export function cloneTask(task: ParsedTask): ParsedTask {
   return {
     ...task,
-    tagsBeforeContent: [...task.tagsBeforeContent],
-    propertiesBeforeContent: new Map(task.propertiesBeforeContent),
-    tagsAfterContent: [...task.tagsAfterContent],
-    propertiesAfterContent: new Map(task.propertiesAfterContent),
-    listMarker: task.listMarker, // Preserve the list marker
+    segments: task.segments.map(segment => ({ ...segment })),
   };
-}
-
-/**
- * Safely resolves conflicts between content and tags by adding spaces
- *
- * @param task The parsed task
- * @returns Task with fixed spacing
- */
-export function fixTaskSpacing(task: ParsedTask): ParsedTask {
-  // Nothing to fix if task has no content
-  if (!task.content.trim()) return task;
-
-  // Fix spacing between content and following tags/properties
-  if (
-    task.tagsAfterContent.length > 0 ||
-    task.propertiesAfterContent.size > 0
-  ) {
-    // Ensure content doesn't end with a character that could merge with a tag
-    if (!task.content.endsWith(' ')) {
-      task.content += ' ';
-    }
-  }
-
-  return task;
 }
 
 /**
@@ -529,21 +228,12 @@ export function getTaskProperty(
   task: ParsedTask,
   key: string
 ): string | undefined {
-  // Check in properties before content
-  if (task.propertiesBeforeContent.has(key)) {
-    return task.propertiesBeforeContent.get(key);
-  }
-
-  // Check in properties after content
-  if (task.propertiesAfterContent.has(key)) {
-    return task.propertiesAfterContent.get(key);
-  }
-
-  return undefined;
+  return task.segments.find(segment => isPropertyNamed(segment, key))?.value;
 }
 
 /**
- * Sets a property on a task
+ * Sets a property on a task. An existing property is updated in place, and a
+ * new one is added after everything else.
  *
  * @param task The parsed task
  * @param key Property name
@@ -555,22 +245,31 @@ export function setTaskProperty(
   key: string,
   value: string
 ): ParsedTask {
-  const updatedTask = { ...task };
+  const property: PropertySegment = {
+    type: 'property',
+    text: `[${key}:: ${value}]`,
+    name: key,
+    value,
+  };
 
-  // If property already exists, update in the same location
-  if (task.propertiesBeforeContent.has(key)) {
-    updatedTask.propertiesBeforeContent = new Map(task.propertiesBeforeContent);
-    updatedTask.propertiesBeforeContent.set(key, value);
-  } else if (task.propertiesAfterContent.has(key)) {
-    updatedTask.propertiesAfterContent = new Map(task.propertiesAfterContent);
-    updatedTask.propertiesAfterContent.set(key, value);
-  } else {
-    // Otherwise, add to properties after content (more common for added properties)
-    updatedTask.propertiesAfterContent = new Map(task.propertiesAfterContent);
-    updatedTask.propertiesAfterContent.set(key, value);
+  const index = task.segments.findIndex(segment =>
+    isPropertyNamed(segment, key)
+  );
+  if (index >= 0) {
+    return {
+      ...task,
+      segments: task.segments.map((segment, i) =>
+        i === index ? property : segment
+      ),
+    };
   }
 
-  return updatedTask;
+  const lastSegment = task.segments[task.segments.length - 1];
+  const separator: TaskSegment[] =
+    lastSegment && !/\s$/.test(lastSegment.text)
+      ? [{ type: 'text', text: ' ' }]
+      : [];
+  return { ...task, segments: [...task.segments, ...separator, property] };
 }
 
 /**
@@ -581,17 +280,25 @@ export function setTaskProperty(
  * @returns Updated task
  */
 export function removeTaskProperty(task: ParsedTask, key: string): ParsedTask {
-  const updatedTask = { ...task };
+  const segments: TaskSegment[] = [];
+  let hasJustRemoved = false;
 
-  if (task.propertiesBeforeContent.has(key)) {
-    updatedTask.propertiesBeforeContent = new Map(task.propertiesBeforeContent);
-    updatedTask.propertiesBeforeContent.delete(key);
+  for (const segment of task.segments) {
+    if (isPropertyNamed(segment, key)) {
+      hasJustRemoved = true;
+      continue;
+    }
+
+    // Avoid leaving the whitespace on both sides of the removed property
+    const previous = segments[segments.length - 1];
+    const followsWhitespace = !previous || /\s$/.test(previous.text);
+    if (hasJustRemoved && segment.type === 'text' && followsWhitespace) {
+      segments.push({ ...segment, text: segment.text.trimStart() });
+    } else {
+      segments.push(segment);
+    }
+    hasJustRemoved = false;
   }
 
-  if (task.propertiesAfterContent.has(key)) {
-    updatedTask.propertiesAfterContent = new Map(task.propertiesAfterContent);
-    updatedTask.propertiesAfterContent.delete(key);
-  }
-
-  return updatedTask;
+  return { ...task, segments };
 }

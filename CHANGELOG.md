@@ -70,6 +70,11 @@ and this project adheres to
 - Updating or deleting a task no longer risks modifying another line when lines
   were added to or removed from the note just before. The calendar now verifies
   that the line still holds the task, and asks to try again otherwise.
+- Updating a task no longer drops the text that follows a tag or a property. For
+  example, changing the status of `- [ ] buy milk #errand at the store` used to
+  remove "at the store". The rest of the line is now written back as it was,
+  which also keeps the order of tags and properties, URLs with a `#fragment`,
+  and repeated spaces intact.
 
 ## [0.1.10]
 

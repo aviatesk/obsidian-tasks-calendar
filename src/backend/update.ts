@@ -5,7 +5,7 @@ import {
   hasEmbeddedTags,
   setTaskProperty,
   removeTaskProperty,
-  detectTaskIssues,
+  getContentFragments,
   cloneTask,
 } from './parse';
 import { getCurrentDateFormatted, formatDateForTask } from './date';
@@ -432,13 +432,11 @@ export async function updateTaskText(
     // Parse the task to extract components - may throw TaskValidationError
     const parsedTask = parseTask(taskLine);
 
-    // Check for potential issues that would make editing unsafe
-    const issues = detectTaskIssues(parsedTask, taskLine);
-
     // Safety check: Reject if the task has multiple content fragments
-    if (issues.hasSplitContent) {
-      const fragmentsText = issues.contentFragments
-        .map((f: { text: string }) => `"${f.text}"`)
+    const contentFragments = getContentFragments(parsedTask);
+    if (contentFragments.length > 1) {
+      const fragmentsText = contentFragments
+        .map(fragment => `"${fragment}"`)
         .join(', ');
       throw new TaskValidationError(
         `Task has content in multiple places (${fragmentsText}). Please edit the task directly in the file.`
