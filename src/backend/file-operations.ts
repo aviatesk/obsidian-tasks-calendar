@@ -1,5 +1,6 @@
 import { App, Vault, TFile } from 'obsidian';
 import { FileOperationError } from './error-handling';
+import { findTaskBlockEnd } from './task-block';
 
 /**
  * Ensures a directory exists, creating it and parent directories if needed
@@ -71,19 +72,19 @@ export async function processFileLine(
 }
 
 /**
- * Process a specific line in a file, optionally inserting a new line after it.
+ * Process a task together with its body within a single `vault.process()`
+ * call (atomic operation).
  *
- * The processor returns the updated line and an optional `insertAfter` string.
- * When `insertAfter` is provided, it is spliced in immediately after the
- * processed line within a single `vault.process()` call (atomic operation).
+ * The processor receives the task line and its body lines, and returns the
+ * lines that replace the whole block.
  */
-export async function processFileLineWithInsert(
+export async function processTaskBlock(
   vault: Vault,
   file: TFile,
   line: number,
-  processor: (lineContent: string) => { updated: string; insertAfter?: string }
-): Promise<{ original: string; updated: string; changed: boolean }> {
-  let result = { original: '', updated: '', changed: false };
+  processor: (taskLine: string, bodyLines: string[]) => string[]
+): Promise<{ changed: boolean }> {
+  const result = { changed: false };
 
   await vault.process(file, content => {
     const lines = content.split('\n');
@@ -92,22 +93,20 @@ export async function processFileLineWithInsert(
       throw new FileOperationError(`Invalid line number: ${line}`);
     }
 
-    result.original = lines[line];
+    const blockEnd = findTaskBlockEnd(lines, line);
+    const original = lines.slice(line, blockEnd + 1);
 
-    const processed = processor(lines[line]);
-    result.updated = processed.updated;
+    // The processor function may throw TaskValidationError
+    const updated = processor(original[0], original.slice(1));
+
     result.changed =
-      result.original !== result.updated || processed.insertAfter !== undefined;
+      original.length !== updated.length ||
+      original.some((originalLine, i) => originalLine !== updated[i]);
 
-    if (result.changed) {
-      lines[line] = result.updated;
-      if (processed.insertAfter !== undefined) {
-        lines.splice(line + 1, 0, processed.insertAfter);
-      }
-      return lines.join('\n');
-    }
+    if (!result.changed) return content;
 
-    return content;
+    lines.splice(line, original.length, ...updated);
+    return lines.join('\n');
   });
 
   return result;

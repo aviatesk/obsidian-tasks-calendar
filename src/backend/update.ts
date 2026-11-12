@@ -11,7 +11,7 @@ import {
 import { getCurrentDateFormatted, formatDateForTask } from './date';
 import {
   processFileLine,
-  processFileLineWithInsert,
+  processTaskBlock,
   renameFile,
 } from './file-operations';
 import { STATUS_OPTIONS } from './status';
@@ -29,7 +29,8 @@ export interface UpdateStatusResult {
  * Update task status in Obsidian document.
  *
  * When a recurring task is completed, a new task instance is automatically
- * created with the next due date.
+ * created with the next due date. The new instance is inserted after the
+ * completed task's body and gets its own copy of that body.
  */
 export async function updateTaskStatus(
   app: App,
@@ -154,7 +155,7 @@ async function updateInlineTaskStatus(
   const needsRecurrence = isCompletionStatus(newStatus);
 
   if (needsRecurrence) {
-    await processFileLineWithInsert(app.vault, file, line, taskLine => {
+    await processTaskBlock(app.vault, file, line, (taskLine, bodyLines) => {
       const updatedLine = applyInlineStatusChange(taskLine, newStatus);
 
       const parsedCompleted = parseTask(updatedLine);
@@ -164,14 +165,10 @@ async function updateInlineTaskStatus(
         startDateProperty
       );
 
-      if (newTaskLine) {
-        result.recurringTaskCreated = true;
-      }
+      if (!newTaskLine) return [updatedLine, ...bodyLines];
 
-      return {
-        updated: updatedLine,
-        insertAfter: newTaskLine ?? undefined,
-      };
+      result.recurringTaskCreated = true;
+      return [updatedLine, ...bodyLines, newTaskLine, ...bodyLines];
     });
   } else {
     await processFileLine(app.vault, file, line, taskLine => {

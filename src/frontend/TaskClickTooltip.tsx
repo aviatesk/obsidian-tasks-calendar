@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { DateTimePickerNativeModal } from './DateTimePickerModal';
 import { StatusPickerNativeModal } from './StatusPickerDropdown';
+import { TaskBody } from './TaskBody';
 import { formatStatus } from '../backend/status';
 import { getStatusIcon } from './statusIcon';
 import { type App, Modal, Platform } from 'obsidian';
@@ -50,6 +51,7 @@ export interface TaskClickTooltipProps {
   ) => void;
   onDeleteTask?: (filePath: string, line?: number) => Promise<boolean>;
   recurrence?: string;
+  hasBody?: boolean;
   onUpdateRecurrence?: (newPattern: string) => void;
   onUpdateProperty?: (propertyName: string, newValue: string) => void;
   isCreateMode?: boolean;
@@ -84,6 +86,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   onHoverLink,
   onDeleteTask,
   recurrence,
+  hasBody = false,
   onUpdateRecurrence,
   onUpdateProperty,
   isCreateMode = false,
@@ -515,7 +518,11 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
       <div className="task-click-tooltip-delete-confirm">
         <div className="task-click-tooltip-delete-message">
           <AlertCircle size={18} className="task-click-tooltip-delete-icon" />
-          <span>Are you sure you want to delete this task?</span>
+          <span>
+            {hasBody
+              ? 'Are you sure you want to delete this task and its details?'
+              : 'Are you sure you want to delete this task?'}
+          </span>
         </div>
         <div className="task-click-tooltip-delete-actions">
           <button
@@ -660,6 +667,15 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
       </div>
       <div className="task-click-tooltip-content">
         {renderTaskContent()}
+
+        {hasBody && !isCreateMode && line !== undefined && (
+          <TaskBody
+            app={app}
+            filePath={filePath}
+            line={line}
+            onOpenLink={onClose}
+          />
+        )}
 
         <div className="task-click-tooltip-info">
           {currentStatus && (

@@ -25,6 +25,14 @@ easy-to-manage interface.
   ```
   - [ ] Weekly review [due:: 2026-03-01] [recurrence:: every week]
   ```
+- Tasks with a body:
+  ```
+  - [ ] Task description [due:: YYYY-MM-DD]
+    Additional notes about the task
+    - Nested list items work too
+  ```
+  The first line becomes the event title. The indented lines are shown as
+  Markdown in the task tooltip.
 - File property tasks (using frontmatter):
   ```yaml
   ---

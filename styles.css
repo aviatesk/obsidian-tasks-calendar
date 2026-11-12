@@ -379,6 +379,26 @@
   text-decoration: line-through;
 }
 
+.tasks-calendar-container
+  .tasks-calendar-event-has-body
+  .fc-event-title::before,
+.tasks-calendar-container
+  .tasks-calendar-event-has-body
+  .fc-list-event-title
+  a::before {
+  --tasks-calendar-body-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M21 5H3M15 12H3M17 19H3'/%3E%3C/svg%3E");
+  content: '';
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  margin-right: 0.3em;
+  vertical-align: -0.1em;
+  background-color: currentColor;
+  opacity: 0.8;
+  -webkit-mask: var(--tasks-calendar-body-icon) center / contain no-repeat;
+  mask: var(--tasks-calendar-body-icon) center / contain no-repeat;
+}
+
 .tasks-calendar-container .fc-event.tasks-calendar-event-ghost {
   opacity: 0.4;
   cursor: default;
@@ -1181,6 +1201,29 @@
 
 .task-click-tooltip-main-text:hover {
   background-color: var(--background-modifier-hover);
+}
+
+.task-click-tooltip-body {
+  margin: 0 8px 12px;
+  padding-left: 10px;
+  border-left: 2px solid var(--background-modifier-border);
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 0.95em;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.task-click-tooltip-body > div > :first-child {
+  margin-block-start: 0;
+}
+
+.task-click-tooltip-body > div > :last-child {
+  margin-block-end: 0;
+}
+
+.task-click-tooltip-body input[type='checkbox'] {
+  pointer-events: none;
 }
 
 /* Edit button styling */

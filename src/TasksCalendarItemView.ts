@@ -166,6 +166,7 @@ export class TasksCalendarItemView extends ItemView {
         const status = info.event.extendedProps.status;
         const isAllDay = info.event.allDay;
         const recurrence = info.event.extendedProps.recurrence;
+        const hasBody = info.event.extendedProps.hasBody;
         const isGhost = info.event.extendedProps.isGhost;
 
         if (filePath) {
@@ -181,6 +182,7 @@ export class TasksCalendarItemView extends ItemView {
             isAllDay,
             event: info.event,
             recurrence,
+            hasBody,
             isGhost,
           });
         }
@@ -326,6 +328,7 @@ export class TasksCalendarItemView extends ItemView {
     isAllDay: boolean;
     event?: EventApi;
     recurrence?: string;
+    hasBody?: boolean;
     isGhost?: boolean;
   }) {
     const isGhost = props.isGhost ?? false;
@@ -345,6 +348,7 @@ export class TasksCalendarItemView extends ItemView {
       line: props.line,
       isAllDay: props.isAllDay,
       recurrence: props.recurrence,
+      hasBody: props.hasBody,
       onUpdateDates: isGhost
         ? undefined
         : (

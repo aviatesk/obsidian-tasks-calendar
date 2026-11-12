@@ -1,9 +1,10 @@
 import { App, TFile } from 'obsidian';
-import { processFileLine } from './file-operations';
+import { processTaskBlock } from './file-operations';
 import { TaskValidationError } from './error-handling';
 
 /**
- * Deletes a task from a file at the specified line or removes file properties
+ * Deletes a task from a file at the specified line or removes file properties.
+ * A task written in a list is deleted together with its body.
  *
  * @param vault Obsidian vault instance
  * @param file Target file containing the task
@@ -37,11 +38,7 @@ export async function deleteTask(
       throw new TaskValidationError('Valid line number must be specified');
     }
 
-    // Process the file to remove the task line
-    const result = await processFileLine(app.vault, file, line, () => {
-      // Return an empty string to remove the line
-      return '';
-    });
+    const result = await processTaskBlock(app.vault, file, line, () => ['']);
 
     return result.changed;
   }

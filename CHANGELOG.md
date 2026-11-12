@@ -35,10 +35,27 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- Task tooltip now shows the body of a task, i.e. the lines indented under the
+  task line, rendered as Markdown. Internal links in the body are clickable.
+- Events of tasks that have a body are marked with a small icon in front of the
+  title.
+
 ### Changed
 
+- Events now use only the first line of a task as their title. The body of a
+  multi-line task is no longer appended to the title.
+- Deleting a task from the calendar now deletes its body as well.
+- Completing a recurring task now inserts the next occurrence after the body of
+  the completed task, and copies the body to the new task.
 - Upgraded build and type checking to TypeScript 7.0.2, while retaining
   TypeScript 6.0 for ESLint compatibility.
+
+### Fixed
+
+- Editing the text of a multi-line task from the task tooltip no longer fails
+  with a "Cannot safely update" error.
 
 ## [0.1.10]
 

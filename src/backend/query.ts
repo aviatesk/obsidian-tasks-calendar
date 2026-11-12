@@ -18,6 +18,7 @@ export interface ExtendedProps {
   priority: number;
   tags: string[];
   recurrence?: string;
+  hasBody: boolean;
   isGhost?: boolean;
 }
 
@@ -172,7 +173,10 @@ function createEvent(
   if (!allDay)
     // give a priority to non-all-day events
     priority += calculateEventPriority(startDate);
-  const taskText = source.text ? source.text : source.file.name;
+  const fullText: string = source.text ? source.text : source.file.name;
+  const [taskText, ...continuationLines] = fullText.split('\n');
+  const hasBody =
+    !isPage && (continuationLines.length > 0 || source.children?.length > 0);
   const cleanText = taskText
     .replace(/#\w+/g, '') // Remove all tags
     .replace(/\[[\w\s-]+::\s*[^\]]*\]/g, '') // Remove metadata properties [key::value]
@@ -190,9 +194,11 @@ function createEvent(
     tags: source.tags,
     priority,
     recurrence: typeof recurrence === 'string' ? recurrence : undefined,
+    hasBody,
   };
-  const classNames =
-    source.status === '-' ? ['tasks-calendar-event-cancelled'] : [];
+  const classNames: string[] = [];
+  if (source.status === '-') classNames.push('tasks-calendar-event-cancelled');
+  if (hasBody) classNames.push('tasks-calendar-event-has-body');
   return {
     textColor: eventProps.textColor,
     backgroundColor: eventProps.backgroundColor,
