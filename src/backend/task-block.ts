@@ -1,17 +1,10 @@
 import { App, TFile } from 'obsidian';
 
-const TAB_WIDTH = 4;
+const TAB_STOP = 4;
 
-function getIndentation(text: string): string {
-  return /^[ \t]*/.exec(text)?.[0] ?? '';
-}
-
-function getIndentationWidth(text: string): number {
-  return getIndentation(text).replace(/\t/g, ' '.repeat(TAB_WIDTH)).length;
-}
-
-function isBlank(text: string): boolean {
-  return text.trim() === '';
+interface LineLayout {
+  indentationWidth: number;
+  content: string;
 }
 
 /**
@@ -24,12 +17,45 @@ export function getQuoteDepth(line: string): number {
 }
 
 /**
- * Removes `quoteDepth` blockquote markers from the start of the line. Returns
- * `null` when the line has fewer markers, i.e. it is outside of the blockquote.
+ * Measures the indentation of the line within a blockquote of the given depth.
+ *
+ * The width is counted in columns, with a tab advancing to the next tab stop.
+ * It excludes the optional padding after a blockquote marker, so that
+ * `>- item` and `> - item` are indented equally. Returns `null` when the line
+ * has fewer blockquote markers, i.e. it is outside of the blockquote.
  */
-function stripQuoteMarkers(line: string, quoteDepth: number): string | null {
-  const match = new RegExp(`^(?:[ \\t]*>){${quoteDepth}}`).exec(line);
-  return match ? line.slice(match[0].length) : null;
+function layoutLine(line: string, quoteDepth: number): LineLayout | null {
+  let index = 0;
+  let column = 0;
+  let contentOrigin = 0;
+
+  const isWhitespace = () => line[index] === ' ' || line[index] === '\t';
+  const skipWhitespace = () => {
+    for (; isWhitespace(); index++) {
+      column =
+        line[index] === '\t'
+          ? column + TAB_STOP - (column % TAB_STOP)
+          : column + 1;
+    }
+  };
+
+  for (let depth = 0; depth < quoteDepth; depth++) {
+    skipWhitespace();
+    if (line[index] !== '>') return null;
+    index++;
+    column++;
+    contentOrigin = isWhitespace() ? column + 1 : column;
+  }
+  skipWhitespace();
+
+  return {
+    indentationWidth: column - contentOrigin,
+    content: line.slice(index),
+  };
+}
+
+function isBlank(layout: LineLayout): boolean {
+  return layout.content.trim() === '';
 }
 
 /**
@@ -40,51 +66,42 @@ function stripQuoteMarkers(line: string, quoteDepth: number): string | null {
  */
 export function findTaskBlockEnd(lines: string[], line: number): number {
   const quoteDepth = getQuoteDepth(lines[line]);
-  const taskIndentationWidth = getIndentationWidth(
-    stripQuoteMarkers(lines[line], quoteDepth) ?? ''
-  );
+  const taskIndentationWidth =
+    layoutLine(lines[line], quoteDepth)?.indentationWidth ?? 0;
   let end = line;
   for (let i = line + 1; i < lines.length; i++) {
-    const unquoted = stripQuoteMarkers(lines[i], quoteDepth);
-    if (unquoted === null) break;
-    if (isBlank(unquoted)) continue;
-    if (getIndentationWidth(unquoted) <= taskIndentationWidth) break;
+    const layout = layoutLine(lines[i], quoteDepth);
+    if (layout === null) break;
+    if (isBlank(layout)) continue;
+    if (layout.indentationWidth <= taskIndentationWidth) break;
     end = i;
   }
   return end;
 }
 
-function getCommonIndentation(lines: string[]): string {
-  let common: string | null = null;
-  for (const line of lines) {
-    if (isBlank(line)) continue;
-    const indentation = getIndentation(line);
-    if (common === null) {
-      common = indentation;
-      continue;
-    }
-    let length = 0;
-    while (
-      length < common.length &&
-      length < indentation.length &&
-      common[length] === indentation[length]
-    ) {
-      length++;
-    }
-    common = common.slice(0, length);
-  }
-  return common ?? '';
-}
-
+/**
+ * Returns the body of the task starting at `line` as Markdown, without the
+ * blockquote markers and the indentation that the body lines have in common.
+ */
 export function extractTaskBody(lines: string[], line: number): string {
   const quoteDepth = getQuoteDepth(lines[line]);
-  const bodyLines = lines
+  const layouts = lines
     .slice(line + 1, findTaskBlockEnd(lines, line) + 1)
-    .map(bodyLine => stripQuoteMarkers(bodyLine, quoteDepth) ?? '');
-  const commonIndentation = getCommonIndentation(bodyLines);
-  return bodyLines
-    .map(bodyLine =>
-      isBlank(bodyLine) ? '' : bodyLine.slice(commonIndentation.length)
+    .map(
+      bodyLine =>
+        layoutLine(bodyLine, quoteDepth) ?? { indentationWidth: 0, content: '' }
+    );
+  const baseIndentationWidth = layouts.reduce(
+    (width, layout) =>
+      isBlank(layout) ? width : Math.min(width, layout.indentationWidth),
+    Infinity
+  );
+  return layouts
+    .map(layout =>
+      isBlank(layout)
+        ? ''
+        : ' '.repeat(layout.indentationWidth - baseIndentationWidth) +
+          layout.content
     )
     .join('\n');
 }
