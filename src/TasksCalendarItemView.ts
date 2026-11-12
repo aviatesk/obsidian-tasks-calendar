@@ -350,14 +350,15 @@ export class TasksCalendarItemView extends ItemView {
     isGhost?: boolean;
   }) {
     const isGhost = props.isGhost ?? false;
+    let filePath = props.filePath;
     let expectedTaskText: string = props.event?.extendedProps.taskText ?? '';
 
     this.activeTooltipModal = new TaskTooltipModal(this.app, {
       taskText: props.taskText || 'Task details not available',
       cleanText: props.cleanText,
-      filePath: props.filePath,
+      filePath,
       onOpenFile: () => {
-        void openTask(this.app, props.filePath, props.line);
+        void openTask(this.app, filePath, props.line);
         this.closeActiveTooltip();
       },
       startDate: props.startDate,
@@ -382,7 +383,7 @@ export class TasksCalendarItemView extends ItemView {
               newEndDate,
               isAllDay,
               wasMultiDay,
-              props.filePath,
+              filePath,
               props.line,
               expectedTaskText
             );
@@ -391,7 +392,7 @@ export class TasksCalendarItemView extends ItemView {
         void this.handleTaskRecurrenceUpdate(
           props.event || ({} as EventApi),
           newPattern,
-          props.filePath,
+          filePath,
           props.line,
           expectedTaskText
         );
@@ -402,7 +403,7 @@ export class TasksCalendarItemView extends ItemView {
             void this.handleTaskPropertyUpdate(
               propertyName,
               newValue,
-              props.filePath,
+              filePath,
               props.line,
               expectedTaskText
             );
@@ -410,24 +411,27 @@ export class TasksCalendarItemView extends ItemView {
       onUpdateStatus: (newStatus: string) => {
         void this.handleTaskStatusUpdate(
           newStatus,
-          props.filePath,
+          filePath,
           props.line,
           expectedTaskText
         );
       },
       onUpdateText: async (newText: string, originalText: string) => {
-        const updated = await this.handleTaskTextUpdate(
+        const updatedFilePath = await this.handleTaskTextUpdate(
           newText,
           originalText,
-          props.filePath,
+          filePath,
           props.line,
           expectedTaskText
         );
-        if (updated) expectedTaskText = newText;
-        return updated;
+        if (updatedFilePath) {
+          filePath = updatedFilePath;
+          expectedTaskText = newText;
+        }
+        return updatedFilePath;
       },
-      onDeleteTask: (filePath: string, line?: number) => {
-        return this.handleTaskDeletion(filePath, line, expectedTaskText);
+      onDeleteTask: (taskFilePath: string, line?: number) => {
+        return this.handleTaskDeletion(taskFilePath, line, expectedTaskText);
       },
       onHoverLink: this.onHoverLink,
     });
@@ -608,18 +612,18 @@ export class TasksCalendarItemView extends ItemView {
     filePath: string,
     line: number | undefined,
     expectedTaskText: string
-  ): Promise<boolean> {
+  ): Promise<string | undefined> {
     if (!filePath) {
       this.logger.warn('Unable to update task: missing file information');
       new Notice('Unable to update task: missing file information');
-      return false;
+      return undefined;
     }
 
     const file = this.app.vault.getAbstractFileByPath(filePath);
     if (!file || !(file instanceof TFile)) {
       this.logger.warn(`File not found: ${filePath}`);
       new Notice(`File not found: ${filePath}`);
-      return false;
+      return undefined;
     }
 
     try {
@@ -635,13 +639,12 @@ export class TasksCalendarItemView extends ItemView {
       if (newFilePath) {
         new Notice('Task text updated successfully');
         this.refetchNowAndOnReindex(newFilePath);
-        return true;
       }
 
-      return false;
+      return newFilePath;
     } catch (error) {
       this.handleTaskError(error, 'Failed to update task text', filePath);
-      return false;
+      return undefined;
     }
   }
 
@@ -1036,7 +1039,7 @@ export class TasksCalendarItemView extends ItemView {
       onUpdateDates: () => {},
       onUpdateStatus: () => {},
       onHoverLink: this.onHoverLink,
-      onUpdateText: () => Promise.resolve(false),
+      onUpdateText: () => Promise.resolve(undefined),
     });
 
     this.activeTooltipModal.open();

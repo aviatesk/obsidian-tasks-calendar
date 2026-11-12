@@ -43,7 +43,10 @@ export interface TaskClickTooltipProps {
     wasMultiDay: boolean
   ) => void;
   onUpdateStatus?: (newStatus: string) => void;
-  onUpdateText?: (newText: string, originalText: string) => Promise<boolean>;
+  onUpdateText?: (
+    newText: string,
+    originalText: string
+  ) => Promise<string | undefined>;
   onHoverLink?: (
     event: React.MouseEvent,
     filePath: string,
@@ -97,7 +100,6 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
-  const fileName = filePath.split('/').pop() || filePath;
   const isMobile = Platform.isMobile;
   const logger = createLogger('TaskClickTooltip');
 
@@ -120,6 +122,9 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   const [currentRecurrence, setCurrentRecurrence] = useState<string>(
     recurrence ?? ''
   );
+
+  const [currentFilePath, setCurrentFilePath] = useState<string>(filePath);
+  const fileName = currentFilePath.split('/').pop() || currentFilePath;
 
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
@@ -145,8 +150,8 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   }, [isEditing]);
 
   const handleHover = (event: React.MouseEvent) => {
-    if (onHoverLink && filePath) {
-      onHoverLink(event, filePath, line);
+    if (onHoverLink && currentFilePath) {
+      onHoverLink(event, currentFilePath, line);
     }
   };
 
@@ -206,10 +211,11 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
       }
     } else if (onUpdateText && currentCleanText !== editedText) {
       setIsSaving(true);
-      const success = await onUpdateText(editedText, currentCleanText);
+      const updatedFilePath = await onUpdateText(editedText, currentCleanText);
       setIsSaving(false);
 
-      if (success) {
+      if (updatedFilePath) {
+        setCurrentFilePath(updatedFilePath);
         setCurrentCleanText(editedText);
         setIsEditing(false);
       }
@@ -267,7 +273,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     if (!onUpdateDates && !isCreateMode) return;
 
     new DateTimePickerNativeModal(app, {
-      title: cleanText || undefined,
+      title: currentCleanText || undefined,
       initialStartDate: startDate ? new Date(startDate) : new Date(),
       initialEndDate: endDate ? new Date(endDate) : null,
       isAllDay,
@@ -355,7 +361,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
     if (isNaN(createdDate.getTime())) return;
 
     new DateTimePickerNativeModal(app, {
-      title: cleanText || undefined,
+      title: currentCleanText || undefined,
       initialStartDate: createdDate,
       initialEndDate: null,
       isAllDay: true,
@@ -504,11 +510,11 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   };
 
   const handleDeleteConfirm = async () => {
-    if (!onDeleteTask || !filePath) return;
+    if (!onDeleteTask || !currentFilePath) return;
 
     setIsDeleting(true);
     try {
-      const success = await onDeleteTask(filePath, line);
+      const success = await onDeleteTask(currentFilePath, line);
       if (success) {
         onClose();
       } else {
@@ -682,7 +688,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
         {hasBody && !isCreateMode && line !== undefined && (
           <TaskBody
             app={app}
-            filePath={filePath}
+            filePath={currentFilePath}
             line={line}
             onOpenLink={onClose}
           />
@@ -725,7 +731,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
             >
               <Info size={18} className="task-click-tooltip-icon-small" />
               <span className="task-click-tooltip-info-text">
-                {filePath}
+                {currentFilePath}
                 {line ? ` (line ${line})` : ''}
               </span>
             </div>

@@ -78,6 +78,10 @@ and this project adheres to
 - Changing the date of a task whose text contains a wikilink or other square
   brackets, e.g. `- [ ] read [[Note]] [due:: 2027-01-01]`, no longer adds a
   second `due` property instead of updating the existing one.
+- After the title of a task written in file properties is edited, which renames
+  its file, the task tooltip now shows the new file name and path. Further
+  changes made from the same tooltip are applied to the renamed file instead of
+  failing with a "File not found" error.
 
 ## [0.1.10]
 
