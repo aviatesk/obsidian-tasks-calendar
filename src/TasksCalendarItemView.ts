@@ -38,6 +38,7 @@ export class TasksCalendarItemView extends ItemView {
   calendar: Calendar | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private activeTooltipModal: TaskTooltipModal | null = null;
+  private isAwaitingReindex = false;
   private calendarFooter: CalendarFooter | null = null;
   private settings: CalendarSettings = DEFAULT_CALENDAR_SETTINGS;
   private plugin: TasksCalendarPlugin;
@@ -276,13 +277,20 @@ export class TasksCalendarItemView extends ItemView {
 
     this.calendar = calendar;
 
-    this.plugin._onChangeCallback = debounce(
+    const refetchOnceSettled = debounce(
       () => {
         calendar.refetchEvents();
       },
       3000,
       true
     );
+    this.plugin._onChangeCallback = () => {
+      if (this.isAwaitingReindex) {
+        this.isAwaitingReindex = false;
+        calendar.refetchEvents();
+      }
+      refetchOnceSettled();
+    };
 
     this.calendar.render();
 
@@ -459,7 +467,7 @@ export class TasksCalendarItemView extends ItemView {
       );
 
       new Notice('Task date updated successfully');
-      this.calendar?.refetchEvents();
+      this.refetchNowAndAfterReindex();
     } catch (error) {
       this.handleTaskError(error, 'Failed to update task date');
     }
@@ -496,7 +504,7 @@ export class TasksCalendarItemView extends ItemView {
       new Notice(
         newPattern ? 'Task recurrence updated' : 'Task recurrence removed'
       );
-      this.calendar?.refetchEvents();
+      this.refetchNowAndAfterReindex();
     } catch (error) {
       this.handleTaskError(error, 'Failed to update task recurrence');
     }
@@ -532,7 +540,7 @@ export class TasksCalendarItemView extends ItemView {
         newValue
       );
       new Notice(`Task ${propertyName} updated`);
-      this.calendar?.refetchEvents();
+      this.refetchNowAndAfterReindex();
     } catch (error) {
       this.handleTaskError(error, `Failed to update task ${propertyName}`);
     }
@@ -574,7 +582,7 @@ export class TasksCalendarItemView extends ItemView {
         new Notice('Task status updated successfully');
       }
 
-      this.calendar?.refetchEvents();
+      this.refetchNowAndAfterReindex();
     } catch (error) {
       this.handleTaskError(error, 'Failed to update task status');
     }
@@ -612,7 +620,7 @@ export class TasksCalendarItemView extends ItemView {
 
       if (newFilePath) {
         new Notice('Task text updated successfully');
-        this.calendar?.refetchEvents();
+        this.refetchNowAndAfterReindex();
         return true;
       }
 
@@ -650,7 +658,7 @@ export class TasksCalendarItemView extends ItemView {
       );
 
       if (success) {
-        this.calendar?.refetchEvents();
+        this.refetchNowAndAfterReindex();
         new Notice('Task created successfully');
         return true;
       }
@@ -748,7 +756,7 @@ export class TasksCalendarItemView extends ItemView {
       if (success) {
         new Notice('Task deleted successfully');
 
-        this.calendar?.refetchEvents();
+        this.refetchNowAndAfterReindex();
         return true;
       }
 
@@ -763,7 +771,17 @@ export class TasksCalendarItemView extends ItemView {
 
   private handleTaskError(error: unknown, context: string) {
     handleError(error, context, this.logger);
-    if (error instanceof StaleTaskError) this.calendar?.refetchEvents();
+    if (error instanceof StaleTaskError) this.refetchNowAndAfterReindex();
+  }
+
+  /**
+   * Dataview indexes a modified file asynchronously, so the events fetched
+   * right after a write still carry the old state of the file, including the
+   * line numbers of its tasks. Fetch them again as soon as the index changes.
+   */
+  private refetchNowAndAfterReindex() {
+    this.isAwaitingReindex = true;
+    this.calendar?.refetchEvents();
   }
 
   private closeActiveTooltip() {

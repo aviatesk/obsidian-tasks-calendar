@@ -55,6 +55,8 @@ and this project adheres to
   used to split the task line and detach the task from its properties and body.
   Pressing Enter now saves the text, and line breaks in pasted text are replaced
   with spaces.
+- The calendar now refreshes as soon as Dataview has indexed a change made from
+  the calendar, instead of only three seconds after it.
 - Upgraded build and type checking to TypeScript 7.0.2, while retaining
   TypeScript 6.0 for ESLint compatibility.
 
