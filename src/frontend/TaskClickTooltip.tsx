@@ -156,12 +156,23 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setEditedText(e.target.value);
+    setEditedText(e.target.value.replace(/\s*\n\s*/g, ' '));
   };
+
+  const canSaveText = !isSaving && !(isCreateMode && !editedText.trim());
 
   const handleTextareaKeyDown = (
     e: React.KeyboardEvent<HTMLTextAreaElement>
   ) => {
+    if (e.key === 'Enter') {
+      // The key press that confirms an IME composition must not save the text.
+      // WebKit reports it with `isComposing` already reset, but still with the
+      // key code 229.
+      if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+      e.preventDefault();
+      if (canSaveText) void handleTextSave();
+      return;
+    }
     if (e.key === 'Tab') {
       e.preventDefault();
       if (e.shiftKey) {
@@ -580,7 +591,7 @@ export const TaskClickTooltip: React.FC<TaskClickTooltipProps> = ({
               ref={saveButtonRef}
               className="task-click-tooltip-save-button"
               onClick={() => void handleTextSave()}
-              disabled={isSaving || (isCreateMode && !editedText.trim())}
+              disabled={!canSaveText}
               title={isCreateMode ? 'Create task' : 'Save changes'}
             >
               {isSaving ? 'Saving...' : isCreateMode ? 'Create' : 'Save'}

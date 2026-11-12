@@ -51,6 +51,10 @@ and this project adheres to
   leaving an empty line behind, which used to split the blockquote in two.
 - Completing a recurring task now inserts the next occurrence after the body of
   the completed task, and copies the body to the new task.
+- The task text field of the task tooltip no longer accepts line breaks, which
+  used to split the task line and detach the task from its properties and body.
+  Pressing Enter now saves the text, and line breaks in pasted text are replaced
+  with spaces.
 - Upgraded build and type checking to TypeScript 7.0.2, while retaining
   TypeScript 6.0 for ESLint compatibility.
 
