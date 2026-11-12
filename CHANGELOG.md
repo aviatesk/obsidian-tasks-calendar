@@ -47,6 +47,8 @@ and this project adheres to
 - Events now use only the first line of a task as their title. The body of a
   multi-line task is no longer appended to the title.
 - Deleting a task from the calendar now deletes its body as well.
+- Deleting a task inside a blockquote or callout now removes its line instead of
+  leaving an empty line behind, which used to split the blockquote in two.
 - Completing a recurring task now inserts the next occurrence after the body of
   the completed task, and copies the body to the new task.
 - Upgraded build and type checking to TypeScript 7.0.2, while retaining
@@ -56,6 +58,9 @@ and this project adheres to
 
 - Editing the text of a multi-line task from the task tooltip no longer fails
   with a "Cannot safely update" error.
+- Tasks inside blockquotes and callouts can now be updated from the calendar.
+  Changing their status, dates, text, or recurrence used to fail with an
+  "Invalid task format" error.
 
 ## [0.1.10]
 

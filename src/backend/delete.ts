@@ -1,6 +1,7 @@
 import { App, TFile } from 'obsidian';
 import { processTaskBlock } from './file-operations';
 import { TaskValidationError } from './error-handling';
+import { getQuoteDepth } from './task-block';
 
 /**
  * Deletes a task from a file at the specified line or removes file properties.
@@ -38,7 +39,11 @@ export async function deleteTask(
       throw new TaskValidationError('Valid line number must be specified');
     }
 
-    const result = await processTaskBlock(app.vault, file, line, () => ['']);
+    // An empty line would split the surrounding blockquote or callout in two,
+    // so a task inside of one is removed without leaving a line behind
+    const result = await processTaskBlock(app.vault, file, line, taskLine =>
+      getQuoteDepth(taskLine) > 0 ? [] : ['']
+    );
 
     return result.changed;
   }

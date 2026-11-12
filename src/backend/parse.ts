@@ -4,7 +4,7 @@ import { TaskValidationError } from './error-handling';
  * Represents different parts of a parsed task
  */
 export interface ParsedTask {
-  leadingWhitespace: string; // Whitespace before the list marker
+  linePrefix: string; // Blockquote markers and whitespace before the list marker
   checkboxPrefix: string; // The full prefix including list marker and checkbox
   status: string; // The character in the checkbox
   tagsBeforeContent: string[]; // Tags before content (#TODO, etc.)
@@ -48,15 +48,16 @@ export function parseTask(taskLine: string): ParsedTask {
   }
 
   // Define regex patterns for different components
-  // Updated to explicitly handle tab characters in leading whitespace
-  const checkboxPattern = /^([ \t]*)([-*+]|\d+\.)\s+\[(.)\]\s*/;
+  // The line prefix covers blockquote markers (for tasks inside blockquotes
+  // and callouts) as well as indentation, including tab characters
+  const checkboxPattern = /^((?:[ \t]*>)*[ \t]*)([-*+]|\d+\.)\s+\[(.)\]\s*/;
   const propertyPattern = /\[([^:]+)::\s*([^\]]*)\]/g;
   const tagPattern = /#[\w\p{L}/\-_]+/gu;
   const blockRefPattern = /\s*(\^\w+)\s*$/;
 
   // Start with default structure
   const result: ParsedTask = {
-    leadingWhitespace: '', // New property for whitespace
+    linePrefix: '',
     checkboxPrefix: '',
     status: ' ', // Default to incomplete
     tagsBeforeContent: [],
@@ -77,11 +78,10 @@ export function parseTask(taskLine: string): ParsedTask {
     );
   }
 
-  // Explicitly preserve tab characters in the leading whitespace
-  result.leadingWhitespace = checkboxMatch[1]; // Store leading whitespace with tabs preserved
+  result.linePrefix = checkboxMatch[1]; // Store the line prefix verbatim
   result.listMarker = checkboxMatch[2]; // Extract the list marker type
   result.status = checkboxMatch[3]; // Extract the status character
-  result.checkboxPrefix = checkboxMatch[0].substring(checkboxMatch[1].length); // Prefix without leading whitespace
+  result.checkboxPrefix = checkboxMatch[0].substring(checkboxMatch[1].length); // Prefix without the line prefix
   let remainingText = taskLine.slice(checkboxMatch[0].length);
 
   // Extract block reference from the end if present
@@ -363,10 +363,7 @@ export function findContentFragments(
 export function reconstructTask(task: ParsedTask): string {
   let result = '';
 
-  // Add leading whitespace if present
-  if (task.leadingWhitespace) {
-    result += task.leadingWhitespace;
-  }
+  result += task.linePrefix;
 
   // Add checkbox with status, preserving the original list marker
   if (task.listMarker) {
@@ -421,15 +418,11 @@ export function reconstructTask(task: ParsedTask): string {
     result += task.blockReference;
   }
 
-  // Clean up excessive spacing while preserving the leading whitespace and tabs
-  // Preserve the leading whitespace (including tabs)
-  const leadingPart = result.slice(0, task.leadingWhitespace.length);
-  // Clean up only the non-leading part
-  const nonLeadingPart = result.slice(task.leadingWhitespace.length);
-  // Replace multiple spaces with a single space in the non-leading part
-  const cleanedNonLeadingPart = nonLeadingPart.replace(/ +/g, ' ').trim();
+  // Clean up excessive spacing while preserving the line prefix verbatim
+  const nonPrefixPart = result.slice(task.linePrefix.length);
+  const cleanedNonPrefixPart = nonPrefixPart.replace(/ +/g, ' ').trim();
 
-  return leadingPart + cleanedNonLeadingPart;
+  return task.linePrefix + cleanedNonPrefixPart;
 }
 
 /**
@@ -493,7 +486,6 @@ export function detectTaskIssues(
 export function cloneTask(task: ParsedTask): ParsedTask {
   return {
     ...task,
-    leadingWhitespace: task.leadingWhitespace,
     tagsBeforeContent: [...task.tagsBeforeContent],
     propertiesBeforeContent: new Map(task.propertiesBeforeContent),
     tagsAfterContent: [...task.tagsAfterContent],
