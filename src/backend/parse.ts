@@ -34,7 +34,7 @@ export interface ParsedTask {
 // The line prefix covers blockquote markers (for tasks inside blockquotes and
 // callouts) as well as indentation, including tab characters
 const CHECKBOX_PATTERN = /^((?:[ \t]*>)*[ \t]*)([-*+]|\d+\.)\s+\[(.)\]\s*/;
-const PROPERTY_PATTERN = /\[([^:]+)::\s*([^\]]*)\]/g;
+const PROPERTY_PATTERN = /\[([^[\]:]+)::\s*([^\]]*)\]/g;
 const TAG_PATTERN = /#[\w\p{L}/\-_]+/gu;
 const BLOCK_REFERENCE_PATTERN = /\s*(\^\w+)\s*$/;
 

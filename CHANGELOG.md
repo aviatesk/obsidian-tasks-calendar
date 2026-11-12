@@ -75,6 +75,9 @@ and this project adheres to
   remove "at the store". The rest of the line is now written back as it was,
   which also keeps the order of tags and properties, URLs with a `#fragment`,
   and repeated spaces intact.
+- Changing the date of a task whose text contains a wikilink or other square
+  brackets, e.g. `- [ ] read [[Note]] [due:: 2027-01-01]`, no longer adds a
+  second `due` property instead of updating the existing one.
 
 ## [0.1.10]
 
