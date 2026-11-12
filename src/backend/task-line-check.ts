@@ -3,9 +3,9 @@ import { StaleTaskError } from './error-handling';
 /**
  * Mirrors the pattern Dataview uses to extract the text of a list item, so
  * that the text of a line in a file is comparable to the indexed task text.
+ * Unlike that pattern, it requires a checkbox, since only tasks are modified.
  */
-const LIST_ITEM_PATTERN =
-  /^[\s>]*(?:\d+\.|\d+\)|\*|-|\+)\s*(?:\[.{0,1}\])?\s*(.*)$/mu;
+const TASK_LINE_PATTERN = /^[\s>]*(?:\d+\.|\d+\)|\*|-|\+)\s*\[.\]\s*(.*)$/mu;
 
 /**
  * Reduces a task text to the part that stays the same when the calendar
@@ -32,7 +32,7 @@ export function assertTaskLineMatches(
   lineContent: string,
   expectedTaskText: string
 ): void {
-  const lineText = LIST_ITEM_PATTERN.exec(lineContent)?.[1];
+  const lineText = TASK_LINE_PATTERN.exec(lineContent)?.[1];
   if (
     lineText === undefined ||
     getTaskTextFingerprint(lineText) !==
