@@ -1,4 +1,11 @@
-import { ItemView, Notice, WorkspaceLeaf, debounce, TFile } from 'obsidian';
+import {
+  Events,
+  ItemView,
+  Notice,
+  WorkspaceLeaf,
+  debounce,
+  TFile,
+} from 'obsidian';
 import { Calendar, EventApi, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -33,12 +40,14 @@ import handleError, { StaleTaskError } from './backend/error-handling';
 import { parseIcsEvents } from './backend/ics';
 import { createLogger } from './logging';
 
+const REINDEX_WAIT_MS = 5000;
+
 export class TasksCalendarItemView extends ItemView {
   private readonly logger = createLogger('ItemView');
   calendar: Calendar | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private activeTooltipModal: TaskTooltipModal | null = null;
-  private isAwaitingReindex = false;
+  private readonly recentWrites = new Map<string, number>();
   private calendarFooter: CalendarFooter | null = null;
   private settings: CalendarSettings = DEFAULT_CALENDAR_SETTINGS;
   private plugin: TasksCalendarPlugin;
@@ -277,20 +286,21 @@ export class TasksCalendarItemView extends ItemView {
 
     this.calendar = calendar;
 
-    const refetchOnceSettled = debounce(
+    this.plugin._onChangeCallback = debounce(
       () => {
         calendar.refetchEvents();
       },
       3000,
       true
     );
-    this.plugin._onChangeCallback = () => {
-      if (this.isAwaitingReindex) {
-        this.isAwaitingReindex = false;
-        calendar.refetchEvents();
-      }
-      refetchOnceSettled();
-    };
+    this.registerEvent(
+      (this.app.metadataCache as Events).on(
+        'dataview:metadata-change',
+        (_type, file) => {
+          if (file instanceof TFile) this.refetchIfRecentlyWritten(file.path);
+        }
+      )
+    );
 
     this.calendar.render();
 
@@ -467,9 +477,9 @@ export class TasksCalendarItemView extends ItemView {
       );
 
       new Notice('Task date updated successfully');
-      this.refetchNowAndAfterReindex();
+      this.refetchNowAndOnReindex(filePath);
     } catch (error) {
-      this.handleTaskError(error, 'Failed to update task date');
+      this.handleTaskError(error, 'Failed to update task date', filePath);
     }
   }
 
@@ -504,9 +514,9 @@ export class TasksCalendarItemView extends ItemView {
       new Notice(
         newPattern ? 'Task recurrence updated' : 'Task recurrence removed'
       );
-      this.refetchNowAndAfterReindex();
+      this.refetchNowAndOnReindex(filePath);
     } catch (error) {
-      this.handleTaskError(error, 'Failed to update task recurrence');
+      this.handleTaskError(error, 'Failed to update task recurrence', filePath);
     }
   }
 
@@ -540,9 +550,13 @@ export class TasksCalendarItemView extends ItemView {
         newValue
       );
       new Notice(`Task ${propertyName} updated`);
-      this.refetchNowAndAfterReindex();
+      this.refetchNowAndOnReindex(filePath);
     } catch (error) {
-      this.handleTaskError(error, `Failed to update task ${propertyName}`);
+      this.handleTaskError(
+        error,
+        `Failed to update task ${propertyName}`,
+        filePath
+      );
     }
   }
 
@@ -582,9 +596,9 @@ export class TasksCalendarItemView extends ItemView {
         new Notice('Task status updated successfully');
       }
 
-      this.refetchNowAndAfterReindex();
+      this.refetchNowAndOnReindex(filePath);
     } catch (error) {
-      this.handleTaskError(error, 'Failed to update task status');
+      this.handleTaskError(error, 'Failed to update task status', filePath);
     }
   }
 
@@ -620,13 +634,13 @@ export class TasksCalendarItemView extends ItemView {
 
       if (newFilePath) {
         new Notice('Task text updated successfully');
-        this.refetchNowAndAfterReindex();
+        this.refetchNowAndOnReindex(newFilePath);
         return true;
       }
 
       return false;
     } catch (error) {
-      this.handleTaskError(error, 'Failed to update task text');
+      this.handleTaskError(error, 'Failed to update task text', filePath);
       return false;
     }
   }
@@ -658,7 +672,7 @@ export class TasksCalendarItemView extends ItemView {
       );
 
       if (success) {
-        this.refetchNowAndAfterReindex();
+        this.refetchNowAndOnReindex(targetPath);
         new Notice('Task created successfully');
         return true;
       }
@@ -716,9 +730,10 @@ export class TasksCalendarItemView extends ItemView {
         wasAllDay
       );
 
+      this.expectReindex(filePath);
       new Notice('Task date updated successfully');
     } catch (error) {
-      this.handleTaskError(error, 'Failed to update task date');
+      this.handleTaskError(error, 'Failed to update task date', filePath);
     }
   }
 
@@ -756,7 +771,7 @@ export class TasksCalendarItemView extends ItemView {
       if (success) {
         new Notice('Task deleted successfully');
 
-        this.refetchNowAndAfterReindex();
+        this.refetchNowAndOnReindex(filePath);
         return true;
       }
 
@@ -764,23 +779,38 @@ export class TasksCalendarItemView extends ItemView {
       new Notice('Failed to delete task');
       return false;
     } catch (error) {
-      this.handleTaskError(error, 'Failed to delete task');
+      this.handleTaskError(error, 'Failed to delete task', filePath);
       return false;
     }
   }
 
-  private handleTaskError(error: unknown, context: string) {
+  private handleTaskError(error: unknown, context: string, filePath: string) {
     handleError(error, context, this.logger);
-    if (error instanceof StaleTaskError) this.refetchNowAndAfterReindex();
+    if (error instanceof StaleTaskError) this.refetchNowAndOnReindex(filePath);
   }
 
   /**
    * Dataview indexes a modified file asynchronously, so the events fetched
    * right after a write still carry the old state of the file, including the
-   * line numbers of its tasks. Fetch them again as soon as the index changes.
+   * line numbers of its tasks. Remember the write, so that the events are
+   * fetched again as soon as Dataview has indexed the file.
    */
-  private refetchNowAndAfterReindex() {
-    this.isAwaitingReindex = true;
+  private expectReindex(filePath: string) {
+    this.recentWrites.set(filePath, Date.now());
+  }
+
+  private refetchNowAndOnReindex(filePath: string) {
+    this.expectReindex(filePath);
+    this.calendar?.refetchEvents();
+  }
+
+  private refetchIfRecentlyWritten(filePath: string) {
+    const writtenAt = this.recentWrites.get(filePath);
+    if (writtenAt === undefined) return;
+    if (Date.now() - writtenAt > REINDEX_WAIT_MS) {
+      this.recentWrites.delete(filePath);
+      return;
+    }
     this.calendar?.refetchEvents();
   }
 
