@@ -2,6 +2,7 @@ import { App, TFile } from 'obsidian';
 import { processTaskBlock } from './file-operations';
 import { TaskValidationError } from './error-handling';
 import { getQuoteDepth } from './task-block';
+import { assertTaskLineMatches } from './task-line-check';
 
 /**
  * Deletes a task from a file at the specified line or removes file properties.
@@ -17,7 +18,8 @@ import { getQuoteDepth } from './task-block';
 export async function deleteTask(
   app: App,
   file: TFile,
-  line?: number,
+  line: number | undefined,
+  expectedTaskText: string,
   dateProperty?: string,
   startDateProperty?: string
 ): Promise<boolean> {
@@ -41,9 +43,10 @@ export async function deleteTask(
 
     // An empty line would split the surrounding blockquote or callout in two,
     // so a task inside of one is removed without leaving a line behind
-    const result = await processTaskBlock(app.vault, file, line, taskLine =>
-      getQuoteDepth(taskLine) > 0 ? [] : ['']
-    );
+    const result = await processTaskBlock(app.vault, file, line, taskLine => {
+      assertTaskLineMatches(taskLine, expectedTaskText);
+      return getQuoteDepth(taskLine) > 0 ? [] : [''];
+    });
 
     return result.changed;
   }

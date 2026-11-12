@@ -61,6 +61,9 @@ and this project adheres to
 - Tasks inside blockquotes and callouts can now be updated from the calendar.
   Changing their status, dates, text, or recurrence used to fail with an
   "Invalid task format" error.
+- Updating or deleting a task no longer risks modifying another line when lines
+  were added to or removed from the note just before. The calendar now verifies
+  that the line still holds the task, and asks to try again otherwise.
 
 ## [0.1.10]
 

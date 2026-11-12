@@ -12,6 +12,19 @@ export class TaskValidationError extends Error {
 }
 
 /**
+ * Error thrown when the line of a task no longer holds that task, i.e. the
+ * file has changed since the task was indexed
+ */
+export class StaleTaskError extends TaskValidationError {
+  constructor() {
+    super(
+      'The task has changed in the file. Try again once the calendar has refreshed.'
+    );
+    this.name = 'StaleTaskError';
+  }
+}
+
+/**
  * Error thrown when file operations fail
  */
 export class FileOperationError extends Error {

@@ -29,7 +29,7 @@ import updateTaskDates, {
 } from './backend/update';
 import { createTask } from './backend/create';
 import { deleteTask } from './backend/delete';
-import handleError from './backend/error-handling';
+import handleError, { StaleTaskError } from './backend/error-handling';
 import { parseIcsEvents } from './backend/ics';
 import { createLogger } from './logging';
 
@@ -332,6 +332,7 @@ export class TasksCalendarItemView extends ItemView {
     isGhost?: boolean;
   }) {
     const isGhost = props.isGhost ?? false;
+    let expectedTaskText: string = props.event?.extendedProps.taskText ?? '';
 
     this.activeTooltipModal = new TaskTooltipModal(this.app, {
       taskText: props.taskText || 'Task details not available',
@@ -364,7 +365,8 @@ export class TasksCalendarItemView extends ItemView {
               isAllDay,
               wasMultiDay,
               props.filePath,
-              props.line
+              props.line,
+              expectedTaskText
             );
           },
       onUpdateRecurrence: (newPattern: string) => {
@@ -372,7 +374,8 @@ export class TasksCalendarItemView extends ItemView {
           props.event || ({} as EventApi),
           newPattern,
           props.filePath,
-          props.line
+          props.line,
+          expectedTaskText
         );
       },
       onUpdateProperty: isGhost
@@ -382,22 +385,31 @@ export class TasksCalendarItemView extends ItemView {
               propertyName,
               newValue,
               props.filePath,
-              props.line
+              props.line,
+              expectedTaskText
             );
           },
       onUpdateStatus: (newStatus: string) => {
-        void this.handleTaskStatusUpdate(newStatus, props.filePath, props.line);
+        void this.handleTaskStatusUpdate(
+          newStatus,
+          props.filePath,
+          props.line,
+          expectedTaskText
+        );
       },
-      onUpdateText: (newText: string, originalText: string) => {
-        return this.handleTaskTextUpdate(
+      onUpdateText: async (newText: string, originalText: string) => {
+        const updated = await this.handleTaskTextUpdate(
           newText,
           originalText,
           props.filePath,
-          props.line
+          props.line,
+          expectedTaskText
         );
+        if (updated) expectedTaskText = newText;
+        return updated;
       },
       onDeleteTask: (filePath: string, line?: number) => {
-        return this.handleTaskDeletion(filePath, line);
+        return this.handleTaskDeletion(filePath, line, expectedTaskText);
       },
       onHoverLink: this.onHoverLink,
     });
@@ -412,7 +424,8 @@ export class TasksCalendarItemView extends ItemView {
     isAllDay: boolean,
     wasMultiDay: boolean,
     filePath: string,
-    line?: number
+    line: number | undefined,
+    expectedTaskText: string
   ): Promise<void> {
     if (!filePath || !newStartDate) {
       this.logger.warn('Unable to update task: missing required information');
@@ -435,6 +448,7 @@ export class TasksCalendarItemView extends ItemView {
         this.app,
         file,
         line,
+        expectedTaskText,
         newStartDate,
         newEndDate || null,
         isAllDay,
@@ -447,7 +461,7 @@ export class TasksCalendarItemView extends ItemView {
       new Notice('Task date updated successfully');
       this.calendar?.refetchEvents();
     } catch (error) {
-      handleError(error, 'Failed to update task date', this.logger);
+      this.handleTaskError(error, 'Failed to update task date');
     }
   }
 
@@ -455,7 +469,8 @@ export class TasksCalendarItemView extends ItemView {
     _event: EventApi,
     newPattern: string,
     filePath: string,
-    line?: number
+    line: number | undefined,
+    expectedTaskText: string
   ): Promise<void> {
     if (!filePath) {
       this.logger.warn('Unable to update task: missing file information');
@@ -471,13 +486,19 @@ export class TasksCalendarItemView extends ItemView {
     }
 
     try {
-      await updateTaskRecurrence(this.app, file, line, newPattern);
+      await updateTaskRecurrence(
+        this.app,
+        file,
+        line,
+        expectedTaskText,
+        newPattern
+      );
       new Notice(
         newPattern ? 'Task recurrence updated' : 'Task recurrence removed'
       );
       this.calendar?.refetchEvents();
     } catch (error) {
-      handleError(error, 'Failed to update task recurrence', this.logger);
+      this.handleTaskError(error, 'Failed to update task recurrence');
     }
   }
 
@@ -485,7 +506,8 @@ export class TasksCalendarItemView extends ItemView {
     propertyName: string,
     newValue: string,
     filePath: string,
-    line?: number
+    line: number | undefined,
+    expectedTaskText: string
   ): Promise<void> {
     if (!filePath) {
       this.logger.warn('Unable to update task: missing file information');
@@ -501,18 +523,26 @@ export class TasksCalendarItemView extends ItemView {
     }
 
     try {
-      await updateTaskProperty(this.app, file, line, propertyName, newValue);
+      await updateTaskProperty(
+        this.app,
+        file,
+        line,
+        expectedTaskText,
+        propertyName,
+        newValue
+      );
       new Notice(`Task ${propertyName} updated`);
       this.calendar?.refetchEvents();
     } catch (error) {
-      handleError(error, `Failed to update task ${propertyName}`, this.logger);
+      this.handleTaskError(error, `Failed to update task ${propertyName}`);
     }
   }
 
   private async handleTaskStatusUpdate(
     newStatus: string,
     filePath: string,
-    line?: number
+    line: number | undefined,
+    expectedTaskText: string
   ): Promise<void> {
     if (!filePath) {
       this.logger.warn('Unable to update task: missing file information');
@@ -532,6 +562,7 @@ export class TasksCalendarItemView extends ItemView {
         this.app,
         file,
         line,
+        expectedTaskText,
         newStatus,
         this.settings.dateProperty,
         this.settings.startDateProperty
@@ -545,7 +576,7 @@ export class TasksCalendarItemView extends ItemView {
 
       this.calendar?.refetchEvents();
     } catch (error) {
-      handleError(error, 'Failed to update task status', this.logger);
+      this.handleTaskError(error, 'Failed to update task status');
     }
   }
 
@@ -553,7 +584,8 @@ export class TasksCalendarItemView extends ItemView {
     newText: string,
     originalText: string,
     filePath: string,
-    line?: number
+    line: number | undefined,
+    expectedTaskText: string
   ): Promise<boolean> {
     if (!filePath) {
       this.logger.warn('Unable to update task: missing file information');
@@ -573,6 +605,7 @@ export class TasksCalendarItemView extends ItemView {
         this.app,
         file,
         line,
+        expectedTaskText,
         originalText,
         newText
       );
@@ -585,7 +618,7 @@ export class TasksCalendarItemView extends ItemView {
 
       return false;
     } catch (error) {
-      handleError(error, 'Failed to update task text', this.logger);
+      this.handleTaskError(error, 'Failed to update task text');
       return false;
     }
   }
@@ -632,6 +665,7 @@ export class TasksCalendarItemView extends ItemView {
   private async handleTaskDateChange(newEvent: EventApi, oldEvent: EventApi) {
     const filePath = newEvent.extendedProps.filePath;
     const line = newEvent.extendedProps.line;
+    const expectedTaskText: string = newEvent.extendedProps.taskText ?? '';
 
     if (!filePath) {
       this.logger.warn('Unable to update task: missing file information');
@@ -665,6 +699,7 @@ export class TasksCalendarItemView extends ItemView {
         this.app,
         file,
         line,
+        expectedTaskText,
         newStart,
         newEnd,
         isAllDay,
@@ -675,13 +710,14 @@ export class TasksCalendarItemView extends ItemView {
 
       new Notice('Task date updated successfully');
     } catch (error) {
-      handleError(error, 'Failed to update task date', this.logger);
+      this.handleTaskError(error, 'Failed to update task date');
     }
   }
 
   private async handleTaskDeletion(
     filePath: string,
-    line?: number
+    line: number | undefined,
+    expectedTaskText: string
   ): Promise<boolean> {
     if (!filePath) {
       this.logger.warn('Unable to delete task: missing file information');
@@ -704,6 +740,7 @@ export class TasksCalendarItemView extends ItemView {
         this.app,
         file,
         line,
+        expectedTaskText,
         dateProperty,
         startDateProperty
       );
@@ -719,9 +756,14 @@ export class TasksCalendarItemView extends ItemView {
       new Notice('Failed to delete task');
       return false;
     } catch (error) {
-      handleError(error, 'Failed to delete task', this.logger);
+      this.handleTaskError(error, 'Failed to delete task');
       return false;
     }
+  }
+
+  private handleTaskError(error: unknown, context: string) {
+    handleError(error, context, this.logger);
+    if (error instanceof StaleTaskError) this.calendar?.refetchEvents();
   }
 
   private closeActiveTooltip() {

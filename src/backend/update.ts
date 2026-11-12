@@ -16,6 +16,7 @@ import {
 } from './file-operations';
 import { STATUS_OPTIONS } from './status';
 import { TaskValidationError } from './error-handling';
+import { assertTaskLineMatches } from './task-line-check';
 import {
   buildRecurringTaskLine,
   buildRecurringFrontmatter,
@@ -36,6 +37,7 @@ export async function updateTaskStatus(
   app: App,
   file: TFile,
   line: number | undefined,
+  expectedTaskText: string,
   newStatus: string,
   dateProperty: string,
   startDateProperty: string
@@ -56,6 +58,7 @@ export async function updateTaskStatus(
       app,
       file,
       line,
+      expectedTaskText,
       newStatus,
       dateProperty,
       startDateProperty,
@@ -147,6 +150,7 @@ async function updateInlineTaskStatus(
   app: App,
   file: TFile,
   line: number,
+  expectedTaskText: string,
   newStatus: string,
   dateProperty: string,
   startDateProperty: string,
@@ -156,6 +160,7 @@ async function updateInlineTaskStatus(
 
   if (needsRecurrence) {
     await processTaskBlock(app.vault, file, line, (taskLine, bodyLines) => {
+      assertTaskLineMatches(taskLine, expectedTaskText);
       const updatedLine = applyInlineStatusChange(taskLine, newStatus);
 
       const parsedCompleted = parseTask(updatedLine);
@@ -172,6 +177,7 @@ async function updateInlineTaskStatus(
     });
   } else {
     await processFileLine(app.vault, file, line, taskLine => {
+      assertTaskLineMatches(taskLine, expectedTaskText);
       return applyInlineStatusChange(taskLine, newStatus);
     });
   }
@@ -217,6 +223,7 @@ export async function updateTaskRecurrence(
   app: App,
   file: TFile,
   line: number | undefined,
+  expectedTaskText: string,
   newRecurrence: string
 ): Promise<void> {
   if (line === undefined) {
@@ -231,6 +238,7 @@ export async function updateTaskRecurrence(
   }
 
   await processFileLine(app.vault, file, line, taskLine => {
+    assertTaskLineMatches(taskLine, expectedTaskText);
     const parsedTask = parseTask(taskLine);
     let updatedTask = cloneTask(parsedTask);
     if (newRecurrence) {
@@ -246,6 +254,7 @@ export async function updateTaskProperty(
   app: App,
   file: TFile,
   line: number | undefined,
+  expectedTaskText: string,
   propertyName: string,
   newValue: string
 ): Promise<void> {
@@ -257,6 +266,7 @@ export async function updateTaskProperty(
   }
 
   await processFileLine(app.vault, file, line, taskLine => {
+    assertTaskLineMatches(taskLine, expectedTaskText);
     const parsedTask = parseTask(taskLine);
     const updatedTask = setTaskProperty(
       cloneTask(parsedTask),
@@ -277,6 +287,7 @@ export default async function updateTaskDates(
   app: App,
   file: TFile,
   line: number | undefined,
+  expectedTaskText: string,
   newStart: Date,
   newEnd: Date | null,
   isAllDay: boolean,
@@ -328,6 +339,8 @@ export default async function updateTaskDates(
 
   // Handle regular inline task
   await processFileLine(app.vault, file, line, taskLine => {
+    assertTaskLineMatches(taskLine, expectedTaskText);
+
     // Parse the task using our parser - may throw TaskValidationError
     const parsedTask = parseTask(taskLine);
 
@@ -403,6 +416,7 @@ export async function updateTaskText(
   app: App,
   file: TFile,
   line: number | undefined,
+  expectedTaskText: string,
   originalText: string,
   newText: string
 ): Promise<string | undefined> {
@@ -413,6 +427,8 @@ export async function updateTaskText(
 
   // Handle regular inline task
   const result = await processFileLine(app.vault, file, line, taskLine => {
+    assertTaskLineMatches(taskLine, expectedTaskText);
+
     // Parse the task to extract components - may throw TaskValidationError
     const parsedTask = parseTask(taskLine);
 
